@@ -1,0 +1,21 @@
+{
+  "id": "i999999",
+  "name": "Test Sweet Spot Session",
+  "start_date_local": "2026-03-20T18:30:00",
+  "type": "Ride",
+  "sport_type": "VirtualRide",
+  "trainer": true,
+  "moving_time": 3600,
+  "elapsed_time": 3660,
+  "distance": 25000,
+  "elevation_gain": 0,
+  "average_watts": 165,
+  "icu_weighted_avg_watts": 172,
+  "icu_intensity": 92,
+  "icu_training_load": 85,
+  "average_heartrate": 148,
+  "max_heartrate": 165,
+  "average_cadence": 88,
+  "device_watts": true,
+  "icu_joules": 594000
+}

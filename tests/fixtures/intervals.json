@@ -1,0 +1,49 @@
+{
+  "icu_intervals": [
+    {
+      "type": "WARMUP",
+      "start_index": 0,
+      "end_index": 600,
+      "duration": 600,
+      "average_watts": 120,
+      "average_heartrate": 125,
+      "average_cadence": 85
+    },
+    {
+      "type": "WORK",
+      "start_index": 600,
+      "end_index": 1800,
+      "duration": 1200,
+      "average_watts": 170,
+      "average_heartrate": 152,
+      "average_cadence": 90
+    },
+    {
+      "type": "REST",
+      "start_index": 1800,
+      "end_index": 2100,
+      "duration": 300,
+      "average_watts": 100,
+      "average_heartrate": 130,
+      "average_cadence": 80
+    },
+    {
+      "type": "WORK",
+      "start_index": 2100,
+      "end_index": 3300,
+      "duration": 1200,
+      "average_watts": 168,
+      "average_heartrate": 155,
+      "average_cadence": 89
+    },
+    {
+      "type": "COOLDOWN",
+      "start_index": 3300,
+      "end_index": 3600,
+      "duration": 300,
+      "average_watts": 90,
+      "average_heartrate": 120,
+      "average_cadence": 75
+    }
+  ]
+}
