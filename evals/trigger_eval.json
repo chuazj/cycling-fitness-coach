@@ -1,0 +1,82 @@
+[
+  {
+    "query": "how did my ride go today, here's the link intervals.icu/activities/i126468486",
+    "should_trigger": true
+  },
+  {
+    "query": "I have a 100km sportive in 8 weeks, can you build me a training plan? my ftp is around 190 and I ride tue/thu/sat",
+    "should_trigger": true
+  },
+  {
+    "query": "need a 45min vo2max session for zwift, something with 4-5min intervals at around 120%",
+    "should_trigger": true
+  },
+  {
+    "query": "weekly check-in -- I did 3 out of 4 planned sessions this week, missed Saturday due to rain",
+    "should_trigger": true
+  },
+  {
+    "query": "what watts should I hold for a sweet spot block? my ftp tested at 186 last month",
+    "should_trigger": true
+  },
+  {
+    "query": "just finished my ramp test on zwift, want to see the numbers -- i126468500",
+    "should_trigger": true
+  },
+  {
+    "query": "weekly summary please, felt pretty good this week but legs were heavy on Thursday",
+    "should_trigger": true
+  },
+  {
+    "query": "what's next on my plan? I have a window to ride after work today",
+    "should_trigger": true
+  },
+  {
+    "query": "I have a gran fondo on April 25th and need to start tapering -- what's the protocol for a 2 week taper?",
+    "should_trigger": true
+  },
+  {
+    "query": "can you pull up my power profile and tell me where I'm weakest? I think I fade on anything over 5 minutes",
+    "should_trigger": true
+  },
+  {
+    "query": "analyze my 10k run pace data from Strava, I ran 48 minutes and want to know my heart rate zone splits",
+    "should_trigger": false
+  },
+  {
+    "query": "what's a good bodyweight workout routine for someone who sits at a desk all day and wants to build core strength",
+    "should_trigger": false
+  },
+  {
+    "query": "how many calories should I eat on rest days vs training days if I'm trying to lose weight at 75kg",
+    "should_trigger": false
+  },
+  {
+    "query": "my rear derailleur keeps skipping under load in the big ring, how do I adjust the b-tension screw",
+    "should_trigger": false
+  },
+  {
+    "query": "what's the fastest way to level up in Zwift? I want to unlock the Tron bike and the new route badges",
+    "should_trigger": false
+  },
+  {
+    "query": "will it rain in Singapore this weekend? I want to plan whether to ride outdoors or stay on the trainer",
+    "should_trigger": false
+  },
+  {
+    "query": "I have a CSV of quarterly sales data with timestamps, can you plot the weekly trend and identify anomalies",
+    "should_trigger": false
+  },
+  {
+    "query": "my resting heart rate has been elevated the last few days around 72 bpm when it's usually 58, should I see a doctor",
+    "should_trigger": false
+  },
+  {
+    "query": "is the Canyon Aeroad CF SLX worth it over the Cervelo S5? I race crits mostly and want the most aero frame",
+    "should_trigger": false
+  },
+  {
+    "query": "I'm training for a triathlon -- can you help with my swim pacing for the 1.5km open water leg?",
+    "should_trigger": false
+  }
+]

@@ -1,0 +1,149 @@
+{
+  "skill_name": "cycling-fitness-coach",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Can you analyze this ride? https://intervals.icu/activities/i126468486",
+      "expected_output": "Extracts activity ID, runs intervals_icu_api.py with --use-athlete-profile, provides structured coaching analysis with execution rating, interval review, and next session recommendation",
+      "files": [],
+      "expectations": [
+        "Runs intervals_icu_api.py with --activity flag and the extracted ID",
+        "Output contains an execution rating (pass, warn, or fail)",
+        "Output contains an interval review section with per-lap breakdown",
+        "Asks for RPE (1-10) at the end of the analysis"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I have 4 hours this week for cycling training. What should I do?",
+      "expected_output": "Asks about current FTP/goals or uses known values, provides structured weekly plan using Training Recommendation template with specific sessions and power targets",
+      "files": [],
+      "expectations": [
+        "Output uses the Training Recommendation template format",
+        "Sessions include power targets in both watts and %FTP",
+        "Total session time fits within the 4-hour constraint"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Build me a 60-minute sweet spot workout for Zwift",
+      "expected_output": "Generates .zwo file with warmup, sweet spot intervals at 88-94% FTP, cooldown; provides Workout summary template with TSS estimate and execution notes",
+      "files": [],
+      "expectations": [
+        "Generates a .zwo file using generate_zwo.py or writes XML directly",
+        "Workout includes warmup, main set, and cooldown sections",
+        "Main set power targets are in the 88-94% FTP (sweet spot) range",
+        "Output includes a TSS estimate"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I just did a 20-minute FTP test, here's the link: https://intervals.icu/activities/i126468500",
+      "expected_output": "Detects FTP test via ftp_test field, calculates new FTP (20min avg x 0.95), compares to current FTP, recommends zone updates if change > 3%",
+      "files": [],
+      "expectations": [
+        "Detects FTP test via ftp_test field in script output",
+        "Calculates estimated new FTP as 20min average x 0.95",
+        "Compares new FTP to current FTP value",
+        "Recommends zone update if change exceeds 3%"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "How did my outdoor ride go? https://intervals.icu/activities/i126468510",
+      "expected_output": "Checks data_warnings for estimated power, caveats all power-based analysis, focuses feedback on HR, RPE, duration, and cadence instead",
+      "files": [],
+      "expectations": [
+        "Checks data_warnings array in script output",
+        "Caveats or disclaims power-based metrics if power is estimated",
+        "Shifts analysis focus to HR, RPE, duration, or cadence"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Did I keep my recovery ride easy enough? https://intervals.icu/activities/i126468520",
+      "expected_output": "Checks zone distribution for Z1 dominance, flags any Z3+ time, assesses recovery quality based on HR and power staying below 55% FTP",
+      "files": [],
+      "expectations": [
+        "Checks zone distribution for Z1/Z2 dominance",
+        "Flags any time spent in Z3 or above",
+        "References the 55% FTP threshold for recovery rides"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "How's my training going?",
+      "expected_output": "Fetches recent activities via --list-recent, assesses training load and consistency trends, provides analysis and recommendations",
+      "files": [],
+      "expectations": [
+        "Fetches recent activities via --list-recent or --weekly-summary",
+        "Provides assessment of training load or consistency trends"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "how did my ride go today",
+      "expected_output": "Asks for intervals.icu link or fetches most recent activity, runs analysis, provides coaching feedback",
+      "files": [],
+      "expectations": [
+        "Either asks for an intervals.icu link or uses --latest to fetch most recent activity",
+        "Provides structured coaching feedback"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "What power should I hold for tempo intervals?",
+      "expected_output": "References training zones, provides Z3 tempo range in both %FTP and watts based on current FTP",
+      "files": [],
+      "expectations": [
+        "References Z3 tempo zone boundaries (75-90% FTP)",
+        "Provides power range in both %FTP and absolute watts"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Compare my last two threshold workouts",
+      "expected_output": "Fetches recent activities, identifies threshold sessions, runs analysis on both, compares power, HR, consistency, and adaptation signals",
+      "files": [],
+      "expectations": [
+        "Fetches and analyzes at least two activities",
+        "Compares power, HR, or consistency metrics between the sessions"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Create a 4-week FTP improvement plan",
+      "expected_output": "Runs pmc_calculator.py --bootstrap for PMC baseline, designs periodized block using periodization.md rules, writes active_plan.md, generates week 1 .zwo files via batch_generate_zwo.py",
+      "files": [],
+      "expectations": [
+        "Runs pmc_calculator.py --bootstrap for PMC baseline",
+        "Reads references/periodization.md for block design rules",
+        "Writes plans/active_plan.md with the plan structure",
+        "Generates week 1 .zwo files via batch_generate_zwo.py"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "How did week 1 go? Let's review my training week",
+      "expected_output": "Runs pmc_calculator.py --weekly-update with plan context, compares planned vs actual TSS, applies adaptation decision trees from periodization.md, proposes adjustments for next week",
+      "files": [],
+      "expectations": [
+        "Runs pmc_calculator.py --weekly-update",
+        "Compares planned vs actual TSS in a table",
+        "Applies adaptation decision trees from periodization.md",
+        "Proposes adjustments for the next week"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "What's my plan status? What workout is next?",
+      "expected_output": "Reads plans/active_plan.md, shows current week schedule with completed/upcoming workouts, identifies next session with power targets and focus",
+      "files": [],
+      "expectations": [
+        "Reads plans/active_plan.md for current state",
+        "Shows current week schedule with completion status",
+        "Identifies the next session with power targets"
+      ]
+    }
+  ]
+}

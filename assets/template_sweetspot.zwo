@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workout_file>
+  <author>Cycling Fitness Coach</author>
+  <name>Template - Sweet Spot Builder</name>
+  <description>Customizable sweet spot workout template. Modify intervals and duration based on your current fitness level and goals.</description>
+  <sportType>bike</sportType>
+  <tags>
+    <tag name="Sweet Spot"/>
+    <tag name="FTP"/>
+    <tag name="Template"/>
+  </tags>
+  <workout>
+    <!-- WARMUP: 10 minutes progressive -->
+    <Warmup Duration="600" PowerLow="0.40" PowerHigh="0.75">
+      <textevent timeoffset="0" message="Easy spin to start"/>
+      <textevent timeoffset="300" message="Gradually building"/>
+      <textevent timeoffset="540" message="Nearly ready for the work"/>
+    </Warmup>
+    
+    <!-- OPENER: Short effort to activate -->
+    <SteadyState Duration="60" Power="0.95" Cadence="95">
+      <textevent timeoffset="0" message="Quick opener - wake up the legs"/>
+    </SteadyState>
+    <SteadyState Duration="120" Power="0.55">
+      <textevent timeoffset="0" message="Easy recovery"/>
+    </SteadyState>
+    
+    <!-- MAIN SET: 2x15min Sweet Spot -->
+    <SteadyState Duration="900" Power="0.90" Cadence="90">
+      <textevent timeoffset="0" message="Interval 1 - 15 minutes @ 90% FTP"/>
+      <textevent timeoffset="60" message="Find your rhythm, smooth pedal stroke"/>
+      <textevent timeoffset="450" message="Halfway! You're doing great"/>
+      <textevent timeoffset="800" message="Final minute - stay focused"/>
+    </SteadyState>
+    
+    <SteadyState Duration="300" Power="0.55">
+      <textevent timeoffset="0" message="5 minutes easy recovery"/>
+      <textevent timeoffset="180" message="Prepare for the second interval"/>
+    </SteadyState>
+    
+    <SteadyState Duration="900" Power="0.90" Cadence="90">
+      <textevent timeoffset="0" message="Interval 2 - same target, same focus"/>
+      <textevent timeoffset="60" message="Match the effort from interval 1"/>
+      <textevent timeoffset="450" message="Halfway through the final block"/>
+      <textevent timeoffset="800" message="Almost there - finish strong!"/>
+    </SteadyState>
+    
+    <!-- COOLDOWN: 5 minutes -->
+    <Cooldown Duration="300" PowerLow="0.55" PowerHigh="0.35">
+      <textevent timeoffset="0" message="Great work! Cool down time"/>
+      <textevent timeoffset="120" message="Easy spinning, let the heart rate drop"/>
+      <textevent timeoffset="240" message="Workout complete - well done!"/>
+    </Cooldown>
+  </workout>
+</workout_file>
