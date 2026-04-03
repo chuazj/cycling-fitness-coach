@@ -184,14 +184,13 @@ python scripts/intervals_icu_api.py --activity i126468486 --compact
 
 ```bash
 # Bootstrap: 90-day history with current CTL/ATL/TSB + peak powers
-python scripts/pmc_calculator.py --bootstrap --days 90 --ftp 192
+python scripts/pmc_calculator.py --bootstrap --days 90
 
 # Weekly update: compare planned vs actual
 python scripts/pmc_calculator.py --weekly-update \
   --week 1 --plan-start 2025-03-16 \
   --prev-ctl 42.3 --prev-atl 51.2 \
-  --planned-tss '{"Tue":65,"Thu":70,"Sat":80,"Flex":55}' \
-  --ftp 192
+  --planned-tss '{"Tue":65,"Thu":70,"Sat":80,"Flex":55}'
 ```
 
 ### generate_zwo.py

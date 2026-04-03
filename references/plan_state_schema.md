@@ -75,6 +75,12 @@ Header format: `## Current Week Schedule (Week {N}: {Mon date}-{Sun date})`
 - `pending` → `modified`: session was done but significantly deviated from plan
 - Only forward transitions; never revert a status
 
+### `## Week {N+1} Schedule (Preview)` *(optional)*
+
+Read-only preview of the next week's schedule. Generated during weekly review to give the athlete visibility into upcoming sessions. **Replaced or removed** when the current week advances.
+
+Same column format as `## Current Week Schedule`. Day column may use relative labels (e.g., `D1`, `D2`) when exact dates are TBD.
+
 ### `## PMC Snapshot`
 
 Current PMC values. **Overwritten** with latest values during weekly review.

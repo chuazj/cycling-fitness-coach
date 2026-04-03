@@ -9,9 +9,9 @@ from intervals.icu activity history. Two modes:
   Weekly:     Fetch one week of activities, compare planned vs actual, update PMC.
 
 Usage:
-    python pmc_calculator.py --bootstrap --days 90 --ftp 192
+    python pmc_calculator.py --bootstrap --days 90
     python pmc_calculator.py --weekly-update --week 1 --plan-start 2026-03-16 \
-        --prev-ctl 42.3 --prev-atl 51.2 --planned-tss '{"Tue":65,"Thu":70,"Sat":80,"Flex":55}' --ftp 192
+        --prev-ctl 42.3 --prev-atl 51.2 --planned-tss '{"Tue":65,"Thu":70,"Sat":80,"Flex":55}'
 """
 
 import argparse

@@ -18,8 +18,8 @@
 | Start Date | TBD (after 5-7 day recovery week) |
 | End Date | TBD |
 | Total Weeks | 4 |
-| Current Week | 0 (Recovery / Pre-Block) |
-| Current Phase | Recovery |
+| Current Week | 1 |
+| Current Phase | Re-Foundation |
 
 ## Block Structure
 
@@ -30,7 +30,7 @@
 | 3 | Peak | Keystone threshold 2x25 + VO2max 5x5 | 360 | No |
 | 4 | Taper & Test | Deload + 20-min FTP test | 161 | Yes |
 
-## Current Week Schedule (Week 0: Recovery)
+## Current Week Schedule (Week 0: Recovery — 2026-03-27 to 2026-04-02)
 
 | Day | Session | Duration | Key Interval | Target TSS | ZWO File | Status |
 |-----|---------|----------|-------------|------------|----------|--------|
@@ -42,7 +42,7 @@
 
 | Day | Session | Duration | Key Interval | Target TSS | ZWO File | Status |
 |-----|---------|----------|-------------|------------|----------|--------|
-| D1 | Sweet Spot | 70 min | 3x15 @ 89-96% | ~72 | W1_D1_SweetSpot_3x15.zwo | pending |
+| D1 (Mar 31) | Sweet Spot | 70 min | 3x15 @ 89-96% | 82 | W1_D1_SweetSpot_3x15.zwo | completed |
 | D2 | Recovery | 45 min | Z1 spin + cadence drills | ~22 | W1_D2_Recovery_45min.zwo | pending |
 | D3 | Threshold | 64 min | 2x18 @ 97-101% | ~75 | W1_D3_Threshold_2x18.zwo | pending |
 | D5 | Over-Unders | 60 min | 3x10 (92/107%, finale 110%) | ~68 | W1_D5_OverUnder_3x10.zwo | pending |

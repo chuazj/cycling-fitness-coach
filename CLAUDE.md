@@ -44,14 +44,13 @@ python scripts/generate_zwo.py --json workout_def.json --output workout.zwo --ft
 ### PMC Calculator (Performance Management Chart)
 ```bash
 # Bootstrap: pull 90-day history, compute current CTL/ATL/TSB + peak powers
-python scripts/pmc_calculator.py --bootstrap --days 90 --ftp 192
+python scripts/pmc_calculator.py --bootstrap --days 90
 
 # Weekly update: compare planned vs actual for a training week
 python scripts/pmc_calculator.py --weekly-update \
   --week 1 --plan-start 2026-03-16 \
   --prev-ctl 42.3 --prev-atl 51.2 \
-  --planned-tss '{"Tue":65,"Thu":70,"Sat":80,"Flex":55}' \
-  --ftp 192
+  --planned-tss '{"Tue":65,"Thu":70,"Sat":80,"Flex":55}'
 ```
 
 ### Batch Zwift Workout Generation
@@ -119,15 +118,14 @@ assets/
 - **ZWO tag reference**: Always consult https://github.com/h4l/zwift-workout-file-reference/blob/master/zwift_workout_file_tag_reference.md for definitive attribute/element specs when generating .zwo files
 - **ZWO file encoding**: Always write with `encoding="utf-8"` — Windows defaults to cp1252
 - **Script stdout encoding**: Do NOT use `.encode("ascii", "replace").decode()` workarounds; they destroy Unicode data
-- **intervals.icu auth**: HTTP Basic Auth with permanent API key; credentials in `.env`, never committed
+- **intervals.icu auth**: HTTP Basic Auth; credentials in `.env`, never committed (see SKILL.md for setup)
 - **intervals.icu null handling**: API returns `None` for missing values, not absent keys. Use `a.get("field") or 0` only for fields where 0 is equivalent to missing (e.g., `moving_time`, `distance`, `elapsed_time`, `elevation_gain`). Use `x is not None` checks for fields where 0 is a valid distinct value (e.g., IF, TSS, average_watts, average_heartrate, icu_joules)
 - **Metrics hierarchy**: NP → IF → TSS (each derived from the previous); prefer intervals.icu pre-computed values, fall back to stream computation
 - **Canonical references**: Zone boundaries in `references/training_zones.md`, PMC formulas in `pmc_calculator.py`, block templates in `references/periodization.md` — do not duplicate these values elsewhere
 - **Plan state**: `plans/active_plan.md` is the single source of truth for active training plans; structure documented in `references/plan_state_schema.md`
 - **Adaptation requires approval**: Claude proposes adaptations based on decision trees in `references/periodization.md`, but waits for user confirmation before modifying the plan
 - **Batch ZWO input**: JSON array where each item extends the `workout_from_dict()` schema with a `filename` field
-- **ZWO output directory**: `plans/workouts/week{N}/` — one subdirectory per training week. Zwift custom workout folder: `<user_home>\AppData\Local\Zwift\Workouts\<your_zwift_id>\`
-- **Obsidian vault**: `<your_obsidian_vault>` — workout analyses, plans, and reviews are saved to `cycling-fitness-coach/` subfolder. Use `Write` tool for content creation (direct to vault folder), Obsidian CLI for open/search/read. CLI requires Obsidian to be running.
+- **ZWO output directory, Zwift path, Obsidian vault**: See SKILL.md → Obsidian Integration for canonical paths and folder structure
 - **Batch dry-run**: `batch_generate_zwo.py --dry-run` validates and computes stats without writing files
 - **FTP/weight bounds**: All scripts validate FTP (50-500W) and weight (30-200kg) — rejects nonsensical values
 - **User's current FTP**: 192W; weight 74kg
@@ -143,6 +141,5 @@ assets/
 - **FTP test detection**: `detect_ftp_test()` returns `detection_methods` (list), not a single string — multiple detection heuristics can match simultaneously. Formula fields are per-method: `estimated_ftp_formula_20min` and `estimated_ftp_formula_ramp` (not a shared `estimated_ftp_formula`)
 - **FTP test bounds**: 20-min heuristic triggers only when 80–150% of reference FTP (rejects anomalous data)
 - **Indoor/outdoor context**: Derived from `detect_indoor(trainer, sport_type)` — `bool(trainer) or sport_type in ("VirtualRide", "VirtualRun")`. intervals.icu may return `trainer: null` for Zwift activities — `sport_type` fallback handles this.
-- **pmc_calculator.py `--ftp`**: Reserved for future stream-based TSS computation — present in argparse but unused. TSS comes from intervals.icu pre-computed values.
 - **Power profile categories**: Coggan-based W/kg thresholds at 5s, 1min, 5min, 20min. Used by `analyze_power_profile()` to classify rider type (sprinter, time_trialist, pursuiter, all_rounder) and identify strengths/weaknesses.
 - **RPE collection**: Session RPE (1-10) collected after workout analysis; compared against IF for mismatch detection (fatigue signal, FTP underestimate). Stored in Obsidian frontmatter as `rpe` and `rpe_match` fields.
