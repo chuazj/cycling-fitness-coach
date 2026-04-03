@@ -128,7 +128,7 @@ assets/
 - **ZWO output directory, Zwift path, Obsidian vault**: See SKILL.md → Obsidian Integration for canonical paths and folder structure
 - **Batch dry-run**: `batch_generate_zwo.py --dry-run` validates and computes stats without writing files
 - **FTP/weight bounds**: All scripts validate FTP (50-500W) and weight (30-200kg) — rejects nonsensical values
-- **User's current FTP**: 192W; weight 74kg
+- **User's current FTP**: 192W; weight 74kg — update these to match your profile, or use `--use-athlete-profile` to auto-fetch from intervals.icu
 
 ### Context (background for debugging/understanding)
 
@@ -137,7 +137,6 @@ assets/
 - **`--compact` flag**: `intervals_icu_api.py --compact` omits rarely-used fields (VI, EF, zone_seconds, per-interval distance/max_watts/intensity) for token-efficient coaching output
 - **`training_day_pattern`**: `pmc_calculator.py --bootstrap` output includes `training_day_pattern` (e.g., `["Tue", "Thu", "Sat"]`) — auto-detected from activity history day-of-week frequency. Use to pre-fill training days in Workflow 4 Step 2 instead of asking the athlete.
 - **weekly_summary top-3 optimization**: `weekly_summary()` fetches power curves only from the top-3 TSS activities (not all N), reducing API calls significantly for athletes with many weekly rides
-
 - **FTP test detection**: `detect_ftp_test()` returns `detection_methods` (list), not a single string — multiple detection heuristics can match simultaneously. Formula fields are per-method: `estimated_ftp_formula_20min` and `estimated_ftp_formula_ramp` (not a shared `estimated_ftp_formula`)
 - **FTP test bounds**: 20-min heuristic triggers only when 80–150% of reference FTP (rejects anomalous data)
 - **Indoor/outdoor context**: Derived from `detect_indoor(trainer, sport_type)` — `bool(trainer) or sport_type in ("VirtualRide", "VirtualRun")`. intervals.icu may return `trainer: null` for Zwift activities — `sport_type` fallback handles this.

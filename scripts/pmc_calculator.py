@@ -82,6 +82,30 @@ def compute_pmc(daily_tss, initial_ctl=0.0, initial_atl=0.0):
     }
 
 
+def _aggregate_daily_tss(activities, start_date, end_date):
+    """Aggregate activity TSS by date and fill gaps with zeros.
+
+    Returns list of (date_str, tss) tuples covering start_date to end_date inclusive.
+    """
+    daily = {}
+    for a in activities:
+        tss = a.get("icu_training_load")
+        if tss is None:
+            continue
+        date_str = (a.get("start_date_local") or "")[:10]
+        if not date_str:
+            continue
+        daily[date_str] = daily.get(date_str, 0) + tss
+
+    all_days = []
+    current = start_date
+    while current <= end_date:
+        ds = current.strftime("%Y-%m-%d")
+        all_days.append((ds, daily.get(ds, 0)))
+        current += timedelta(days=1)
+    return all_days
+
+
 def extract_peak_powers(activities, client):
     """Extract best peak powers from recent activities.
 
@@ -151,25 +175,7 @@ def bootstrap(client, days):
             "daily_tss": [],
         }
 
-    # Aggregate to daily TSS
-    daily = {}
-    for a in activities:
-        tss = a.get("icu_training_load")
-        if tss is None:
-            continue
-        date_str = (a.get("start_date_local") or "")[:10]
-        if not date_str:
-            continue
-        daily[date_str] = daily.get(date_str, 0) + tss
-
-    # Fill gaps with zero-TSS days
-    all_days = []
-    current = oldest.date()
-    end = newest.date()
-    while current <= end:
-        ds = current.strftime("%Y-%m-%d")
-        all_days.append((ds, daily.get(ds, 0)))
-        current += timedelta(days=1)
+    all_days = _aggregate_daily_tss(activities, oldest.date(), newest.date())
 
     # Compute PMC
     pmc = compute_pmc(all_days)
@@ -234,25 +240,7 @@ def weekly_update(client, week_num, plan_start, prev_ctl, prev_atl, planned_tss,
         newest=(week_end + timedelta(days=1)).strftime("%Y-%m-%d"),
     )
 
-    # Aggregate actual daily TSS
-    daily = {}
-    for a in activities:
-        tss = a.get("icu_training_load")
-        if tss is None:
-            continue
-        date_str = (a.get("start_date_local") or "")[:10]
-        if not date_str:
-            continue
-        daily[date_str] = daily.get(date_str, 0) + tss
-
-    # Build full week of daily TSS (fill gaps with 0)
-    all_days = []
-    current = week_start.date()
-    end_date = week_end.date()
-    while current <= end_date:
-        ds = current.strftime("%Y-%m-%d")
-        all_days.append((ds, daily.get(ds, 0)))
-        current += timedelta(days=1)
+    all_days = _aggregate_daily_tss(activities, week_start.date(), week_end.date())
 
     # Compute updated PMC from previous values
     pmc = compute_pmc(all_days, initial_ctl=prev_ctl, initial_atl=prev_atl)

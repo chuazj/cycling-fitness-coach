@@ -1,6 +1,6 @@
 ---
 name: cycling-fitness-coach
-description: Use this skill for cycling training and power analysis. Analyze rides from intervals.icu by pasting a link or ID — fetches power data (NP, IF, TSS, zone distribution, peak powers) via API and provides coaching feedback with execution ratings. Generate Zwift .zwo workout files with warmup/cooldown ramps and power targets. Create periodized training plans with PMC/ACWR tracking (CTL, ATL, TSB, ACWR) and automated weekly adaptation reviews. Perform power profile analysis to identify rider strengths and weaknesses. Support race peaking with taper protocols. Trigger on intervals.icu links, activity IDs, and phrases like "analyze my workout", "how did my ride go", "review my latest ride", "create a training plan", "build me a plan", "weekly check-in", "review my week", "check my plan", "what's next", "weekly summary", "power profile", "race prep", "taper", "peak for event", any zone or FTP question, RPE discussion, and any cycling power or heart rate conversation.
+description: Use this skill for cycling training and power analysis. Analyze rides from intervals.icu (NP, IF, TSS, zones, peaks) with coaching feedback. Generate Zwift .zwo workouts. Create periodized training plans with PMC/ACWR tracking and weekly adaptation reviews. Power profile analysis, race peaking, and taper protocols. Trigger on intervals.icu links, activity IDs, "analyze my workout", "create a training plan", "weekly check-in", "weekly summary", "race prep", zone/FTP questions, RPE discussions, and cycling power/HR conversations.
 compatibility: Python 3.9+, requests package, intervals.icu API key (.env), Obsidian (optional)
 ---
 
@@ -33,13 +33,13 @@ Workout analyses, training plans, and weekly reviews are saved to the Obsidian v
 
 ### Vault Location
 
-`<your_obsidian_vault>\cycling-fitness-coach\`
+`<your_obsidian_vault>/cycling-fitness-coach/`
 
 ### Zwift Workout Directory
 
 Generated `.zwo` files are stored in the project at `plans/workouts/week{N}/`. The user's Zwift custom workout folder is:
 
-`<user_home>\AppData\Local\Zwift\Workouts\<your_zwift_id>\`
+`<user_home>/AppData/Local/Zwift/Workouts/<your_zwift_id>/`
 
 When generating workouts, mention this path so the user knows where to find or load them in Zwift.
 
