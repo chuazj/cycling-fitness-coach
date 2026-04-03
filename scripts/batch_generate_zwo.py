@@ -121,8 +121,13 @@ def main():
     if not (50 <= args.ftp <= 500):
         p.error(f"--ftp must be between 50 and 500 watts (got {args.ftp})")
 
-    with open(args.input, "r", encoding="utf-8") as f:
-        workouts_data = json.load(f)
+    try:
+        with open(args.input, "r", encoding="utf-8") as f:
+            workouts_data = json.load(f)
+    except FileNotFoundError:
+        p.error(f"Input file not found: {args.input}")
+    except json.JSONDecodeError as e:
+        p.error(f"Invalid JSON in {args.input}: {e}")
 
     if not isinstance(workouts_data, list):
         p.error("Input JSON must be an array of workout definitions")

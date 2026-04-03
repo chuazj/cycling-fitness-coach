@@ -692,15 +692,20 @@ def weekly_summary(client, days=7, ftp=192, weight=74.0):
         key=lambda a: a.get("icu_training_load", 0),
         reverse=True,
     )[:3]
-    for a in tss_sorted:
+    def _fetch_20min_peak(activity):
         try:
-            curve = parse_power_curve(client.get_power_curve(a.get("id")))
-            p20 = curve.get("20min")
-            if p20 is not None:
-                if max_20min_peak is None or p20 > max_20min_peak:
-                    max_20min_peak = p20
-        except Exception:
-            pass
+            curve = parse_power_curve(client.get_power_curve(activity.get("id")))
+            return curve.get("20min")
+        except Exception as e:
+            print(f"WARNING: power curve fetch for {activity.get('id')} failed: {e}", file=sys.stderr)
+            return None
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        peaks = executor.map(_fetch_20min_peak, tss_sorted)
+    for p20 in peaks:
+        if p20 is not None:
+            if max_20min_peak is None or p20 > max_20min_peak:
+                max_20min_peak = p20
 
     # Compute duration-weighted average IF
     avg_if = None
