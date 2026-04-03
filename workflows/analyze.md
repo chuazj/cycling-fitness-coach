@@ -66,6 +66,76 @@ Power data is estimated (no power meter). All power metrics (NP, IF, TSS, zones)
 - Use the `Write` tool (direct file write to vault folder)
 - Open in Obsidian: `obsidian open path="cycling-fitness-coach/workout-reviews/YYYY-MM-DD {Activity Name}.md"`
 
+**Step 5:** Update Block Progression Tracker in the project CLAUDE.md:
+- Read the `### Block Progression Tracker` table in the project's `CLAUDE.md`
+- Find the row matching the analyzed session by week/day (e.g., activity named "W1 D3 - Threshold 2x18" → row `W1 | D3`)
+- Update the row's **Status** to `✅ Done (DD Mon)` using the activity date
+- Update **Key Notes** with a compact summary: avg power, % FTP, key metric (NP/IF/TSS), execution rating, RPE if provided
+- If no matching row exists (e.g., unplanned outdoor ride), append a new row at the end of the current week
+- If the session is the last in a week, update the **Week Total** row with estimated TSS
+
+**Example update:**
+```
+| W1 | D3 | Threshold 2x18 | ✅ Done (02 Apr) | 189/191W (98-100% FTP), NP 188W, IF 0.98, TSS 75, cardiac drift +3.1%. 5/5. RPE 7. |
+```
+
+**IMPORTANT:** This step is mandatory after every workout analysis. Stale trackers cause wrong zone calculations and missed targets in future sessions.
+
+**Step 6:** FTP Change Propagation (conditional — only when `metrics.ftp_test` is present in script output):
+
+When the analysis script detects an FTP test, propagate the new FTP across all dependent sections in the project CLAUDE.md. **Always confirm with the athlete before making changes.**
+
+1. **Present the result and ask for confirmation:**
+   ```
+   FTP Test Detected: {20min_avg}W × 0.95 = {estimated_ftp}W
+   Current FTP: {old_ftp}W → Proposed: {new_ftp}W ({+/-X%})
+   
+   Confirm new FTP, or override? (e.g., "set 200W" / "yes" / "keep current")
+   ```
+   - If ramp test: use `estimated_ftp_ramp` (1min × 0.75) instead
+   - If athlete overrides (e.g., rounds up based on training data), use their value
+   - If athlete says "keep current" → skip all updates below
+
+2. **After confirmation, update these 4 sections in one pass:**
+
+   **A. Athlete Profile stats table** (`### Current Stats`):
+   - FTP row → new value + test date (e.g., `| FTP | 200W | 2026-04-26 (validated via 20min test) |`)
+   - W/kg row → `new_ftp / weight` to 2 decimal places
+   
+   **B. FTP Test History table** (`### FTP Test History`):
+   - Append new row: `| {date} | {protocol} | {20min_avg}W | {estimated}W (→ set {confirmed}W) | {pacing_notes} |`
+   - Include pacing notes from the analysis (fade %, key observations)
+   - If athlete overrode the calculated value, note rationale
+   
+   **C. Power Zones table** (`## Power Zones Reference`):
+   - Update header: `Coggan 7-zone model based on **{new_ftp}W FTP**:`
+   - Recalculate all 7 zone rows using these boundaries:
+   
+     | Zone | Low % | High % | Power Range | W/kg |
+     |------|-------|--------|-------------|------|
+     | Z1 | — | 55% | <floor(FTP×0.55)W | <(FTP×0.55/weight) |
+     | Z2 | 56% | 75% | floor(FTP×0.56)-floor(FTP×0.75)W | proportional |
+     | Z3 | 76% | 90% | floor(FTP×0.76)-floor(FTP×0.90)W | proportional |
+     | Z4 | 91% | 105% | floor(FTP×0.91)-floor(FTP×1.05)W | proportional |
+     | Z5 | 106% | 120% | floor(FTP×1.06)-floor(FTP×1.20)W | proportional |
+     | Z6 | 121% | 150% | floor(FTP×1.21)-floor(FTP×1.50)W | proportional |
+     | Z7 | >150% | — | >floor(FTP×1.50)W | proportional |
+   
+   - Update Sweet Spot sub-zone: `84-97% FTP ({floor(FTP×0.84)}-{floor(FTP×0.97)}W)`
+   
+   **D. FTP Test Pacing Strategy** (`### 20-Minute Test (Preferred)`):
+   - Update start wattage: `{floor(new_ftp × 1.06)}W (106% FTP)`
+   - Update target avg: `{floor(new_ftp × 1.11)}W+ avg`
+
+3. **Print a change summary:**
+   ```
+   FTP Updated: {old}W → {new}W (+{X}W / +{X}%)
+   W/kg: {old} → {new}
+   Zones recalculated | Test history appended | Pacing targets updated
+   ```
+
+**IMPORTANT:** Do NOT skip confirmation. The athlete may want to round up/down based on training context, or keep the current FTP if the test was compromised.
+
 **Plan-Aware Analysis:** If `plans/active_plan.md` exists, cross-reference the analyzed activity against the current week schedule:
 - Was this session on-plan? Match by day/date and session type.
 - Compare actual power, TSS, and duration against planned targets.

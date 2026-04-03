@@ -31,7 +31,7 @@ When user requests a training plan ("create a training plan", "start a macro pla
 
 **Step 3:** Bootstrap PMC from intervals.icu:
 ```bash
-python scripts/pmc_calculator.py --bootstrap --days 90 --ftp {FTP}
+python scripts/pmc_calculator.py --bootstrap --days 90
 ```
 This provides: current CTL/ATL/TSB, 4-week average weekly TSS, peak powers, and daily TSS history.
 
@@ -97,8 +97,7 @@ Read `references/plan_state_schema.md` for update rules.
 python scripts/pmc_calculator.py --weekly-update \
   --week {N} --plan-start {start_date} \
   --prev-ctl {ctl} --prev-atl {atl} \
-  --planned-tss '{"Tue":{X},"Thu":{X},"Sat":{X},"Flex":{X}}' \
-  --ftp {FTP}
+  --planned-tss '{"Tue":{X},"Thu":{X},"Sat":{X},"Flex":{X}}'
 ```
 
 **Step 3:** Optionally run detailed analysis on specific activities:

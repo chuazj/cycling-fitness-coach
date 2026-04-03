@@ -69,7 +69,7 @@ When user mentions a target event ("I have a race on DATE", "peak for event", "t
 **Step 3:** If `plans/active_plan.md` exists, read current PMC snapshot (CTL, ATL, TSB).
 Otherwise, bootstrap PMC:
 ```bash
-python scripts/pmc_calculator.py --bootstrap --days 90 --ftp {FTP}
+python scripts/pmc_calculator.py --bootstrap --days 90
 ```
 
 **Step 4:** Calculate taper timing:
