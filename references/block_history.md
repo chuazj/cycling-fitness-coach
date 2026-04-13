@@ -41,13 +41,13 @@
 | W4 | — | Rest (Mar 25) | ✅ Done | |
 | W4 | — | Rest (Mar 26) | ✅ Done | Extra rest day — legs still sore from Saturday overshoot (TSS 129). Shifted test to Thu. |
 | W4 | D5 | FTP Test 20min (Fri Mar 27) | ✅ Done (27 Mar) | 20min avg 198W, NP 201W, HR 178→189. Est FTP 188.1W → set 200W for Block 3. Pacing fade -7.7%. RPE 10. TSS 66. |
-| W4 | D6 | Recovery 30min (Sat Mar 28) | Pending | |
-| W4 | — | **Week Total** | — | **TSS: TBD** (taper) |
+| W4 | D6 | Recovery 30min (Sat Mar 28) | ✅ Done (28 Mar) | Post-test recovery spin. |
+| W4 | — | **Week Total** | — | **TSS: ~300** (taper: 129+57+26+0+66+22) |
 
 ### Block 2 Summary
 
 - **Duration**: 5 weeks (Feb 24 – Mar 28, with 1-week business trip disruption)
-- **Total estimated TSS**: ~1,091+ (W1: 264, W2: 350, W3: 177, W4: TBD taper)
+- **Total estimated TSS**: ~1,091 (W1: 264, W2: 350, W3: 177, W4: ~300 taper)
 - **Key achievements**: Zero-fade threshold at 183W for 2x22, VO2max 224W peak, O/U overs progressed 190→198W
 - **FTP outcome**: 186W → 200W (+3.2%)
 - **Lessons**: Hot start pacing on FTP test caused -7.7% fade. Need strict 203W cap for first 10min next test.

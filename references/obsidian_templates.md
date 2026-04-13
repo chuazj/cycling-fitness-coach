@@ -2,6 +2,16 @@
 
 Reference for writing cycling coaching notes to the Obsidian vault.
 
+**Vault path**: `C:\Users\zijia\OneDrive\obsidian\zj-obsd-vault\cycling-fitness-coach\`
+
+## File Naming Convention
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Workout review | `YYYY-MM-DD {Activity Name}.md` | `2026-04-03 W1 D3 Threshold 2x18.md` |
+| Training plan | `YYYY-MM-DD {Plan Name}.md` | `2026-03-31 Block 3 FTP Builder.md` |
+| Weekly review | `YYYY-MM-DD Week {N} Review.md` | `2026-04-06 Week 1 Review.md` |
+
 ## Frontmatter Templates
 
 ### Workout Reviews
@@ -10,21 +20,21 @@ Reference for writing cycling coaching notes to the Obsidian vault.
 ---
 date: YYYY-MM-DD
 type: workout-review
-week: N
-day: N
 session: "Session Name"
-ftp: 200
-np: X
-if: X.XX
+session_type: sweet-spot|threshold|vo2max|over-under|endurance|recovery|ftp-test
 tss: X
+if: X.XX
 rating: pass|warn|fail
 rpe: null
-rpe_match: null
 tags:
   - cycling
   - workout-review
+  - {session_type}
+  - indoor|outdoor
 ---
 ```
+
+Keep frontmatter lean — only fields used for filtering/sorting/trending across notes. Detailed metrics (NP, VI, HR, cadence, peaks, distance, duration, block/week/day) belong in the body text.
 
 ### Training Plans
 

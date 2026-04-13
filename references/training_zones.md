@@ -4,12 +4,12 @@
 
 | Zone | Name | % FTP | RPE | Description | Training Purpose |
 |------|------|-------|-----|-------------|------------------|
-| Z1 | Active Recovery | 0-55% | 1-2 | Very easy, conversational | Recovery, warm-up, cool-down |
-| Z2 | Endurance | 55-75% | 3-4 | Comfortable, sustainable for hours | Aerobic base, fat oxidation |
-| Z3 | Tempo | 75-90% | 5-6 | "Comfortably hard" | Muscular endurance, efficiency |
-| Z4 | Threshold | 90-105% | 7-8 | Race pace, 20-60min sustainable | FTP improvement, lactate tolerance |
-| Z5 | VO2max | 105-120% | 9 | Hard, 3-8min efforts | Aerobic capacity, power at VO2max |
-| Z6 | Anaerobic | 120-150% | 10 | Very hard, 30s-3min | Anaerobic capacity, repeatability |
+| Z1 | Active Recovery | <55% | 1-2 | Very easy, conversational | Recovery, warm-up, cool-down |
+| Z2 | Endurance | 56-75% | 3-4 | Comfortable, sustainable for hours | Aerobic base, fat oxidation |
+| Z3 | Tempo | 76-90% | 5-6 | "Comfortably hard" | Muscular endurance, efficiency |
+| Z4 | Threshold | 91-105% | 7-8 | Race pace, 20-60min sustainable | FTP improvement, lactate tolerance |
+| Z5 | VO2max | 106-120% | 9 | Hard, 3-8min efforts | Aerobic capacity, power at VO2max |
+| Z6 | Anaerobic | 121-150% | 10 | Very hard, 30s-3min | Anaerobic capacity, repeatability |
 | Z7 | Neuromuscular | >150% | 10+ | Max effort, <30s | Peak power, sprint ability |
 
 ## Sweet Spot Training

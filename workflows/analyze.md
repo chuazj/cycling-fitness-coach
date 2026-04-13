@@ -121,7 +121,7 @@ When the analysis script detects an FTP test, propagate the new FTP across all d
      | Z6 | 121% | 150% | floor(FTP×1.21)-floor(FTP×1.50)W | proportional |
      | Z7 | >150% | — | >floor(FTP×1.50)W | proportional |
    
-   - Update Sweet Spot sub-zone: `84-97% FTP ({floor(FTP×0.84)}-{floor(FTP×0.97)}W)`
+   - Update Sweet Spot sub-zone: `88-94% FTP ({floor(FTP×0.88)}-{floor(FTP×0.94)}W) — extended to 96% in progressive overload blocks`
    
    **D. FTP Test Pacing Strategy** (`### 20-Minute Test (Preferred)`):
    - Update start wattage: `{floor(new_ftp × 1.06)}W (106% FTP)`

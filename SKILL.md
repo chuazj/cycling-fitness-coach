@@ -33,13 +33,13 @@ Workout analyses, training plans, and weekly reviews are saved to the Obsidian v
 
 ### Vault Location
 
-`<your_obsidian_vault>/cycling-fitness-coach/`
+`C:\Users\zijia\OneDrive\obsidian\zj-obsd-vault\cycling-fitness-coach\`
 
 ### Zwift Workout Directory
 
 Generated `.zwo` files are stored in the project at `plans/workouts/week{N}/`. The user's Zwift custom workout folder is:
 
-`<user_home>/AppData/Local/Zwift/Workouts/<your_zwift_id>/`
+`C:\Users\zijia\AppData\Local\Zwift\Workouts\3831767\`
 
 When generating workouts, mention this path so the user knows where to find or load them in Zwift.
 

@@ -374,11 +374,7 @@ Track session RPE over weeks:
 
 ### Obsidian Frontmatter Integration
 
-Store RPE in workout review frontmatter:
-```yaml
-rpe: 7
-rpe_match: "normal"  # or "fatigue_signal", "ftp_underestimated", "overcooking"
-```
+RPE is stored in workout review frontmatter as `rpe: 7`. RPE:Power mismatch analysis is noted in the body text, not frontmatter (keep frontmatter lean — see `references/obsidian_templates.md`).
 
 ## Post-Workout Questions
 
