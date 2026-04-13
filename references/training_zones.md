@@ -26,14 +26,18 @@ Typical protocols (shorter intervals can sit at the upper end of the band):
 - 3x15min @ 88-94% FTP (core sweet spot)
 - 4x10min @ 90-94% FTP (upper sweet spot)
 
-## Training Model Considerations
+## Training Intensity Distribution
 
-Two primary intensity distribution models are well-supported in sport science:
+2024-2025 meta-analyses (Pla et al., *Sports Medicine*; Goulet et al., *JSMS*) show **no significant performance difference between polarized, pyramidal, and threshold-focused models** when total training load is matched. What matters more than the model is total load, consistency, and progressive overload.
 
-- **Sweet Spot / Threshold-focused**: High time-efficiency; most training stress at 88-105% FTP. Effective for time-crunched athletes (<6-8 hrs/week). Higher acute fatigue per session.
-- **Polarized (80/20)**: ~80% Z1-Z2, ~20% Z4+, minimal Z3. Supported by Seiler (2010) and Stoggl & Sperlich (2014). May produce equal or superior long-term adaptations, especially when training volume is available (>8 hrs/week). Lower per-session fatigue, higher total volume.
+WorldTour teams use a **pyramidal distribution** — most volume in Z1-Z2, moderate Z3-Z4 work, smaller Z5+ component — with progressive intensification toward competition (Mateo-March et al., 2025, *SJMSS*, 28 WorldTour cyclists).
 
-Both approaches produce FTP gains. Sweet spot is the default in this program due to the athlete's time-constrained indoor setup, but consider shifting toward polarized distribution if: training volume increases, plateau occurs on SS-heavy plans, or aerobic base needs development (high cardiac drift on Z2 rides).
+### Training Models
+
+- **Pyramidal (DEFAULT)**: Most training in Z1-Z2, meaningful Z3-Z4 (sweet spot/threshold), smaller Z5+ component. This is what the FTP Builder block implements. Validated by WorldTour practice and 2024 meta-analyses. Effective across all training volumes.
+- **Polarized (HIGH-VOLUME ALTERNATIVE)**: ~80% Z1-Z2, ~0% Z3, ~20% Z4+. Eliminates the Z3 "no man's land." Supported by Seiler (2010) and Stoggl & Sperlich (2014). Consider when: training volume >8 hrs/week, plateau occurs on SS-heavy plans for 2+ blocks, or aerobic base needs development (high cardiac drift on Z2 rides).
+
+Both approaches produce FTP gains. The FTP Builder block is pyramidal by design — it includes Z2 endurance days, Z3-Z4 sweet spot/threshold work, and Z5+ VO2max sessions within the same block.
 
 ## Heart Rate Zones (LTHR-Based)
 

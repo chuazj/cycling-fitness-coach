@@ -6,6 +6,7 @@
 - [Key Metrics to Analyze](#key-metrics-to-analyze)
 - [Power Data Confidence](#power-data-confidence)
 - [Indoor vs. Outdoor Context](#indoor-vs-outdoor-context)
+  - [ERG Mode: Strengths & Limitations](#erg-mode-strengths--limitations)
 - [FTP Test Detection & Post-Test Workflow](#ftp-test-detection--post-test-workflow)
 - [Structured Workout Analysis](#structured-workout-analysis)
 - [Common Issues & Coaching Feedback](#common-issues--coaching-feedback)
@@ -125,6 +126,33 @@ Check `context` field (`indoor` / `outdoor`) from the `trainer` flag.
 - Indoor VI > 1.10: Investigate ERG mode, gearing, or cadence instability
 - Outdoor VI 1.10-1.30: Normal for rolling terrain, do not penalize
 - Outdoor VI > 1.30 in urban environments: Expected due to traffic lights and frequent stops — focus on interval-specific power, not overall VI
+
+### ERG Mode: Strengths & Limitations
+
+ERG mode automatically adjusts trainer resistance to maintain constant power regardless of cadence. It is excellent for structured training but has real limitations that affect long-term development.
+
+**Strengths:**
+- Precise intensity targeting (VI 1.00-1.05) — ideal for structured intervals
+- Eliminates pacing decisions — athlete can focus purely on effort
+- Consistent session quality — reduces "bad pacing" as a variable
+- High-quality training data — clean power files for analysis
+
+**Limitations:**
+- **No variable-power training**: ERG holds constant power; outdoor cycling requires constant adjustment (surges, grade changes, wind, group dynamics). This neuromuscular skill atrophies with exclusive ERG use.
+- **Masks pedaling efficiency**: ERG compensates for cadence/technique changes. Outdoor or sim-mode riding exposes inefficiencies that need correction.
+- **No pace management development**: Knowing how to self-select appropriate power for 20 minutes, or respond to attacks, requires practice without ERG holding the power for you.
+- **Thermal load**: Indoor training lacks convective cooling; RPE and HR run higher at same power. Adequate fan setup is essential.
+
+**When to use alternatives to ERG:**
+
+| Mode | When to Use | Benefit |
+|------|-------------|---------|
+| **ERG mode** | Structured intervals (SS, threshold, VO2max, O/U) | Precise targeting, session consistency |
+| **Sim mode** (Zwift) | Endurance rides on hilly routes | Develops power modulation, responds to virtual terrain |
+| **Free ride** (no ERG) | FTP tests, race simulation, pace practice | Develops self-pacing skill, neuromuscular variability |
+| **Outdoor** | When available | Full neuromuscular, bike handling, environmental adaptation |
+
+**Recommendation for predominantly indoor athletes**: Use ERG for all structured interval sessions. Add 1 sim-mode or free-ride session per block for neuromuscular variety. Maintain occasional outdoor rides when possible — outdoor rides with sprint efforts demonstrate neuromuscular capacity that ERG alone does not develop.
 
 ## FTP Test Detection & Post-Test Workflow
 

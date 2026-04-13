@@ -13,6 +13,7 @@ Reference for Claude-as-coach: block templates, TSS distribution, progressive ov
 - [FTP Test Protocols](#ftp-test-protocols) — 20-min and ramp test procedures
 - [Race/Event Peaking Protocol](#raceevent-peaking-protocol) — Taper timing and TSB targeting
 - [Block Selection Logic](#block-selection-logic) — Goal-based block type selection
+- [Durability (Emerging Concept)](#durability-emerging-concept) — Fatigue resistance as trainable metric
 
 ## Training Blocks
 
@@ -183,30 +184,36 @@ Progression: advance one level per week. If athlete can hold 105%+ consistently,
 
 Recovery between classic VO2max intervals: equal to work duration (1:1 work:rest ratio). Recovery power: 40-50% FTP.
 
-### VO2max Progression — Short Intervals (Billat-Style)
+### VO2max Progression — Short Intervals (PRIMARY)
 
-High-frequency short intervals accumulate more time at VO2max than classic long intervals due to rapid re-engagement of aerobic system during brief recovery. Reference: Billat et al. (2000), Rønnestad et al. (2015).
+Short intervals (30s work bouts) accumulate significantly more time above 90% VO2max than classic long intervals due to rapid re-engagement of the aerobic system during brief recovery — VO2 remains elevated through the short rest, bypassing the 1-2 min ramp-up that "wastes" the start of each long interval.
+
+**Evidence**: Rønnestad et al. (2020, *SJMSS*) showed short intervals produced 8.7% vs 2.6% VO2max improvement compared to effort-matched long intervals in elite cyclists. Rønnestad et al. (2025) confirmed 14% higher mean power output and longer time >90% VO2max with 30s vs 5min formats. A 2024 microcycle study showed 3.7% vs 0.7% improvement in mean power at VO2max test.
 
 | Format | Interval Structure | Total Work Time | Rest | Power Target | Est. TSS (session) |
 |--------|-------------------|-----------------|------|-------------|---------------------|
+| 30/15s | 10-20× (30s on / 15s off) | 5-10min | 15s @ 45% | 120-130% FTP | 40-60 |
 | 30/30s | 10-20× (30s on / 30s off) | 5-10min | 30s @ 45% | 120-130% FTP | 40-60 |
 | 40/20s | 8-12× (40s on / 20s off) | 5.3-8min | 20s @ 40% | 115-125% FTP | 40-55 |
 | 15/15s | 20-30× (15s on / 15s off) | 5-7.5min | 15s @ 40% | 130-140% FTP | 35-50 |
+
+The **30/15s format** (2:1 work:rest ratio) is the specific protocol used in Rønnestad's landmark studies and should be the default starting point for VO2max development.
 
 **Short interval progression:**
 
 | Level | Format | Sets × Reps | Total Work |
 |-------|--------|-------------|------------|
 | SVO2-1 | 30/30s | 2×8 (3min set rest) | 8min |
-| SVO2-2 | 30/30s | 2×10 (3min set rest) | 10min |
-| SVO2-3 | 40/20s | 2×8 (3min set rest) | 10.7min |
-| SVO2-4 | 30/30s | 3×8 (3min set rest) | 12min |
-| SVO2-5 | 40/20s | 3×8 (3min set rest) | 16min |
+| SVO2-2 | 30/15s | 2×8 (3min set rest) | 8min |
+| SVO2-3 | 30/30s | 2×10 (3min set rest) | 10min |
+| SVO2-4 | 40/20s | 2×8 (3min set rest) | 10.7min |
+| SVO2-5 | 30/15s | 3×8 (3min set rest) | 12min |
+| SVO2-6 | 40/20s | 3×8 (3min set rest) | 16min |
 
 **When to use short vs. classic:**
-- **Short intervals**: Better for athletes who struggle to complete long intervals at target power, early in VO2max block, or for variety to prevent neural staleness
-- **Classic intervals**: Better for sustained aerobic ceiling work, more race-specific for TT/climbing efforts
-- **Mix both**: Alternate weekly (e.g., Tue = classic, Thu = short) for complementary stimulus
+- **Short intervals (DEFAULT)**: Primary VO2max development format. Produces longer time >90% VO2max and superior adaptations per Rønnestad 2020-2025. Use for all standard VO2max training.
+- **Classic intervals (COMPLEMENTARY)**: Race-specific for sustained climbing/TT efforts where the ability to hold high power for 4-5+ continuous minutes matters. Use when developing sustained-effort capacity, not raw VO2max.
+- **Mix both**: Alternate weekly (e.g., Tue = short, Thu = classic) for complementary stimulus — short intervals build the aerobic ceiling, classic intervals build the ability to use it in sustained efforts.
 
 ### VO2max Progression — Advanced Formats
 
@@ -577,3 +584,32 @@ Default block length is 4 weeks (3 build + 1 recovery). Adjust based on athlete 
 - After completing two 4-week blocks at >95% completion: offer 5-week block option
 - If athlete explicitly reports feeling run down by Week 3 in multiple blocks: switch to 3-week
 - 3-week blocks have faster recovery cycles but slower total progression; 5-week blocks offer more stimulus per cycle but higher fatigue risk
+
+---
+
+## Durability (Emerging Concept)
+
+**Durability** is the capacity to resist performance decline after prolonged exercise. It is emerging as a distinct, trainable metric that is independent of VO2max, FTP, or other traditional lab measures (Lievens et al., 2025, *BMC Sports Science*).
+
+### Key Findings (2023-2025)
+
+- Enhanced durability predicts success in amateur road cycling (Valenzuela et al., 2025, *Frontiers in Sports*)
+- Durability is improved by both low-intensity and high-intensity endurance training (Spragg et al., 2023, *Frontiers in Physiology*)
+- High-intensity work above critical power causes greater acute power output reductions than equivalent work at lower intensities (Spragg et al., 2025, *Eur J Appl Physiol*)
+- Accumulated Zone 1 volume appears to be the primary driver of durability improvements
+
+### When Durability Matters
+
+| Training Context | Relevance | Action |
+|-----------------|-----------|--------|
+| Sessions <90 min, no events planned | Low | Current approach sufficient |
+| Targeting events 2-4 hours | Moderate | Increase Z2 volume; add longer Saturday rides |
+| Targeting events >4 hours (gran fondos, sportives) | High | Dedicated endurance block; progressive long-ride extension |
+| Training volume >8 hrs/week | Moderate | Z2 volume already building durability; monitor with long-ride power consistency |
+
+### Practical Application
+
+Durability is not a separate training block — it develops as a byproduct of aerobic volume. For athletes targeting longer events:
+1. Extend the Saturday long ride by 15-30 min per week during endurance/build phases
+2. Monitor power consistency in the final third of long rides (>90 min) — declining NP relative to first third indicates durability limiter
+3. Fueling during long rides directly affects durability — underfueling accelerates performance decline (see `references/fueling.md`)
