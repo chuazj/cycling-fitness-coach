@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **Claude Code skill** (not a standalone application). It provides cycling coaching capabilities: intervals.icu workout analysis via API, training feedback, Zwift workout (.zwo) file generation, multi-week periodized training plans with PMC tracking, and weekly adaptive reviews. The skill entry point is `SKILL.md`.
 
-**Canonical copy**: `~/.claude/skills/cycling-fitness-coach/` — OneDrive backup at `~/OneDrive/code/claude_skill/Cycling/cycling-fitness-coach/` is a read-only mirror (sync direction: skill -> OneDrive).
+**Repo layout**: Git working copy lives under `~/OneDrive/code/claude_skill/Cycling/cycling-fitness-coach/` (origin: `github.com/chuazj/cycling-fitness-coach`). Claude loads the skill from `~/.claude/skills/cycling-fitness-coach/` — keep the two in sync (working copy → install path).
 
 ## Running Scripts
 
@@ -58,8 +58,12 @@ python scripts/pmc_calculator.py --weekly-update \
 
 ### Batch Zwift Workout Generation
 ```bash
-# Generate all .zwo files for a week from JSON array
-python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir plans/workouts/week1/ --ftp 200
+# Generate all .zwo files for a week from JSON array.
+# --output-dir must be the user's Zwift custom workouts folder (see SKILL.md → Zwift Workout Directory),
+# NOT a repo path. Substitute <ZWIFT_WORKOUTS_DIR> with the platform-specific path:
+#   Windows:       %LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\
+#   macOS/Linux:   ~/Documents/Zwift/Workouts/<athlete_id>/
+python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp 200
 ```
 
 ### Weekly Training Summary
@@ -124,7 +128,7 @@ assets/
 - **Cooldown power naming**: `power_low` is the *start* (higher) value, `power_high` is the *end* (lower) value — matches Zwift XML attribute names, not magnitudes. Opposite semantic to Warmup where naming matches both.
 - **Duration**: Always in seconds
 - **Zwift XML**: Use `<name>` tags (not `<n>`); set `ftptest="1"` on `<workout>` for FTP test workouts; use `show_avg="1"` on `<FreeRide>` to display running average power on HUD (essential for FTP tests)
-- **ZWO tag reference**: Always consult https://github.com/h4l/zwift-workout-file-reference/blob/master/zwift_workout_file_tag_reference.md for definitive attribute/element specs when generating .zwo files
+- **ZWO tag reference**: See `SKILL.md` → Reference Files → `zwo_format.md` for the canonical external tag-reference URL; consult it for definitive attribute/element specs when generating .zwo files
 - **ZWO file encoding**: Always write with `encoding="utf-8"` — Windows defaults to cp1252
 - **Script stdout encoding**: Do NOT use `.encode("ascii", "replace").decode()` workarounds; they destroy Unicode data
 - **intervals.icu auth**: HTTP Basic Auth; credentials in `.env`, never committed (see SKILL.md for setup)
@@ -138,7 +142,7 @@ assets/
 - **Obsidian vault**: See SKILL.md → Obsidian Integration for canonical paths and folder structure
 - **Batch dry-run**: `batch_generate_zwo.py --dry-run` validates and computes stats without writing files
 - **FTP/weight bounds**: All scripts validate FTP (50-500W) and weight (30-200kg) — rejects nonsensical values
-- **User's current FTP**: 200W; weight 70kg — update these to match your profile, or use `--use-athlete-profile` to auto-fetch from intervals.icu
+- **Athlete profile source of truth**: `plans/active_plan.md` → Athlete Profile section holds the current FTP + weight. For one-off script runs, prefer `--use-athlete-profile` (auto-fetches from intervals.icu) over hard-coded `--ftp`/`--weight` flags so values don't drift
 
 ### Context (background for debugging/understanding)
 

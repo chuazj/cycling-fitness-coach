@@ -30,9 +30,10 @@ python scripts/generate_zwo.py --json workout_def.json --output workout.zwo --ft
 
 **Option B — Batch generation (full week):**
 ```bash
-python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir plans/workouts/week1/ --ftp 200
-# Dry run first to validate:
-python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir plans/workouts/week1/ --ftp 200 --dry-run
+# --output-dir must be the user's Zwift custom workouts folder (see SKILL.md → Zwift Workout Directory), NOT a repo path.
+python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp 200
+# Dry run first to validate (safe to use any path — does not write files):
+python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp 200 --dry-run
 ```
 
 **Option C — Direct XML (simple workouts):**

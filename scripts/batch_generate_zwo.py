@@ -6,7 +6,10 @@ Takes a JSON array of workout definitions and generates all .zwo files for a tra
 Thin wrapper around generate_zwo.py — reuses workout_from_dict, create_zwo_xml, calculate_workout_stats.
 
 Usage:
-    python batch_generate_zwo.py --input week_workouts.json --output-dir plans/workouts/week1/ --ftp 200
+    # --output-dir should be the user's Zwift custom workouts folder so files show up in Zwift:
+    #   Windows:      %LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\week1\
+    #   macOS/Linux:  ~/Documents/Zwift/Workouts/<athlete_id>/week1/
+    python batch_generate_zwo.py --input week_workouts.json --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp 200
 
 Input JSON format:
     [

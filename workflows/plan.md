@@ -55,7 +55,8 @@ If zone confidence is not `validated`, insert a field test session into Week 1 (
 - Create JSON array of workout definitions (one per session)
 - Run batch generation:
 ```bash
-python scripts/batch_generate_zwo.py --input {week_json} --output-dir plans/workouts/week1/ --ftp {FTP}
+python scripts/batch_generate_zwo.py --input {week_json} --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp {FTP}
+# <ZWIFT_WORKOUTS_DIR> = user's Zwift custom workouts folder (see SKILL.md → Zwift Workout Directory). Confirm path with user first.
 ```
 
 **Step 8:** Save plan summary to Obsidian vault:
@@ -79,7 +80,7 @@ python scripts/batch_generate_zwo.py --input {week_json} --output-dir plans/work
 |-----|---------|--------------|------------|
 | ... | ...     | ...          | ...        |
 
-**Workout files**: Generated in plans/workouts/week1/
+**Workout files**: Generated in the user's Zwift custom workouts folder (e.g. `%LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\week1\` on Windows) — see SKILL.md → Zwift Workout Directory
 **Peak Power Baseline**: 5s: {X}W | 1min: {X}W | 5min: {X}W | 20min: {X}W
 ```
 

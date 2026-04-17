@@ -203,10 +203,13 @@ python scripts/generate_zwo.py --json workout_def.json --output workout.zwo --ft
 ### batch_generate_zwo.py
 
 ```bash
-# Generate all .zwo files for a training week
-python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir plans/workouts/week1/ --ftp 200
+# Generate all .zwo files for a training week.
+# --output-dir should be your Zwift custom workouts folder so the files show up in-game:
+#   Windows:       %LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\week1\
+#   macOS/Linux:   ~/Documents/Zwift/Workouts/<athlete_id>/week1/
+python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp 200
 
-# Dry run (validate + compute stats without writing files)
+# Dry run (validate + compute stats without writing files — any --output-dir is fine here)
 python scripts/batch_generate_zwo.py --input week_workouts.json --dry-run --ftp 200
 ```
 
