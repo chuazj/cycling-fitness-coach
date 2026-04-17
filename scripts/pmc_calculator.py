@@ -18,6 +18,8 @@ import argparse
 import json
 import os
 import sys
+from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 # Force UTF-8 stdout on Windows
@@ -38,7 +40,12 @@ ATL_DAYS = 7   # Acute Training Load time constant
 
 
 def _ewa_constant(days):
-    """Exponentially weighted average decay constant: 1/n (standard PMC)."""
+    """Discrete EWA constant (1/n).
+
+    Matches the intervals.icu PMC discrete formulation. Differs slightly
+    (~7% at n=7) from the continuous 1-exp(-1/τ) form some sources cite.
+    Using 1/n keeps CTL/ATL values consistent with what users see in intervals.icu.
+    """
     return 1.0 / days
 
 
@@ -111,8 +118,6 @@ def extract_peak_powers(activities, client):
 
     Fetches power curves from top-TSS activities in parallel (up to 8, 4 concurrent).
     """
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-
     powered = [a for a in activities if a.get("icu_training_load") and a.get("icu_training_load") > 0]
     if not powered:
         return {}
@@ -195,7 +200,6 @@ def bootstrap(client, days):
     peaks = extract_peak_powers(recent_activities, client)
 
     # Training day pattern: count day-of-week frequency from all activities
-    from collections import Counter
     day_counter = Counter()
     for a in activities:
         date_str = (a.get("start_date_local") or "")[:10]
@@ -288,7 +292,8 @@ def weekly_update(client, week_num, plan_start, prev_ctl, prev_atl, planned_tss,
 # CLI
 # ---------------------------------------------------------------------------
 
-def main():
+def build_parser():
+    """Build the CLI argument parser. Exposed for tests and reuse."""
     p = argparse.ArgumentParser(
         description="PMC Calculator — bootstrap from intervals.icu history or update weekly"
     )
@@ -314,7 +319,11 @@ def main():
     p.add_argument("--prev-atl", type=float, help="Previous ATL value")
     p.add_argument("--planned-tss", help='Planned TSS as JSON object, e.g. \'{"Tue":65,"Thu":70}\'')
     p.add_argument("--prev-peaks", help='Previous peak powers as JSON, e.g. \'{"5s":450,"1min":280}\'')
+    return p
 
+
+def main():
+    p = build_parser()
     args = p.parse_args()
 
     # Load credentials

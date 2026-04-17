@@ -716,7 +716,7 @@ class TestParsePowerCurveEdgeCases(unittest.TestCase):
         self.assertIsInstance(peaks, dict)
 
 
-class TestIntervalStatsEdgeCases(unittest.TestCase):
+class TestIntervalStatsValidation(unittest.TestCase):
     def test_all_zero_watts(self):
         laps = [{"average_watts": 0}, {"average_watts": 0}]
         # All zero watts → work_laps is empty (filter requires > 0)

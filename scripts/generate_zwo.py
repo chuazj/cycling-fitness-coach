@@ -14,9 +14,10 @@ Usage:
 import argparse
 import json
 import sys
+import warnings
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field, fields
 from typing import Optional
-import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 # Force UTF-8 stdout on Windows (default cp1252 cannot encode CJK workout names)
@@ -40,7 +41,7 @@ def _validate_power(value, name="power"):
 class WorkoutInterval:
     """Base class for workout intervals"""
     duration: int  # seconds
-    text_events: list = field(default_factory=list)
+    text_events: list[TextEvent] = field(default_factory=list)
     cadence: Optional[int] = None
     cadence_low: Optional[int] = None
     cadence_high: Optional[int] = None
@@ -125,7 +126,6 @@ class IntervalsT(WorkoutInterval):
         # Auto-calculate duration before parent validation
         calculated = self.repeat * (self.on_duration + self.off_duration)
         if self.duration != 0 and self.duration != calculated:
-            import warnings
             warnings.warn(
                 f"IntervalsT: explicit duration={self.duration}s ignored, "
                 f"using calculated {calculated}s "
@@ -165,8 +165,8 @@ class ZwiftWorkout:
     author: str = "Cycling Fitness Coach"
     description: str = ""
     sport_type: str = "bike"
-    tags: list = field(default_factory=list)
-    intervals: list = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    intervals: list[WorkoutInterval] = field(default_factory=list)
     category: Optional[str] = None
     is_ftp_test: bool = False
 
@@ -213,10 +213,10 @@ def create_zwo_xml(workout: ZwiftWorkout) -> str:
 
 
 def _create_interval_element(interval: WorkoutInterval) -> Element:
-    """Create XML element for a workout interval.
+    """Dispatch concrete interval type to its XML element.
 
-    Order matters: check specific subclasses (Warmup, Cooldown, Ramp) before
-    the generic SteadyState, since all share similar attributes.
+    All interval classes are siblings of WorkoutInterval (none subclass each other),
+    so the isinstance check order is independent — each branch matches exactly one type.
     """
     if isinstance(interval, Warmup):
         elem = Element("Warmup")
@@ -330,7 +330,7 @@ def calculate_workout_stats(workout: ZwiftWorkout, ftp: int = 200) -> dict:
     """Calculate workout statistics"""
     total_duration = 0
     total_work = 0  # kJ approximation
-    
+
     for interval in workout.intervals:
         if isinstance(interval, IntervalsT):
             avg_power = (interval.on_power * interval.on_duration +
@@ -348,28 +348,41 @@ def calculate_workout_stats(workout: ZwiftWorkout, ftp: int = 200) -> dict:
 
         total_duration += interval.duration
         total_work += avg_power * ftp * interval.duration / 1000  # kJ
-    
+
     # Estimate IF using average power (not NP — accurate for structured workouts with low variability)
     avg_intensity = total_work * 1000 / (ftp * total_duration) if total_duration > 0 else 0
 
     # Estimated TSS (uses avg-power-based IF; actual TSS may differ due to power variability)
     tss = (total_duration * avg_intensity * avg_intensity) / 3600 * 100
-    
+
+    # Variable workouts (IntervalsT, over-unders) underreport TSS by ~5-10% vs NP-based actual
+    has_high_variability = any(isinstance(i, IntervalsT) for i in workout.intervals)
+
     return {
         "total_duration_min": round(total_duration / 60, 1),
         "estimated_kj": round(total_work),
         "estimated_avg_intensity": round(avg_intensity, 2),
         "estimated_tss": round(tss),
         "tss_method": "avg_power (not NP — actual TSS may differ with high power variability)",
+        "tss_warning": (
+            "Variable workout detected — actual TSS will likely run 5-10% higher than "
+            "estimated due to NP > avg power."
+        ) if has_high_variability else None,
     }
 
 
-def main():
+def build_parser():
+    """Build the CLI argument parser. Exposed for tests and reuse."""
     parser = argparse.ArgumentParser(description="Generate Zwift workout files")
     parser.add_argument("--json", "-j", required=True, help="JSON workout definition file")
     parser.add_argument("--output", "-o", required=True, help="Output .zwo file path")
     parser.add_argument("--ftp", type=int, default=200,
                         help="FTP for stats calculation (generic default; user provides actual FTP via --ftp, must be > 0)")
+    return parser
+
+
+def main():
+    parser = build_parser()
     args = parser.parse_args()
     
     if not (50 <= args.ftp <= 500):

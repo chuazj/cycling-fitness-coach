@@ -65,6 +65,15 @@ def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
             errors.append({"index": idx, "error": "missing required 'filename' field"})
             continue
 
+        # Reject path traversal / absolute paths — filename must be a bare basename
+        if (os.sep in filename or "/" in filename
+                or filename.startswith("..") or os.path.isabs(filename)):
+            errors.append({
+                "index": idx, "filename": filename,
+                "error": "filename must be a bare filename (no path separators or '..')",
+            })
+            continue
+
         try:
             workout = workout_from_dict(workout_def)
             xml_content = create_zwo_xml(workout)
@@ -102,7 +111,8 @@ def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
     }
 
 
-def main():
+def build_parser():
+    """Build the CLI argument parser. Exposed for tests and reuse."""
     p = argparse.ArgumentParser(
         description="Batch generate Zwift workout files from JSON array"
     )
@@ -115,7 +125,11 @@ def main():
     p.add_argument("-o", "--output", help="Write summary JSON to file (default: stdout)")
     p.add_argument("--dry-run", action="store_true",
                    help="Validate and compute stats without writing .zwo files")
+    return p
 
+
+def main():
+    p = build_parser()
     args = p.parse_args()
 
     if not (50 <= args.ftp <= 500):

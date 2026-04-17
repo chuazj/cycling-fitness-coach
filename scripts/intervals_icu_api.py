@@ -11,8 +11,16 @@ Usage:
     python intervals_icu_api.py --weekly-summary 7 --ftp 200 --weight 70
 """
 
-import argparse, json, math, os, re, sys, time
+import argparse
+import json
+import math
+import os
+import re
+import sys
+import time
+import warnings
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 
 # Force UTF-8 stdout on Windows (default cp1252 cannot encode CJK activity names)
 if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
@@ -285,7 +293,6 @@ def parse_power_curve(curve_data):
                     peaks[label] = round(lookup[dur], 1)
     elif curve_data:
         # Non-empty but unexpected format — warn so silent data loss is visible
-        import warnings
         warnings.warn(
             f"Unexpected power curve format: {type(curve_data).__name__}, "
             f"expected dict with 'secs'/'watts' keys"
@@ -618,8 +625,6 @@ def weekly_summary(client, days=7, ftp=192, weight=74.0):
     Returns:
         dict with aggregated metrics, zone distribution, and optional FTP update suggestion
     """
-    from datetime import datetime, timedelta
-
     newest = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     oldest = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
     activities = client.list_activities(oldest=oldest, newest=newest)
@@ -643,8 +648,12 @@ def weekly_summary(client, days=7, ftp=192, weight=74.0):
     # Track max 20-min peak power for FTP detection (FE-3)
     max_20min_peak = None
 
+    cycling_types = ("Ride", "VirtualRide", "EBikeRide", "Handcycle")
     for a in activities:
-        # Skip non-cycling activities if sport type is available
+        # Skip non-cycling activities (e.g., logged runs) — weekly summary is for cycling load
+        sport = a.get("type") or ""
+        if sport and sport not in cycling_types:
+            continue
         moving_time = a.get("moving_time") or 0
         if moving_time <= 0:
             continue
@@ -768,7 +777,7 @@ def load_env(env_path=None):
         candidates = [env_path]
     for path in candidates:
         if os.path.isfile(path):
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith("#") or "=" not in line:
@@ -787,7 +796,12 @@ def load_env(env_path=None):
 
 
 def apply_compact(result):
-    """Remove rarely-used fields for token-efficient output."""
+    """Remove rarely-used fields for token-efficient output.
+
+    MUTATES `result` in place and returns it for chaining. Fields removed:
+    metrics.{variability_index, efficiency_factor, zone_seconds} and per-lap
+    {distance, max_watts, intensity}.
+    """
     m = result.get("metrics", {})
     for key in ("variability_index", "efficiency_factor", "zone_seconds"):
         m.pop(key, None)
@@ -797,7 +811,8 @@ def apply_compact(result):
     return result
 
 
-if __name__ == "__main__":
+def build_parser():
+    """Build the CLI argument parser. Exposed for tests and reuse."""
     p = argparse.ArgumentParser(description="intervals.icu activity analysis")
     p.add_argument("--athlete-id", help="intervals.icu athlete ID (default: from .env)")
     p.add_argument("--api-key", help="intervals.icu API key (default: from .env)")
@@ -814,6 +829,11 @@ if __name__ == "__main__":
     p.add_argument("-o", "--output", help="Output file path (default: stdout)")
     p.add_argument("--compact", action="store_true",
                    help="Omit rarely-used fields (VI, EF, zone_seconds, per-interval distance/max_watts/intensity)")
+    return p
+
+
+if __name__ == "__main__":
+    p = build_parser()
     args = p.parse_args()
 
     # Load .env
@@ -859,7 +879,6 @@ if __name__ == "__main__":
         return apply_compact(result)
 
     if args.latest:
-        from datetime import datetime, timedelta
         newest = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         oldest = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%S")
         activities = client.list_activities(oldest=oldest, newest=newest, limit=1)
@@ -877,7 +896,6 @@ if __name__ == "__main__":
         else:
             print(out)
     elif args.list_recent:
-        from datetime import datetime, timedelta
         newest = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         oldest = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%S")
         activities = client.list_activities(oldest=oldest, newest=newest, limit=args.list_recent)

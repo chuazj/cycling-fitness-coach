@@ -1,38 +1,30 @@
 #!/usr/bin/env python3
 """Tests for CLI argument parsing of all scripts.
 
+Imports the real `build_parser()` from each script so the tests stay aligned
+with the production parsers (no schema drift).
+
 Run: python -m unittest tests.test_cli -v
 """
 
 import os
 import sys
 import unittest
-from io import StringIO
-from unittest.mock import patch
 
 # Add scripts/ to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
+
+from intervals_icu_api import build_parser as build_intervals_parser
+from generate_zwo import build_parser as build_generate_parser
+from batch_generate_zwo import build_parser as build_batch_parser
+from pmc_calculator import build_parser as build_pmc_parser
 
 
 class TestIntervalsIcuApiCli(unittest.TestCase):
     """Test intervals_icu_api.py argument parsing."""
 
     def _parse(self, args):
-        """Import and run argparse with given args, return namespace."""
-        import argparse
-        import intervals_icu_api  # noqa: F401 — ensures module is importable
-        # We test argparse logic directly rather than calling main() (which needs API creds)
-        p = argparse.ArgumentParser()
-        mode = p.add_mutually_exclusive_group(required=True)
-        mode.add_argument("--activity")
-        mode.add_argument("--latest", action="store_true")
-        mode.add_argument("--list-recent", type=int)
-        mode.add_argument("--weekly-summary", type=int, nargs="?", const=7)
-        p.add_argument("--ftp", type=int, default=None)
-        p.add_argument("--weight", type=float, default=None)
-        p.add_argument("--compact", action="store_true")
-        p.add_argument("-o", "--output")
-        return p.parse_args(args)
+        return build_intervals_parser().parse_args(args)
 
     def test_activity_mode(self):
         ns = self._parse(["--activity", "i123", "--ftp", "200"])
@@ -69,17 +61,20 @@ class TestIntervalsIcuApiCli(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self._parse(["--activity", "i123", "--latest"])
 
+    def test_use_athlete_profile_flag(self):
+        ns = self._parse(["--activity", "i999", "--use-athlete-profile"])
+        self.assertTrue(ns.use_athlete_profile)
+
+    def test_output_file(self):
+        ns = self._parse(["--activity", "i999", "-o", "out.json"])
+        self.assertEqual(ns.output, "out.json")
+
 
 class TestGenerateZwoCli(unittest.TestCase):
     """Test generate_zwo.py argument parsing."""
 
     def _parse(self, args):
-        import argparse
-        p = argparse.ArgumentParser()
-        p.add_argument("--json", "-j", required=True)
-        p.add_argument("--output", "-o", required=True)
-        p.add_argument("--ftp", type=int, default=200)
-        return p.parse_args(args)
+        return build_generate_parser().parse_args(args)
 
     def test_required_args(self):
         ns = self._parse(["--json", "w.json", "--output", "w.zwo"])
@@ -100,13 +95,7 @@ class TestBatchGenerateZwoCli(unittest.TestCase):
     """Test batch_generate_zwo.py argument parsing."""
 
     def _parse(self, args):
-        import argparse
-        p = argparse.ArgumentParser()
-        p.add_argument("--input", "-i", required=True)
-        p.add_argument("--output-dir", "-d", required=True)
-        p.add_argument("--ftp", type=int, default=200)
-        p.add_argument("--dry-run", action="store_true")
-        return p.parse_args(args)
+        return build_batch_parser().parse_args(args)
 
     def test_dry_run_flag(self):
         ns = self._parse(["--input", "w.json", "--output-dir", "out/", "--dry-run"])
@@ -116,23 +105,16 @@ class TestBatchGenerateZwoCli(unittest.TestCase):
         ns = self._parse(["-i", "w.json", "-d", "out/"])
         self.assertEqual(ns.ftp, 200)
 
+    def test_summary_output_path(self):
+        ns = self._parse(["-i", "w.json", "-d", "out/", "-o", "summary.json"])
+        self.assertEqual(ns.output, "summary.json")
+
 
 class TestPmcCalculatorCli(unittest.TestCase):
     """Test pmc_calculator.py argument parsing."""
 
     def _parse(self, args):
-        import argparse
-        p = argparse.ArgumentParser()
-        mode = p.add_mutually_exclusive_group(required=True)
-        mode.add_argument("--bootstrap", action="store_true")
-        mode.add_argument("--weekly-update", action="store_true")
-        p.add_argument("--days", type=int, default=90)
-        p.add_argument("--week", type=int)
-        p.add_argument("--plan-start")
-        p.add_argument("--prev-ctl", type=float)
-        p.add_argument("--prev-atl", type=float)
-        p.add_argument("--planned-tss")
-        return p.parse_args(args)
+        return build_pmc_parser().parse_args(args)
 
     def test_bootstrap_mode(self):
         ns = self._parse(["--bootstrap", "--days", "60"])
@@ -150,6 +132,10 @@ class TestPmcCalculatorCli(unittest.TestCase):
     def test_mutually_exclusive_modes(self):
         with self.assertRaises(SystemExit):
             self._parse(["--bootstrap", "--weekly-update"])
+
+    def test_prev_peaks_arg(self):
+        ns = self._parse(["--weekly-update", "--prev-peaks", '{"5s":450}'])
+        self.assertEqual(ns.prev_peaks, '{"5s":450}')
 
 
 class TestFtpBoundsValidation(unittest.TestCase):
