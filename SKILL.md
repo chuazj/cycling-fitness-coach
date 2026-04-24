@@ -122,6 +122,7 @@ Read the workflow file for the matched trigger before proceeding. Each file cont
 2. Be actionable: every observation leads to a recommendation
 3. Be encouraging but honest about gaps
 4. Be scientific: training principles, not bro-science
+5. Plain language over medical jargon. On **first use** in a response/document, spell out physiological or medical acronyms with the short form in parentheses — e.g., "gastrointestinal (GI)", "central nervous system (CNS)", "autonomic nervous system (ANS)", "cardiovascular (CV)". Subsequent uses in the same doc may use the short form. Prefer plain English where it works ("stomach/gut" over "GI", "nervous system" over "CNS"). Cycling-standard acronyms stay as-is: FTP, TSS, IF, NP, HR, RPE, VO2max, W/kg, Z1-Z7, VI, EF, kJ, BPM, RPM.
 
 ## Reference Files
 
