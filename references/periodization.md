@@ -13,6 +13,7 @@ Reference for Claude-as-coach: block templates, TSS distribution, progressive ov
 - [FTP Test Protocols](#ftp-test-protocols) — 20-min and ramp test procedures
 - [Race/Event Peaking Protocol](#raceevent-peaking-protocol) — Taper timing and TSB targeting
 - [Block Selection Logic](#block-selection-logic) — Goal-based block type selection
+- [Heat Adaptation (Optional Block)](#heat-adaptation-optional-block) — Plasma volume expansion, hot-weather performance, partial cool-weather transfer
 - [Durability (Emerging Concept)](#durability-emerging-concept) — Fatigue resistance as trainable metric
 
 ## Training Blocks
@@ -54,14 +55,43 @@ The primary block for systematic FTP improvement. Progressive overload through i
 
 ### VO2max Block (3 weeks + 1 recovery)
 
-For athletes who need top-end power development after establishing a solid sweet spot base.
+For athletes who need top-end power development after establishing a solid sweet spot base. Default uses short intervals (30/15s) as the primary VO2max format per Rønnestad 2015–2025 (greater time >90% VO2max, time-efficient); classic long intervals are included for sustained-effort capacity.
 
 | Week | Phase | Focus | TSS vs Baseline |
 |------|-------|-------|-----------------|
-| 1 | VO2 Build 1 | 3×3min intervals | Baseline |
-| 2 | VO2 Build 2 | 4×4min intervals | +10% |
-| 3 | VO2 Build 3 | 5×4-5min intervals | +10% vs W2 |
-| 4 | Recovery | Deload | -45% |
+| 1 | VO2 Build 1 | Short intervals introduction (30/30s) + Threshold support | Baseline |
+| 2 | VO2 Build 2 | Short intervals progression (30/15s) + Classic intro | +10% |
+| 3 | VO2 Build 3 | Mixed: short intervals peak + classic 4-5min | +10% vs W2 |
+| 4 | Recovery | Deload + retest | -45% |
+
+**Week 1 detail (VO2 Build 1):**
+- Tue: SVO2-1 (30/30s 2×8, 3min set rest) — 8min total work @ 120-130% FTP
+- Thu: Threshold — 3×8min @ 100-105% FTP, 5min recovery (sustains FTP base while VO2 work begins)
+- Sat: Endurance + threshold — 60-90min Z2 with 1×15min @ 95-100% FTP block
+- Flex: Easy endurance 45min Z1-Z2
+
+**Week 2 detail (VO2 Build 2):**
+- Tue: SVO2-2 or SVO2-3 (30/15s 2×8 or 30/30s 2×10, 3min set rest) — 8-10min total work @ 120-130% FTP
+- Thu: Classic VO2max intro — 4×3min @ 115-120% FTP, 3min recovery
+- Sat: Endurance + sweet spot — 75-100min Z2 with 1×20min SS block
+- Flex: Easy endurance or recovery spin
+
+**Week 3 detail (VO2 Build 3):**
+- Tue: SVO2-5 (30/15s 3×8, 3min set rest) — 12min total work @ 120-130% FTP
+- Thu: Classic VO2max — 4-5×4min @ 115-120% FTP, 4min recovery
+- Sat: Endurance + threshold — 80-100min Z2 with 2×10min @ 95-100% FTP
+- Flex: Easy endurance
+
+**Week 4 detail (Recovery + Test):**
+- Tue: Easy endurance — 45min Z1-Z2
+- Thu: Openers — 30min easy + 3×1min @ 105% FTP with 2min rest (neuromuscular activation pre-test)
+- Sat: FTP Test — 20-minute test protocol (or alternative ramp test)
+- Flex: Rest or 20-30min very easy spin
+
+**Block-level coaching notes:**
+- Hard sessions are Tue + Thu — never back-to-back. Sat long ride is volume anchor with moderate intensity insertion.
+- VO2max work strongly fatiguing — if RPE persistently ≥9 on short intervals or HR fails to reach expected levels, drop one progression level rather than push through.
+- VO2max block typically yields +2–4% FTP gain when stacked after a sweet-spot base — use as a "ceiling-raising" block, not a standalone FTP builder.
 
 ### Endurance Block (4 weeks)
 
@@ -197,6 +227,8 @@ Short intervals (30s work bouts) accumulate significantly more time above 90% VO
 | 40/20s | 8-12× (40s on / 20s off) | 5.3-8min | 20s @ 40% | 115-125% FTP | 40-55 |
 | 15/15s | 20-30× (15s on / 15s off) | 5-7.5min | 15s @ 40% | 130-140% FTP | 35-50 |
 
+> **Format metabolic profile (Quittmann 2025; INSCYD 2025)**: 30/15s and 30/30s at 120–130% FTP with mid-cadence (90–100 rpm) are **aerobic-dominant** — they target VO2max with minimal glycolytic load. 15/15s @ 130–140% FTP is **glycolytic-dominant** — supramaximal intensity with brief recovery raises VLaMax (max lactate accumulation rate). For a primarily endurance-focused athlete (200W FTP, 200W goal), prefer 30/15s and 30/30s; reserve 15/15s for sprint-specific demands or variety, and avoid stacking it with other high-glycolytic work (Tabata, max-effort sprints) in the same week.
+
 The **30/15s format** (2:1 work:rest ratio) is the specific protocol used in Rønnestad's landmark studies and should be the default starting point for VO2max development.
 
 **Short interval progression:**
@@ -214,6 +246,25 @@ The **30/15s format** (2:1 work:rest ratio) is the specific protocol used in Rø
 - **Short intervals (DEFAULT)**: Primary VO2max development format. Produces longer time >90% VO2max (Rønnestad 2015–2025) and at-least-equivalent adaptations with greater time-efficiency. Two cycling-focused meta-analyses (Norte et al. 2024, IUSCA; Yang et al. 2025, *BMC Sports Sci Med Rehabil*) found no clear duration-related superiority across HIIT/SIT methods, so frame short intervals as the more time-efficient default — not categorically superior. Use for all standard VO2max training.
 - **Classic intervals (COMPLEMENTARY)**: Race-specific for sustained climbing/TT efforts where the ability to hold high power for 4-5+ continuous minutes matters. Use when developing sustained-effort capacity, not raw VO2max.
 - **Mix both**: Alternate weekly (e.g., Tue = short, Thu = classic) for complementary stimulus — short intervals build the aerobic ceiling, classic intervals build the ability to use it in sustained efforts.
+
+### VLaMax — Conceptual Frame for Format Selection
+
+**VLaMax** (maximum lactate accumulation rate, mmol·L⁻¹·s⁻¹) is the glycolytic-system analogue to VO2max — it represents maximum glycolytic flux. Typical endurance-trained cyclists: 0.3–0.6; sprint specialists: 0.8–1.0+ (Quittmann et al., 2025, *Sports Medicine*; Clark & Macdermid 2025, *RQES*).
+
+**For an endurance-focused rider (this athlete profile)**, a *lower* VLaMax is generally advantageous:
+- Less lactate accumulation at submaximal intensities → higher sustainable power per mmol blood lactate
+- Lower carbohydrate cost per watt → better glycogen endurance
+- FTP / MLSS settles at a higher fraction of VO2max
+
+**Training implications (no testing required):**
+- **Default toward aerobic-dominant short intervals**: 30/15s and 30/30s at 120–130% FTP with 85–100 rpm mid-cadence are aerobic-dominant — they raise VO2max without disproportionately raising VLaMax.
+- **Use glycolytic-dominant formats sparingly**: 15/15s at supramaximal intensity, all-out 10–15s sprints, and Tabata-style 20s/10s sets all stress the glycolytic system. They have a place (sprint-specific preparation, race demands) but stacking them weekly can erode aerobic efficiency at the margin.
+- **Cadence matters**: Same power at high cadence (>105 rpm) tends to be more aerobic; at low cadence (<70 rpm) more glycolytic/neuromuscular. Default to 95–105 rpm for VO2max work.
+- **Sweet spot session at moderate cadence (85–95 rpm)** keeps glycolytic contribution low while delivering muscular-endurance stimulus.
+
+**No formal VLaMax testing needed at this level** (no INSCYD subscription, no lab access required). The conceptual awareness is sufficient: don't add pure glycolytic work for its own sake unless training a sprint-specific demand.
+
+**Evidence confidence**: STRONG EMERGING for VLaMax as a conceptual framework; PRELIMINARY for VLaMax-guided prescription algorithms (no head-to-head RCTs vs standard %FTP-based prescription as of 2026-05).
 
 ### VO2max Progression — Advanced Formats
 
@@ -235,6 +286,36 @@ The **30/15s format** (2:1 work:rest ratio) is the specific protocol used in Rø
 | OU-4 | 4×(4min over + 2min under) | 24min | 75-85 |
 
 Over = 105-110% FTP. Under = 90-95% FTP.
+
+### Neuromuscular Sprints (Optional)
+
+Neuromuscular work develops peak power output and recruits Type II fibers without significant cardiovascular cost. Heavy strength training (see Concurrent Training section) is the primary neuromuscular driver; on-bike sprints supplement and translate strength to cycling-specific recruitment patterns.
+
+**When to include:**
+- Race preparation for events with sprints, attacks, or punchy climbs
+- Outdoor riding readiness (the Block 2/3 outdoor rides showed peak sprints to 514W and 624W — latent neuromuscular capacity that ERG training does not develop)
+- Variety / mental break during a SS-heavy block
+- Once every 1–2 weeks; never the day before a key VO2max or threshold session
+
+**When NOT to include:**
+- During recovery weeks
+- During VO2max blocks where short intervals already provide neuromuscular stimulus
+- When fatigued (RPE elevated, TSB <−25)
+
+| Level | Format | Sets × Reps | Recovery | Cadence |
+|-------|--------|-------------|----------|---------|
+| NM-1 | Standing-start sprints | 4–6× (10s all-out) | 3min full Z1 | Self-selected (start ~50 rpm, accelerate) |
+| NM-2 | Seated sprints | 6–8× (10–15s all-out) | 3–5min full Z1 | 100–120 rpm |
+| NM-3 | Mixed sprint sets | 2 sets × 4× (15s all-out) | 5min between sets, 3min between reps | Vary each rep |
+| NM-4 | Torque sprints | 6× (10s @ low cadence 50–60 rpm, max effort) | 5min full Z1 | <60 rpm — emphasizes force |
+
+**Coaching points:**
+- "All-out" means *truly* all-out — no pacing. Power output >150% FTP expected; 200%+ for trained sprinters.
+- Full recovery between reps. If power on rep 4 is >10% below rep 1, recovery was insufficient — extend rest or reduce volume.
+- Total session TSS is low (30–50) — these are not load-building sessions, they are skill/capacity sessions.
+- Pair with a Z2 endurance session before or after on the same day if total TSS is too low (e.g., 20min Z2 → sprint set → 20min Z2 cooldown).
+
+**Evidence confidence**: ESTABLISHED for heavy strength → on-bike neuromuscular transfer (Llanos-Lagos 2025; Rønnestad 2010, 2015). PRACTITIONER CONSENSUS for specific on-bike sprint protocols — no formal RCT validates one format over another.
 
 ---
 
@@ -584,6 +665,63 @@ Default block length is 4 weeks (3 build + 1 recovery). Adjust based on athlete 
 - After completing two 4-week blocks at >95% completion: offer 5-week block option
 - If athlete explicitly reports feeling run down by Week 3 in multiple blocks: switch to 3-week
 - 3-week blocks have faster recovery cycles but slower total progression; 5-week blocks offer more stimulus per cycle but higher fatigue risk
+
+---
+
+## Heat Adaptation (Optional Block)
+
+Heat adaptation is a low-cost, high-ROI adaptation that drives plasma volume expansion (+5–15%), reduces resting and exercise core temperature, improves sweat response, and reduces cardiovascular drift. Particularly relevant for:
+
+- Athletes with a target event in hot/humid conditions (gran fondos, summer races, tropical destinations)
+- Tropical-climate riders (Singapore, SE Asia, equatorial latitudes) who train primarily in air-conditioned indoor environments — the climate stimulus is "lost" via climate control
+- Pre-outdoor-event preparation when transitioning from indoor Zwift to outdoor riding
+
+**Evidence**:
+- McDonald et al. (2025, *Comprehensive Physiology* 15(3):e70017, [PMC12122934](https://pmc.ncbi.nlm.nih.gov/articles/PMC12122934/)): Bayesian meta-regression of heat-acclimation protocols — improves exercise capacity in heat (effect size ~0.7), reduces resting core temperature (ES −0.6), reduces resting HR (ES −0.5). Short protocols (4–5 days) effective; medium protocols (8–14 days) most common format.
+- Sotiridis et al. (2024, *J Sci Sport Exerc*): cool-weather transfer ~6% via plasma-volume mechanism (variable across studies); no aerobic impairment in cool conditions following heat acclimation.
+- Périard et al. (2023): foundational review of physiological mechanisms — sweat onset, sweat rate, electrolyte conservation, plasma volume.
+
+> **Evidence confidence**: ESTABLISHED for heat-in-heat performance benefits and plasma-volume expansion; CONTESTED for cool-weather transfer magnitude (signal real but smaller than heat-in-heat).
+
+### Protocol — Indoor Z2 Heat Block (Singapore-Optimised)
+
+| Parameter | Target | Notes |
+|---|---|---|
+| **Frequency** | 2 sessions/week × 5–14 consecutive days | 5 days = minimum; 10–14 days = strong plasma-volume response |
+| **Duration per session** | 30–60 min | Z2 only — never combine with hard intervals |
+| **Intensity** | <75% FTP (Z2-low to Z2-high) | Strict — RPE must remain ≤4 |
+| **Ambient temperature** | 27–30°C indoor | Reduce fan speed; close room windows; consider long-sleeve layer |
+| **Relative humidity** | Whatever ambient delivers | Singapore default ~70–90% is sufficient; no humidifier needed |
+| **Hydration target** | 400–800 mL/h | Higher end if sweat rate >1.5 L/h |
+| **Electrolyte target** | Na⁺ 500–1000 mg/L of fluid | Critical — heat-block dehydration risk is the primary safety concern |
+| **Pre-session** | 250–500 mL fluid 1–2 h before | Start session euhydrated |
+| **Post-session** | Replace fluid losses + electrolytes; 0.8–1.2g/kg carb within 60 min | Standard recovery (see `references/fueling.md`) |
+
+### Heat Block Scheduling Within a Training Plan
+
+- **Best fit**: Saturday Z2 long ride is the ideal candidate — low intensity, long duration = strong plasma-volume stimulus without compounding hard-session load.
+- **Block placement**: Insert as a 5–14 day overlay during a base/endurance block, or as a pre-event mini-block 2–3 weeks before a hot-weather event.
+- **Do NOT pair with**: VO2max blocks, FTP test weeks, illness recovery, or weeks with ACWR >1.3.
+- **Block frequency**: Once every 8–12 weeks maintains adaptation; more frequent provides diminishing returns once initial expansion is achieved.
+
+### Monitoring & Abort Criteria
+
+Stop the heat block if any of the following occur:
+- HR drift >10 bpm at matched power across consecutive sessions
+- RPE elevation >2 points at matched power (e.g., RPE 4 → RPE 6+)
+- Visible recovery impairment: poor sleep, persistent fatigue, declining HRV
+- Body weight drop >2% pre-to-post-session despite hydration target met (true dehydration)
+- Heat-exhaustion symptoms: nausea, dizziness, cessation of sweating, mental confusion → immediately stop, cool, hydrate, seek medical help if symptoms persist
+
+### What This Block Does NOT Do
+
+- **Does NOT replace VO2max or threshold work** — it's an adaptation overlay, not a fitness-building block
+- **Does NOT substitute for outdoor heat exposure** — outdoor rides in tropical conditions deliver a stronger stimulus naturally
+- **Does NOT confer "altitude-doping" levels of erythropoietic gain** — plasma-volume expansion improves cardiac output, not red-cell mass; the cool-weather transfer is real but modest (~6%)
+
+### Singapore-Specific Note
+
+Year-round 28–32°C / 70–90% RH means **outdoor riding already delivers heat stimulus** — partial heat acclimation is "free" if the rider does any outdoor work. This block is most valuable for **purely indoor athletes** who want the plasma-volume benefit, or for athletes who occasionally race in even hotter conditions (Malaysia, Thailand events at midday).
 
 ---
 

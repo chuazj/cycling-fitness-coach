@@ -6,11 +6,29 @@
 |------|------|-------|-----|-------------|------------------|
 | Z1 | Active Recovery | <55% | 1-2 | Very easy, conversational | Recovery, warm-up, cool-down |
 | Z2 | Endurance | 56-75% | 3-4 | Comfortable, sustainable for hours | Aerobic base, fat oxidation |
+| Z2-low | Recovery / Lower Endurance | 55-65% | 3 | Very conversational, no breath effort | Active recovery, cardiac output base |
+| Z2-high | Upper Endurance | 65-75% | 4 | Conversational with mild effort | Fat-oxidation peak, mitochondrial signaling |
 | Z3 | Tempo | 76-90% | 5-6 | "Comfortably hard" | Muscular endurance, efficiency |
 | Z4 | Threshold | 91-105% | 7-8 | Race pace, 20-60min sustainable | FTP improvement, lactate tolerance |
 | Z5 | VO2max | 106-120% | 9 | Hard, 3-8min efforts | Aerobic capacity, power at VO2max |
 | Z6 | Anaerobic | 121-150% | 10 | Very hard, 30s-3min | Anaerobic capacity, repeatability |
 | Z7 | Neuromuscular | >150% | 10+ | Max effort, <30s | Peak power, sprint ability |
+
+## Zone 2 — Individual Variability Note
+
+Z2 boundaries are population approximations. Meixner et al. (2025, *Translational Sports Medicine*, 50 trained cyclists) found coefficients of variation (CV) of 6–29% across Z2 boundary metrics — i.e., one athlete's "true Z2 ceiling" (VT1 / FatMax) may sit at 60% FTP while another's sits at 75%.
+
+**Practical implication**: %FTP is the default prescription, but **anchor by RPE and breathing** when calibrating:
+
+- **RPE 3 (very light, fully conversational, no breath effort)** → solidly Z2-low
+- **RPE 4 (light with mild breath effort, still conversational)** → upper Z2 / approaching VT1
+- **RPE 5+ (talking becomes choppy)** → drifted into Z3 — reduce power 5–10W
+
+If Saturday Z2 sessions persistently feel >RPE 4 at 65–70% FTP, your individual Z2 ceiling is likely offset down — drop the power band rather than push through. The opposite (RPE 2 at 70% FTP) suggests room to push toward 73–75%.
+
+This does not change the prescription default (56–75% FTP) but informs how to read your own signal.
+
+---
 
 ## Sweet Spot Training
 
