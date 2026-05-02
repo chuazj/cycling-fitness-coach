@@ -252,10 +252,10 @@ Tests include pure function unit tests, mocked HTTP responses, CLI argument pars
 
 To adapt this skill for your own use:
 
-1. **FTP/Weight**: Update your values in `CLAUDE.md` under "User's current FTP" — or let the skill auto-fetch from your intervals.icu profile
-2. **Training days**: The skill auto-detects your pattern from activity history, or you can specify during plan creation
-3. **Obsidian vault**: Update the vault path in `SKILL.md` if you use Obsidian for note storage
-4. **Zwift workout folder**: Update the Zwift path in `SKILL.md` to match your Zwift ID
+1. **FTP/Weight**: Run scripts with `--use-athlete-profile` to auto-fetch from your intervals.icu profile, or set values in `plans/active_plan.md` → Athlete Profile after the Create Plan workflow runs (this file is gitignored — your data stays local)
+2. **Training days**: Auto-detected from your recent activity pattern; can be overridden during plan creation
+3. **Obsidian vault**: Set the `CYCLING_VAULT_PATH` environment variable (see `SKILL.md` → Obsidian Integration)
+4. **Zwift workout folder**: Set the `ZWIFT_WORKOUT_DIR` environment variable (see `SKILL.md` → Zwift Workout Directory)
 
 ## License
 

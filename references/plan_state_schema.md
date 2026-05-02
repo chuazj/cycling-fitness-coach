@@ -39,7 +39,7 @@ High-level plan metadata. Updated when advancing weeks or changing phase.
 | End Date | `YYYY-MM-DD` | any date | Sunday of last training week |
 | Total Weeks | integer | 3-8 | |
 | Current Week | integer | 1 to Total Weeks | Incremented during weekly review |
-| Current Phase | string | `Build 1`, `Build 2`, `Build 3`, `Recovery`, etc. | From block structure |
+| Current Phase | string | Free-text from periodization block template (examples: `Build 1`, `Build 2`, `Recovery`, `Re-Foundation`, `Build`, `Peak`, `Taper & Test`) | From block structure |
 
 ### `## Block Structure`
 
@@ -61,7 +61,7 @@ Header format: `## Current Week Schedule (Week {N}: {Mon date}-{Sun date})`
 
 | Column | Type | Valid Values | Description |
 |--------|------|-------------|-------------|
-| Day | string | `Tue`, `Thu`, `Sat`, `Flex` | Training day |
+| Day | string | Either `Tue`/`Thu`/`Sat`/`Flex` (day-of-week shorthand for fixed-schedule plans) OR `D1 (DD Mmm)`/`D2 (DD Mmm)`/... (date-anchored — preferred when training days shift week-to-week or to make the actual calendar date unambiguous) | Training day |
 | Session | string | e.g., `Sweet Spot`, `Threshold`, `VO2max`, `Endurance`, `FTP Test` | Session type |
 | Duration | string | e.g., `60min`, `90min` | Planned duration |
 | Key Interval | string | e.g., `2×20min @ 88-94%` | Main interval description |
@@ -227,4 +227,6 @@ Append-only log of adaptation decisions made by Claude. Format:
 - `Target Weekly TSS` must be > 0
 - Session Status must be one of: `pending`, `completed`, `skipped`, `modified`
 - PMC values: CTL and ATL must be ≥ 0; TSB can be negative
-- ZWO filenames follow pattern: `week{N}_{day}_{type}.zwo` (lowercase, underscores)
+- ZWO filenames follow one of two conventions (pick one and use consistently within a plan):
+  - `week{N}_{day}_{type}.zwo` (lowercase, underscores) — e.g., `week1_tue_sweetspot.zwo`
+  - `W{N}_D{D}_{Type}_{Detail}.zwo` (mixed-case, Zwift-friendly natural sort) — e.g., `W1_D1_SweetSpot_3x15.zwo`. **Preferred** when uploading to Zwift, since the workout list sorts these naturally by week then day.

@@ -70,7 +70,7 @@ Before writing any training plan, workout prescription, or adaptation:
 - Wait for the athlete to confirm or correct your assessment
 - Only then proceed to the prescription
 
-Applies to: Workflows 2, 3, 4, 5, 7. The athlete must recognize themselves in your assessment before trusting your plan.
+Applies to: Create Plan, Weekly Review, Training Advice, Mid-Week Check-In, Race Peaking. The athlete must recognize themselves in your assessment before trusting your plan.
 
 ### 2. Establish Zones First
 
@@ -98,7 +98,7 @@ When an athlete lacks intervals.icu data OR has no recent FTP test (>8 weeks or 
 - Frame it as a "baseline assessment" not a "test" — reduce performance anxiety
 - Until the field test is completed, mark all power targets as **provisional** and note the uncertainty
 
-This rule supersedes Block Selection Logic criterion 6 (which only checks >8 weeks). It also applies when zones are self-reported without any test backing.
+This rule supersedes Block Selection Logic → Fitness-state modifiers item 2 (Current FTP test recency, which only schedules a test in Week 1 when >8 weeks since the last one). It also applies when zones are self-reported without any test backing.
 
 ## Workflow Dispatch
 

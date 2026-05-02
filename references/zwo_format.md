@@ -191,7 +191,7 @@ For a complete example .zwo file, see `assets/template_sweetspot.zwo`.
 ## File Installation
 
 Save `.zwo` files to:
-- **Windows**: `Documents\Zwift\Workouts\<your_zwift_id>\`
-- **Mac**: `Documents/Zwift/Workouts/<your_zwift_id>/`
+- **Windows**: `%LOCALAPPDATA%\Zwift\Workouts\<your_zwift_id>\` (typically `C:\Users\<you>\AppData\Local\Zwift\Workouts\<id>\`)
+- **macOS / Linux**: `~/Documents/Zwift/Workouts/<your_zwift_id>/`
 
 Restart Zwift to load new workouts. They appear under "Custom Workouts".

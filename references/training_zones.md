@@ -120,6 +120,7 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 
 1. **20-minute Test**: FTP = 20min avg power × 0.95 (range 0.90-0.98; athletes with high anaerobic capacity may need a lower multiplier)
 2. **Ramp Test**: FTP = last completed minute avg × 0.75 (range 0.72-0.80; can overestimate FTP by 5-15% in some profiles)
+3. **8-minute Test**: FTP = 8min avg power × 0.90 (range 0.86-0.92; Carmichael / Time-Crunched Cyclist protocol — useful when 20min is too long for the available session window)
 4. **Hour of Power**: FTP = 60min avg power (gold standard)
 
 For block templates, progression tables, and common prescriptions: see `references/periodization.md` → Training Blocks.

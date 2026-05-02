@@ -11,7 +11,7 @@ When user requests a workout file ("build a workout", "create a ZWO", workout ge
 **Step 1:** Gather requirements — clarify before generating:
 - Workout type (sweet spot, threshold, VO2max, over-unders, endurance, recovery, FTP test)
 - Duration constraint (total session time)
-- Current FTP (check CLAUDE.md or ask)
+- Current FTP (check `plans/active_plan.md` → Athlete Profile, or run with `--use-athlete-profile` to auto-fetch from intervals.icu)
 - Specific targets if any (e.g., "3x10min at 95%")
 
 **Step 2:** Design the workout structure:
