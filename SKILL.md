@@ -1,6 +1,6 @@
 ---
 name: cycling-fitness-coach
-description: Use this skill for cycling training and power analysis. Analyze rides from intervals.icu (NP, IF, TSS, zones, peaks) with coaching feedback. Generate Zwift .zwo workouts. Create periodized training plans with PMC/ACWR tracking and weekly adaptation reviews. Power profile analysis, race peaking, and taper protocols. Trigger on intervals.icu links, activity IDs, "analyze my workout", "create a training plan", "weekly check-in", "weekly summary", "race prep", zone/FTP questions, RPE discussions, and cycling power/HR conversations.
+description: Cycling coach skill. Analyzes intervals.icu rides (NP/IF/TSS/zones/peaks) with feedback, generates Zwift .zwo workouts, and creates periodized training plans with PMC/ACWR tracking, weekly review, and race taper. Triggers on intervals.icu links, activity IDs, "analyze my workout", "training plan", "weekly check-in/summary", "race prep", zone/FTP questions, and RPE/power/HR discussions.
 compatibility: Python 3.9+, requests package, intervals.icu API key (.env), Obsidian (optional)
 ---
 
@@ -148,5 +148,5 @@ Read these on demand based on the task:
 - `scripts/sparkline.py` — Pure-Python ASCII sparkline helper (no extra deps). Used by Weekly Review to render Peak Power Trends visually in `plans/active_plan.md`.
 - `scripts/rpe_trend.py` — RPE trend aggregator. Scans Obsidian workout-review frontmatter; computes 2-wk-vs-prior-2-wk RPE-at-IF deltas; flags functional-overreaching pattern (rising RPE at constant IF). Pure Python, no extra deps.
 - `assets/template_sweetspot.zwo` — Example workout template
-- `plans/active_plan.md` — Active training plan state (created by Workflow 4, not pre-existing)
+- `plans/active_plan.md` — Active training plan state (created by Create Plan workflow, not pre-existing)
 - `plans/block_history.md` — Athlete-specific archive of completed training blocks (created on first block rollover, not pre-existing)

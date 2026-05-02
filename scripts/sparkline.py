@@ -3,7 +3,7 @@
 ASCII sparkline helper for cycling-fitness-coach.
 
 Renders a sequence of numbers as a Unicode sparkline plus a delta summary.
-Used by Weekly Review (Workflow 5) to visualize Peak Power Trends in
+Used by the Weekly Review workflow to visualize Peak Power Trends in
 plans/active_plan.md without adding a matplotlib dependency.
 
 Usage (CLI):

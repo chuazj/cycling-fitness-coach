@@ -1,10 +1,10 @@
 # Workflow: Zwift Workout Generation
 
-Covers Workflow 3 (single and batch ZWO file generation).
+Covers single and batch ZWO file generation. The SKILL.md → Workflow Dispatch table is the authoritative router.
 
 ---
 
-## 3. Zwift Workout Generation
+## ZWO Generation
 
 When user requests a workout file ("build a workout", "create a ZWO", workout generation request):
 

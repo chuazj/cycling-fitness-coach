@@ -1,10 +1,10 @@
 # Workflow: Training Plan Creation & Weekly Review
 
-Covers Workflow 4 (create training plan) and Workflow 5 (weekly review & adaptation).
+Covers **Create Plan** and **Weekly Review & Adaptation**. The SKILL.md → Workflow Dispatch table is the authoritative router.
 
 ---
 
-## 4. Create Training Plan
+## Create Training Plan
 
 When user requests a training plan ("create a training plan", "start a macro plan", "build me a plan"):
 
@@ -26,7 +26,7 @@ When user requests a training plan ("create a training plan", "start a macro pla
   | `tt` | Time trial / hill climb (20-60 min sustained) |
   | `base` | Off-season; no event in next 12 wk |
 
-  Save goal in `plans/active_plan.md` → Athlete Profile → Goal field. Used downstream by Workflow 5 to interpret peak-power deltas in goal-appropriate context.
+  Save goal in `plans/active_plan.md` → Athlete Profile → Goal field. Used downstream by the Weekly Review workflow to interpret peak-power deltas in goal-appropriate context.
 
 **Step 2b (Validation Gate — Coaching Process Rule 1):** Present your athlete assessment and get confirmation before proceeding:
 - Summarize what you know: current fitness level, training history, strengths/limiters
@@ -103,11 +103,11 @@ python scripts/batch_generate_zwo.py --input {week_json} --output-dir "<ZWIFT_WO
 
 ---
 
-## 5. Weekly Review & Adaptation
+## Weekly Review & Adaptation
 
 When user requests a weekly review ("review my week", "weekly check-in", "how did I do this week"):
 
-**Step 1:** Read `plans/active_plan.md` for current state (week number, schedule, PMC snapshot). If the file does not exist, inform user that no active plan is found and suggest creating one via Workflow 4.
+**Step 1:** Read `plans/active_plan.md` for current state (week number, schedule, PMC snapshot). If the file does not exist, inform user that no active plan is found and suggest creating one via the Create Plan workflow.
 Read `references/plan_state_schema.md` for update rules.
 
 **Step 2:** Run PMC weekly update:
@@ -200,20 +200,27 @@ For each recommendation, explain (Coaching Process Rule 3):
 | ... | ...     | ...          | ...        | {one-line cue from fueling.md → Quick-Reference} |
 ```
 
-**Step 5b (Mid-Plan FTP Change):** If an FTP test was detected in any analyzed activity this week (via `ftp_test` in Workflow 1 output):
+**Step 5b (Mid-Plan FTP Change):** If an FTP test was detected in any analyzed activity this week (via `ftp_test` in Activity Analysis output):
 1. Present the estimated new FTP and ask athlete to confirm
 2. Follow `references/periodization.md` → Mid-Plan FTP Update rules:
    - Update `active_plan.md` Athlete Profile (FTP value + Last Tested date)
    - If FTP change > 5%: recalculate remaining weeks' target TSS
    - Regenerate current week's pending ZWO files and all future weeks with new FTP
 3. Log the FTP change in the Adaptation Log with rationale
-4. Include the FTP update in the review summary presented in Step 6
+4. Include the FTP update in the review summary presented in Step 5
 
-**Step 6:** Wait for user approval before applying changes.
+**Step 6 (default — no approval needed):** Save the weekly review to the Obsidian vault as a historical record.
 
-**Step 7:** After approval:
+This is **default-on** for the Weekly Review workflow — write happens immediately after presenting the review in Step 5, without waiting for the adaptation-approval step. Rationale: the review captures what *happened* (planned vs actual, PMC, RPE trends, wellness flags) regardless of whether the athlete ends up accepting the proposed adaptations. Skipping the write loses the historical trail.
+
+- Write path: `{vault}/cycling-fitness-coach/weekly-reviews/YYYY Week N Review.md`
+- Frontmatter: see `references/obsidian_templates.md` → weekly-review template
+- Open in Obsidian: `obsidian open path="cycling-fitness-coach/weekly-reviews/YYYY Week N Review.md"`
+- **Opt-out**: only skip if the athlete explicitly says "don't save", "skip note", or similar. Briefly mention the save in your Step 5 response so they have the chance: e.g., *"Saving this review to Obsidian — say 'skip note' if you'd rather not."*
+
+**Step 7:** Wait for user approval on the adaptation proposal.
+
+**Step 8:** After approval, apply changes:
 - Generate next week's ZWO files via `batch_generate_zwo.py`
 - Update `plans/active_plan.md`: advance week, new schedule, PMC history, peak powers, review log, adaptation log
-- Save weekly review to Obsidian vault:
-  `{vault}/cycling-fitness-coach/weekly-reviews/YYYY Week N Review.md`
-- Open in Obsidian: `obsidian open path="cycling-fitness-coach/weekly-reviews/YYYY Week N Review.md"`
+- (If the Obsidian write was deferred or skipped in Step 6 due to user opt-out, do not retroactively write here — respect the opt-out.)

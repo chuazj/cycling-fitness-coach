@@ -1,10 +1,10 @@
 # Workflow: Activity Analysis & Weekly Summary
 
-Covers Workflow 1 (single activity analysis) and Workflow 8 (weekly training summary).
+Covers **Activity Analysis** (single ride) and **Weekly Training Summary**. The SKILL.md → Workflow Dispatch table is the authoritative router.
 
 ---
 
-## 1. Workout Analysis (API-First)
+## Activity Analysis (API-First)
 
 When user pastes an intervals.icu URL or activity ID:
 
@@ -23,11 +23,16 @@ The script outputs JSON with:
 - `ftp_test` — auto-detected via activity name keywords, 20min peak heuristic, or ramp test duration; returns `detection_methods` (list — multiple heuristics can match simultaneously: `"activity_name"`, `"20min_effort_heuristic"`, `"ramp_test"`), `estimated_ftp_20min` (`20min x 0.95`), `estimated_ftp_ramp` (`1min x 0.75`)
 - `source: "intervals.icu"` — identifies data source
 
-**Step 3:** Provide coaching analysis using the output:
+**Step 3:** Provide coaching analysis using the output. Lead with the **Ride Card** — a 4-line quick-glance summary the athlete can read in 5 seconds — then full analysis below for athletes who want the detail:
 
 ```
+## Ride Card
+- **[Name]** — [Date] · [Duration]
+- **Load:** NP [X]W · IF [X.XX] · TSS [X]
+- **Zone time:** Z2 [X]% · Z3-4 [X]% · Z5+ [X]%
+- **Takeaway:** [one-sentence headline — the single most important thing about this ride]
+
 ## Workout Analysis: [Name] - [Date]
-**Quick Stats**: [Duration] | NP: [X]W | IF: [X.XX] | TSS: [X]
 ### Execution Rating: [pass/warn/fail]
 ### Interval Review
 [Lap-by-lap target vs actual, consistency]
@@ -41,13 +46,24 @@ The script outputs JSON with:
 **Session RPE (1-10)?** — reply with a number, or skip. Used for RPE:Power mismatch detection (see `references/workout_analysis.md` → Session RPE).
 ```
 
+**Ride Card rules:**
+- Always emit, regardless of analysis depth requested.
+- The `Takeaway` is the same single-sentence headline that leads `Key Takeaways` below — the card is a TL;DR, not a separate verdict.
+- Skip the `Zone time` line if `zone_percent` is `None` (stream too short or absent). Substitute with the most informative one-liner — e.g., `**Peak:** 5min [X]W` for an interval session, or `**Pace:** [X]km @ [X]km/h` for a Z2 ride.
+- Keep to 4 lines. If the ride is HR-only (estimated power), use the HR-only card variant below.
+
 ### HR-Only Analysis Template (when `power_data_quality` == "estimated")
 
 Use this template instead of the standard template when `data_warnings` includes "estimated_power":
 
 ```
+## Ride Card
+- **[Name]** — [Date] · [Duration]
+- **Effort:** Avg HR [X]bpm · Max [X]bpm · [HR-zone estimate]
+- **Distance:** [X]km · [X]m elevation
+- **Takeaway:** [one-sentence headline based on HR/duration/RPE — NOT power]
+
 ## Workout Analysis: [Name] - [Date]
-**Quick Stats**: [Duration] | Avg HR: [X]bpm | Max HR: [X]bpm | Distance: [X]km
 ### Effort Assessment
 - **Effort Level**: [Zone estimate from HR zones in training_zones.md]
 - **Cardiac Response**: [Normal/Elevated/Suppressed for effort type]
@@ -215,7 +231,7 @@ For the full analysis framework including session rating, common issues, and loa
 
 ---
 
-## 8. Weekly Training Summary
+## Weekly Training Summary
 
 When user asks "weekly summary", "how was my week", or "training summary":
 

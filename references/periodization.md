@@ -645,7 +645,7 @@ When creating a plan, Claude routes on the athlete's **goal** first, then applie
 **Selection notes:**
 - If the athlete's intent doesn't fit cleanly, ask: "Are you targeting a specific event in the next 12 weeks?" Yes → match goal to event type. No → `ftp_improvement` (default) or `base`.
 - Goal can change between blocks (e.g., `base` → `ftp_improvement` → `criterium` over 6 months). Each block creation is an independent goal selection.
-- Goal is recorded in `plans/active_plan.md` → Athlete Profile → Goal field. Used by Workflow 5 (weekly review) to interpret peak-power deltas in the right context (e.g., 1-min peak gain matters more for `criterium` than for `tt`).
+- Goal is recorded in `plans/active_plan.md` → Athlete Profile → Goal field. Used by the Weekly Review workflow to interpret peak-power deltas in the right context (e.g., 1-min peak gain matters more for `criterium` than for `tt`).
 
 ### Fitness-state modifiers (apply AFTER goal selection)
 

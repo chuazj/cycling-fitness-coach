@@ -1,10 +1,10 @@
 # Workflow: Training Advice, Mid-Week Check-In & Race Peaking
 
-Covers Workflow 2 (training advice), Workflow 6 (mid-week check-in), and Workflow 7 (race/event peaking).
+Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. The SKILL.md → Workflow Dispatch table is the authoritative router.
 
 ---
 
-## 2. Training Advice
+## Training Advice
 
 **Step 1:** Assess context before responding:
 - Current FTP, weight, training age (check `plans/active_plan.md` → Athlete Profile; if no active plan, ask the athlete or check intervals.icu profile via `--use-athlete-profile`)
@@ -70,11 +70,11 @@ Covers Workflow 2 (training advice), Workflow 6 (mid-week check-in), and Workflo
 
 ---
 
-## 6. Mid-Week Check-In
+## Mid-Week Check-In
 
 When user asks about plan status ("check my plan", "what's next", "plan status"):
 
-**Step 1:** Read `plans/active_plan.md`. If the file does not exist, inform user that no active plan is found and suggest creating one via Workflow 4.
+**Step 1:** Read `plans/active_plan.md`. If the file does not exist, inform user that no active plan is found and suggest creating one via the Create Plan workflow.
 
 **Step 2 (optional but recommended):** Pull wellness/readiness signal:
 ```bash
@@ -106,7 +106,7 @@ This returns last-14-day RHR/HRV/sleep + flags vs baseline. Skip if athlete does
 - Sleep: {latest_hours}h last night {flag if <6h}
 - Subjective: fatigue {X}/4, soreness {X}/4, stress {X}/4 {flags if ≥4}
 
-If `overall_status: yellow` or `red`, recommend session modification per Recovery Prescription table (Workflow 2 above) before showing the planned session.
+If `overall_status: yellow` or `red`, recommend session modification per Recovery Prescription table (Training Advice section above) before showing the planned session.
 
 ### PMC Snapshot
 CTL: {X} | ATL: {X} | TSB: {X}
@@ -117,7 +117,7 @@ If wellness data is unavailable (no `--wellness` records), skip the Readiness bl
 
 ---
 
-## 7. Race/Event Peaking
+## Race/Event Peaking
 
 When user mentions a target event ("I have a race on DATE", "peak for event", "taper for race"):
 

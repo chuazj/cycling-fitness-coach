@@ -6,9 +6,9 @@ Documents the exact structure of `plans/active_plan.md` — the single source of
 
 Fixed convention: `plans/active_plan.md`
 
-- Created by Workflow 4 (Create Training Plan)
-- Read by Workflows 1, 5, 6
-- Updated by Workflows 4, 5
+- Created by the Create Plan workflow
+- Read by Activity Analysis, Weekly Review, and Mid-Week Check-In workflows
+- Updated by Create Plan and Weekly Review workflows
 
 Only one active plan exists at a time. To start a new plan, the old file is archived (renamed with date suffix) or overwritten after user confirmation.
 
