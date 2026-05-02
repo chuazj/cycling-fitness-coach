@@ -630,22 +630,37 @@ To determine when to start tapering, project forward from current PMC:
 
 ## Block Selection Logic
 
-When creating a plan, Claude selects the block type based on:
+When creating a plan, Claude routes on the athlete's **goal** first, then applies fitness-state modifiers (CTL, TSB, FTP test recency).
 
-1. **Goal = FTP improvement** (default) → FTP Builder block
-2. **Goal = aerobic base** OR plateau on SS plan for 2+ blocks OR volume >8h/week → Polarized block
-3. **Goal = top-end power** (after established SS base) → VO2max block
-4. **Goal = event/race peaking** → current block + taper protocol (see Race/Event Peaking Protocol)
-5. **Recent training history**: if athlete has been doing primarily Z2 work → start with SS-focused weeks
-6. **Current FTP test recency**: if >8 weeks since last test → start with FTP test in Week 1
+### Goal taxonomy (5 goals — pick the closest match)
+
+| Goal ID | Athlete intent | Primary Block | Secondary Work | Default Block Length | Key Metric to Track |
+|---|---|---|---|---|---|
+| `ftp_improvement` *(default)* | Raise 20-min sustainable power. Athlete has no specific event; just wants to "get fitter." | FTP Builder (4-wk) | None — focused stimulus | 4 wk | 20-min peak power; FTP retest at week 4 |
+| `gravel_endurance` | Long mixed-surface events (2–6 h gran fondos, gravel races, sportives). Durability matters more than peak power. | Endurance Block + extended Saturday long-ride progression | Sweet Spot 1×/wk for FTP support; concurrent strength 2×/wk | 6–12 wk (key to event date) | Sat long-ride NP and cardiac drift; durability = power in final 1/3 of long ride; CTL build |
+| `criterium` | Short repeated-attack racing (40–90 min crits with surges, sprints). Needs anaerobic capacity and repeatability. | VO2max Block | Sprint/neuromuscular (NM-2 or NM-3) 1×/wk; Threshold 1×/wk to maintain FTP base | 4 wk (repeated 2–3 cycles for crit season) | 1-min and 5-min peaks; sprint repeatability (rep-4 power vs rep-1) |
+| `tt` | Sustained threshold events (20–60 min individual time trials, hill climbs). Pure threshold + aero hold. | FTP Builder + extended Threshold intervals (2×20 → 2×30 → 2×40) | VO2max once every 2 weeks (ceiling-raising); aero-position practice on Sat long ride | 4–6 wk | 20-min and 60-min FTP; sustained aero-position power hold |
+| `base` | Off-season or post-event aerobic base building. No event in next 12 weeks. | Polarized Block (or Endurance for athletes <6 h/wk) | Concurrent strength 2×/wk | 8–12 wk continuous (no taper needed) | CTL build trajectory; resting HR trend; cardiac drift trend on Z2 rides |
+
+**Selection notes:**
+- If the athlete's intent doesn't fit cleanly, ask: "Are you targeting a specific event in the next 12 weeks?" Yes → match goal to event type. No → `ftp_improvement` (default) or `base`.
+- Goal can change between blocks (e.g., `base` → `ftp_improvement` → `criterium` over 6 months). Each block creation is an independent goal selection.
+- Goal is recorded in `plans/active_plan.md` → Athlete Profile → Goal field. Used by Workflow 5 (weekly review) to interpret peak-power deltas in the right context (e.g., 1-min peak gain matters more for `criterium` than for `tt`).
+
+### Fitness-state modifiers (apply AFTER goal selection)
+
+These adjust the block volume/intensity once the block type is picked.
+
+1. **Recent training history**: if athlete has been doing primarily Z2 work → start with one extra SS-focused week before main goal block (avoids intensity shock).
+2. **Current FTP test recency**: if >8 weeks since last test → start with FTP test in Week 1.
    - Also applies when FTP is self-reported with no test history — see SKILL.md → Coaching Process Rules → Rule 4
    - Frame as "baseline assessment ride" to reduce test anxiety
    - All power targets are **provisional** until field test is completed
-7. **CTL level**:
+3. **CTL level**:
    - CTL < 30: start conservative (reduce baseline TSS by 10%)
    - CTL 30-60: normal progression
    - CTL > 60: can handle aggressive progression (+5% additional)
-8. **TSB at plan start**:
+4. **TSB at plan start**:
    - TSB < -20: add recovery week before starting build
    - TSB -20 to +10: normal start
    - TSB > +10: can start at slightly elevated TSS

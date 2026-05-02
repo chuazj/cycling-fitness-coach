@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 # Add scripts/ to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from intervals_icu_api import IntervalsIcuClient, analyze, weekly_summary, apply_compact
+from intervals_icu_api import IntervalsIcuClient, analyze, weekly_summary, apply_compact, wellness_summary
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
@@ -420,6 +420,133 @@ class TestCompactMode(unittest.TestCase):
         for key in ("normalized_power", "intensity_factor", "tss", "peak_powers",
                      "zone_percent", "cardiac_drift"):
             self.assertIn(key, result["metrics"])
+
+
+class TestWellnessSummary(unittest.TestCase):
+    """Test wellness_summary aggregator + Yellow/Red flag detection."""
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def _wellness_record(self, date, **kwargs):
+        return {"id": date, **kwargs}
+
+    def test_no_wellness_returns_error(self):
+        with patch.object(self.client, "get_wellness", return_value=[]):
+            result = wellness_summary(self.client, days=14)
+        self.assertIn("error", result)
+        self.assertEqual(result["days_with_data"], 0)
+
+    def test_fetch_failure_returns_error(self):
+        def boom(*a, **kw):
+            raise RuntimeError("network down")
+        with patch.object(self.client, "get_wellness", side_effect=boom):
+            result = wellness_summary(self.client, days=14)
+        self.assertIn("error", result)
+        self.assertIn("network down", result["error"])
+
+    def test_baseline_excludes_latest_day(self):
+        """Baseline averages history only — today is compared against rolling baseline."""
+        records = [
+            self._wellness_record("2026-04-25", restingHR=50),
+            self._wellness_record("2026-04-26", restingHR=52),
+            self._wellness_record("2026-04-27", restingHR=80),  # Latest — excluded
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        # Baseline = avg of first two days only (50 + 52) / 2 = 51
+        self.assertEqual(result["baseline"]["resting_hr_avg"], 51.0)
+        self.assertEqual(result["latest"]["resting_hr"], 80)
+
+    def test_red_flag_rhr_elevated_10bpm(self):
+        records = [
+            self._wellness_record("2026-04-25", restingHR=50),
+            self._wellness_record("2026-04-26", restingHR=52),
+            self._wellness_record("2026-04-27", restingHR=62),  # +11 above 51 baseline
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        red_flags = [f for f in result["flags"] if f["severity"] == "red"]
+        self.assertTrue(any(f["signal"] == "RHR" for f in red_flags))
+        self.assertEqual(result["overall_status"], "red")
+
+    def test_yellow_flag_rhr_elevated_5bpm(self):
+        records = [
+            self._wellness_record("2026-04-25", restingHR=50),
+            self._wellness_record("2026-04-26", restingHR=52),
+            self._wellness_record("2026-04-27", restingHR=57),  # +6 above 51 baseline
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        yellow_flags = [f for f in result["flags"] if f["severity"] == "yellow"]
+        self.assertTrue(any(f["signal"] == "RHR" for f in yellow_flags))
+        self.assertEqual(result["overall_status"], "yellow")
+
+    def test_yellow_flag_hrv_depressed(self):
+        records = [
+            self._wellness_record("2026-04-25", hrv=70),
+            self._wellness_record("2026-04-26", hrv=72),
+            self._wellness_record("2026-04-27", hrv=60),  # -15.5% vs 71 baseline
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        hrv_flags = [f for f in result["flags"] if f["signal"] == "HRV"]
+        self.assertEqual(len(hrv_flags), 1)
+        self.assertEqual(hrv_flags[0]["severity"], "yellow")
+
+    def test_yellow_flag_short_sleep(self):
+        records = [
+            self._wellness_record("2026-04-26", sleepSecs=27000),
+            # 5h sleep last night = 18000s
+            self._wellness_record("2026-04-27", sleepSecs=18000),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        sleep_flags = [f for f in result["flags"] if f["signal"] == "sleep"]
+        self.assertEqual(len(sleep_flags), 1)
+        self.assertEqual(sleep_flags[0]["value"], 5.0)
+
+    def test_subjective_fatigue_flag(self):
+        records = [
+            self._wellness_record("2026-04-26", fatigue=2),
+            self._wellness_record("2026-04-27", fatigue=4),  # worst tier
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        fatigue_flags = [f for f in result["flags"] if f["signal"] == "fatigue"]
+        self.assertEqual(len(fatigue_flags), 1)
+        self.assertEqual(fatigue_flags[0]["severity"], "yellow")
+
+    def test_all_green_status(self):
+        records = [
+            self._wellness_record("2026-04-25", restingHR=50, hrv=70, sleepSecs=27000),
+            self._wellness_record("2026-04-26", restingHR=51, hrv=71, sleepSecs=28800),
+            self._wellness_record("2026-04-27", restingHR=51, hrv=72, sleepSecs=27000),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["overall_status"], "green")
+        self.assertEqual(result["flags"], [])
+
+    def test_records_sorted_ascending(self):
+        """Should sort regardless of API response order."""
+        records = [
+            self._wellness_record("2026-04-27", restingHR=55),
+            self._wellness_record("2026-04-25", restingHR=50),
+            self._wellness_record("2026-04-26", restingHR=52),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        dates = [d["date"] for d in result["daily"]]
+        self.assertEqual(dates, ["2026-04-25", "2026-04-26", "2026-04-27"])
+
+    def test_sleep_hours_conversion(self):
+        records = [
+            self._wellness_record("2026-04-27", sleepSecs=27000),  # 7.5h
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["latest"]["sleep_hours"], 7.5)
 
 
 if __name__ == "__main__":

@@ -88,6 +88,24 @@ GET /api/v1/athlete/{athlete_id}/activities?oldest=DATE&newest=DATE&limit=N
 - `newest` — optional (defaults to now)
 - `limit` — optional integer, limits number of activities returned server-side
 
+### 7. Get Wellness (daily readiness data)
+```
+GET /api/v1/athlete/{athlete_id}/wellness?oldest=YYYY-MM-DD&newest=YYYY-MM-DD
+```
+Returns an array of daily wellness records. Each record uses `id` = date string (`YYYY-MM-DD`).
+
+**Key fields (verified, all optional — present only when logged or synced from a wearable):**
+- `restingHR` — resting heart rate (bpm)
+- `hrv` — heart-rate variability (RMSSD or score, depending on source)
+- `sleepSecs` — total sleep in seconds
+- `sleepQuality` — subjective 1-4 scale (1=best, 4=worst)
+- `weight` — kg
+- `fatigue`, `soreness`, `stress`, `mood` — subjective 1-4 scales (1=best, 4=worst)
+- `comments` — free-text notes
+
+Used by `wellness_summary()` (CLI: `--wellness N`) to compute baselines and flag deviations
+against the Yellow/Red Flag rules in `references/training_zones.md` → Fatigue Indicators.
+
 ---
 
 ## Data Mapping: API → Coach Analysis
@@ -124,6 +142,12 @@ Also accepts plain numeric IDs (e.g., `17478304236`).
 4. `GET /activity/{id}/streams.json?types=watts&types=heartrate&types=cadence` — zones + drift
 
 **Total: 4 calls per activity** (no rate limit concerns)
+
+## API Calls Per Wellness Summary
+
+1. `GET /athlete/{id}/wellness?oldest=...&newest=...` — single call returns N days of records
+
+**Total: 1 call per wellness summary**
 
 ---
 

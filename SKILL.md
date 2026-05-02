@@ -136,15 +136,17 @@ Read these on demand based on the task:
 | `references/intervals_icu_api.md` | Troubleshooting API issues or needing field/endpoint reference. Has API endpoints, auth details, data models. |
 | `references/periodization.md` | Creating a training plan, weekly adaptation, block selection, race peaking, strength integration. Has block templates, TSS distribution, progressive overload tables, adaptation decision trees (including ACWR), concurrent strength training, race taper protocols, flexible block lengths, durability concept. |
 | `references/adaptation_rules.md` | **Read after every workout analysis (Step 7 of `workflows/analyze.md`).** Per-activity forward-cascade rules: 4 signals (TSS/IF/zone/drift) → severity → next-session edits. Covers off-plan activities, protection overrides, symmetric upside. Complements `periodization.md` (weekly trends) — this layer is single-event, next 1–2 sessions. |
-| `references/fueling.md` | Prescribing fueling strategies, diagnosing GI issues, pre/during/post-ride nutrition. Has carb targets by session duration, gut training protocol, GI troubleshooting, hydration guidelines, fasted training evidence. |
+| `references/fueling.md` | Prescribing fueling strategies, diagnosing GI issues, pre/during/post-ride nutrition. **Quick-Reference subsection** maps duration × intensity → one-line `Fuel:` cue used in all workflow output templates. Also has carb targets by session duration, gut training protocol, GI troubleshooting, hydration guidelines, fasted training evidence. |
 | `references/plan_state_schema.md` | Reading or updating `plans/active_plan.md`. Has section definitions, column types, valid values, update operation rules. |
 | `references/obsidian_templates.md` | Writing notes to Obsidian vault. Has frontmatter templates and CLI commands. |
 
 **Scripts and assets:**
-- `scripts/intervals_icu_api.py` — intervals.icu API client with metrics computation
+- `scripts/intervals_icu_api.py` — intervals.icu API client with metrics computation. Modes: `--activity` (single ride), `--latest`, `--list-recent N`, `--weekly-summary [N]` (training summary), `--wellness [N]` (RHR/HRV/sleep readiness summary with Yellow/Red flag detection)
 - `scripts/generate_zwo.py` — Programmatic ZWO generation (single workout)
 - `scripts/pmc_calculator.py` — PMC bootstrap (90-day history) and weekly update (planned vs actual, CTL/ATL/TSB, peak powers)
 - `scripts/batch_generate_zwo.py` — Batch ZWO generation from JSON array (full week of workouts)
+- `scripts/sparkline.py` — Pure-Python ASCII sparkline helper (no extra deps). Used by Weekly Review to render Peak Power Trends visually in `plans/active_plan.md`.
+- `scripts/rpe_trend.py` — RPE trend aggregator. Scans Obsidian workout-review frontmatter; computes 2-wk-vs-prior-2-wk RPE-at-IF deltas; flags functional-overreaching pattern (rising RPE at constant IF). Pure Python, no extra deps.
 - `assets/template_sweetspot.zwo` — Example workout template
 - `plans/active_plan.md` — Active training plan state (created by Workflow 4, not pre-existing)
 - `plans/block_history.md` — Athlete-specific archive of completed training blocks (created on first block rollover, not pre-existing)

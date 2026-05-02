@@ -904,6 +904,282 @@ class TestAnalyzePowerProfileEdgeCases(unittest.TestCase):
         self.assertEqual(result["profile_type"], "unknown")
 
 
+class TestSparkline(unittest.TestCase):
+    """Test sparkline pure functions (no I/O)."""
+
+    def setUp(self):
+        # Late import keeps any failure local to this class
+        from sparkline import sparkline, render_sparkline, render_peak_power_trends_block, _parse_series
+        self.sparkline = sparkline
+        self.render_sparkline = render_sparkline
+        self.render_block = render_peak_power_trends_block
+        self.parse_series = _parse_series
+
+    def test_empty_series_renders_empty_string(self):
+        self.assertEqual(self.sparkline([]), "")
+
+    def test_all_none_renders_spaces(self):
+        result = self.sparkline([None, None, None])
+        self.assertEqual(result, "   ")
+
+    def test_flat_series_renders_middle_block(self):
+        result = self.sparkline([100, 100, 100])
+        self.assertEqual(result, "▄▄▄")
+
+    def test_increasing_series_starts_low_ends_high(self):
+        result = self.sparkline([1, 2, 3, 4, 5])
+        self.assertEqual(result[0], "▁")
+        self.assertEqual(result[-1], "█")
+        self.assertEqual(len(result), 5)
+
+    def test_gap_in_series_becomes_space(self):
+        result = self.sparkline([10, None, 20])
+        self.assertEqual(result[1], " ")
+
+    def test_render_sparkline_includes_label_and_delta(self):
+        line = self.render_sparkline("5s", [450, 460, 480], unit="W")
+        self.assertIn("5s:", line)
+        self.assertIn("450→480W", line)
+        self.assertIn("+6.7%", line)
+        self.assertIn("+30W", line)
+
+    def test_render_sparkline_negative_delta(self):
+        line = self.render_sparkline("20min", [200, 195, 190], unit="W")
+        self.assertIn("200→190W", line)
+        self.assertIn("-5.0%", line)
+        self.assertIn("-10W", line)
+
+    def test_render_sparkline_handles_first_zero(self):
+        line = self.render_sparkline("test", [0, 10, 20], unit="W")
+        # Avoid div-by-zero — falls back to absolute change only
+        self.assertIn("0→20W", line)
+        self.assertIn("+20W", line)
+        self.assertNotIn("%", line)
+
+    def test_render_sparkline_empty_returns_empty(self):
+        self.assertEqual(self.render_sparkline("x", []), "")
+
+    def test_render_sparkline_all_none_returns_no_data(self):
+        result = self.render_sparkline("x", [None, None])
+        self.assertIn("(no data)", result)
+
+    def test_render_block_orders_standard_durations(self):
+        trends = {
+            "20min": [195, 200, 205],
+            "5s": [450, 460, 480],
+            "1min": [310, 315, 320],
+        }
+        block = self.render_block(trends)
+        lines = block.split("\n")
+        # Standard order: 5s, 1min, 20min
+        self.assertTrue(lines[0].startswith("5s:"))
+        self.assertTrue(lines[1].startswith("1min:"))
+        self.assertTrue(lines[2].startswith("20min:"))
+
+    def test_render_block_handles_extras_alphabetically(self):
+        trends = {
+            "5s": [450, 460],
+            "custom_metric": [10, 20],
+            "another_extra": [5, 15],
+        }
+        block = self.render_block(trends)
+        lines = block.split("\n")
+        # Standard first, then extras alphabetical
+        self.assertTrue(lines[0].startswith("5s:"))
+        self.assertTrue(lines[1].startswith("another_extra:"))
+        self.assertTrue(lines[2].startswith("custom_metric:"))
+
+    def test_parse_series_basic(self):
+        self.assertEqual(self.parse_series("450,460,480"), [450, 460, 480])
+
+    def test_parse_series_handles_gaps(self):
+        self.assertEqual(self.parse_series("450,,480"), [450, None, 480])
+
+    def test_parse_series_handles_floats(self):
+        result = self.parse_series("450.5,460.0,480.25")
+        self.assertEqual(result, [450.5, 460.0, 480.25])
+
+    def test_parse_series_invalid_raises_systemexit(self):
+        with self.assertRaises(SystemExit):
+            self.parse_series("450,abc,480")
+
+
+class TestRpeTrendFrontmatterParser(unittest.TestCase):
+    """Test rpe_trend.parse_frontmatter — minimal flat YAML parser."""
+
+    def setUp(self):
+        from rpe_trend import parse_frontmatter
+        self.parse = parse_frontmatter
+
+    def test_basic_frontmatter(self):
+        content = "---\ndate: 2026-04-01\nrpe: 7\nif: 0.92\n---\nbody"
+        result = self.parse(content)
+        self.assertEqual(result["date"], "2026-04-01")
+        self.assertEqual(result["rpe"], 7)
+        self.assertEqual(result["if"], 0.92)
+
+    def test_no_frontmatter_returns_empty(self):
+        self.assertEqual(self.parse("just body content\nno frontmatter"), {})
+
+    def test_unclosed_frontmatter_returns_empty(self):
+        self.assertEqual(self.parse("---\ndate: 2026-04-01\nbody without close"), {})
+
+    def test_quoted_string_values_stripped(self):
+        content = "---\nsession: \"Sweet Spot 2x20\"\ntype: 'workout-review'\n---"
+        result = self.parse(content)
+        self.assertEqual(result["session"], "Sweet Spot 2x20")
+        self.assertEqual(result["type"], "workout-review")
+
+    def test_null_values_become_none(self):
+        content = "---\nrpe: null\nrating: none\n---"
+        result = self.parse(content)
+        self.assertIsNone(result["rpe"])
+        self.assertIsNone(result["rating"])
+
+    def test_int_vs_float(self):
+        content = "---\ntss: 75\nif: 0.85\n---"
+        result = self.parse(content)
+        self.assertIsInstance(result["tss"], int)
+        self.assertIsInstance(result["if"], float)
+
+    def test_skips_comments_and_blank_lines(self):
+        content = "---\n# this is a comment\n\ndate: 2026-04-01\n---"
+        result = self.parse(content)
+        self.assertEqual(result, {"date": "2026-04-01"})
+
+    def test_skips_nested_list_block(self):
+        """Tags block (key with no value, list items below) should not pollute output."""
+        content = (
+            "---\n"
+            "date: 2026-04-01\n"
+            "tags:\n"
+            "  - cycling\n"
+            "  - workout-review\n"
+            "rpe: 7\n"
+            "---\n"
+        )
+        result = self.parse(content)
+        self.assertEqual(result["date"], "2026-04-01")
+        self.assertEqual(result["rpe"], 7)
+        self.assertNotIn("tags", result)
+        self.assertNotIn("- cycling", result)
+
+
+class TestRpeTrendCompute(unittest.TestCase):
+    """Test rpe_trend.compute_trend pure function."""
+
+    def setUp(self):
+        from rpe_trend import compute_trend
+        self.compute = compute_trend
+
+    def _review(self, date, session_type, if_val, rpe):
+        return {"date": date, "session_type": session_type, "if": if_val, "rpe": rpe}
+
+    def test_empty_returns_empty(self):
+        self.assertEqual(self.compute([], weeks=2), {})
+
+    def test_rising_rpe_at_constant_if_flagged(self):
+        reviews = [
+            self._review("2026-04-01", "threshold", 0.92, 7),
+            self._review("2026-04-08", "threshold", 0.93, 7),
+            self._review("2026-04-15", "threshold", 0.92, 9),
+            self._review("2026-04-22", "threshold", 0.93, 9),
+        ]
+        result = self.compute(reviews, weeks=2)
+        self.assertIn("threshold", result)
+        self.assertEqual(result["threshold"]["flag"], "rising_rpe_at_constant_if")
+        self.assertEqual(result["threshold"]["delta_rpe"], 2.0)
+        self.assertAlmostEqual(result["threshold"]["delta_if"], 0.0, places=2)
+
+    def test_falling_rpe_at_constant_if_flagged_positive(self):
+        reviews = [
+            self._review("2026-04-01", "sweet-spot", 0.88, 8),
+            self._review("2026-04-08", "sweet-spot", 0.88, 8),
+            self._review("2026-04-15", "sweet-spot", 0.88, 7),
+            self._review("2026-04-22", "sweet-spot", 0.88, 6),
+        ]
+        result = self.compute(reviews, weeks=2)
+        self.assertEqual(result["sweet-spot"]["flag"], "falling_rpe_at_constant_if")
+
+    def test_rising_rpe_with_rising_if_not_flagged(self):
+        """If IF rose with RPE, that's expected progression — no flag."""
+        reviews = [
+            self._review("2026-04-01", "vo2max", 0.85, 7),
+            self._review("2026-04-08", "vo2max", 0.86, 7),
+            self._review("2026-04-15", "vo2max", 0.95, 9),  # IF jumped 0.10
+            self._review("2026-04-22", "vo2max", 0.94, 9),
+        ]
+        result = self.compute(reviews, weeks=2)
+        self.assertIsNone(result["vo2max"]["flag"])
+
+    def test_no_prior_window_no_delta(self):
+        """First-time recent data with no prior — flag stays None, no delta keys."""
+        reviews = [
+            self._review("2026-04-15", "threshold", 0.92, 9),
+            self._review("2026-04-22", "threshold", 0.93, 9),
+        ]
+        result = self.compute(reviews, weeks=2)
+        self.assertIn("threshold", result)
+        self.assertIsNone(result["threshold"]["flag"])
+        self.assertNotIn("delta_rpe", result["threshold"])
+
+    def test_separate_session_types_evaluated_independently(self):
+        reviews = [
+            self._review("2026-04-01", "threshold", 0.92, 7),
+            self._review("2026-04-15", "threshold", 0.92, 9),
+            self._review("2026-04-01", "sweet-spot", 0.88, 7),
+            self._review("2026-04-15", "sweet-spot", 0.88, 7),
+        ]
+        result = self.compute(reviews, weeks=2)
+        self.assertEqual(result["threshold"]["flag"], "rising_rpe_at_constant_if")
+        self.assertIsNone(result["sweet-spot"]["flag"])
+
+
+class TestRpeTrendCollectReviews(unittest.TestCase):
+    """Test rpe_trend.collect_reviews — touches filesystem with tempdir."""
+
+    def setUp(self):
+        from rpe_trend import collect_reviews
+        self.collect = collect_reviews
+
+    def test_missing_directory_returns_error(self):
+        reviews, err = self.collect("/no/such/path/XYZ123")
+        self.assertEqual(reviews, [])
+        self.assertIn("does not exist", err)
+
+    def test_skips_files_without_workout_review_type(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "plan.md"), "w", encoding="utf-8") as f:
+                f.write("---\ntype: training-plan\ndate: 2026-04-01\n---\n")
+            with open(os.path.join(d, "review.md"), "w", encoding="utf-8") as f:
+                f.write("---\ntype: workout-review\ndate: 2026-04-01\nif: 0.85\nrpe: 7\n---\n")
+            reviews, err = self.collect(d)
+            self.assertIsNone(err)
+            self.assertEqual(len(reviews), 1)
+            self.assertEqual(reviews[0]["filename"], "review.md")
+
+    def test_skips_reviews_without_rpe_or_if(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "no_rpe.md"), "w", encoding="utf-8") as f:
+                f.write("---\ntype: workout-review\ndate: 2026-04-01\nif: 0.85\nrpe: null\n---\n")
+            with open(os.path.join(d, "no_if.md"), "w", encoding="utf-8") as f:
+                f.write("---\ntype: workout-review\ndate: 2026-04-01\nrpe: 7\n---\n")
+            with open(os.path.join(d, "good.md"), "w", encoding="utf-8") as f:
+                f.write("---\ntype: workout-review\ndate: 2026-04-01\nif: 0.85\nrpe: 7\n---\n")
+            reviews, err = self.collect(d)
+            self.assertEqual(len(reviews), 1)
+            self.assertEqual(reviews[0]["filename"], "good.md")
+
+    def test_sorts_by_date_ascending(self):
+        with tempfile.TemporaryDirectory() as d:
+            for date in ("2026-04-15", "2026-04-01", "2026-04-08"):
+                with open(os.path.join(d, f"{date}.md"), "w", encoding="utf-8") as f:
+                    f.write(f"---\ntype: workout-review\ndate: {date}\nif: 0.85\nrpe: 7\n---\n")
+            reviews, _ = self.collect(d)
+            dates = [r["date"] for r in reviews]
+            self.assertEqual(dates, ["2026-04-01", "2026-04-08", "2026-04-15"])
+
+
 class TestIntervalStatsEdgeCases(unittest.TestCase):
     def test_all_work_intervals(self):
         """All intervals typed as WORK should produce hard_intervals stats."""

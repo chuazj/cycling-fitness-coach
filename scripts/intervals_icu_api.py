@@ -9,6 +9,7 @@ Usage:
     python intervals_icu_api.py --list-recent 10
     python intervals_icu_api.py --activity i126468486 --use-athlete-profile
     python intervals_icu_api.py --weekly-summary 7 --use-athlete-profile
+    python intervals_icu_api.py --wellness 14
 """
 
 import argparse
@@ -113,6 +114,12 @@ class IntervalsIcuClient:
         if newest: params["newest"] = newest
         if limit: params["limit"] = limit
         return self._get(f"/athlete/{self.athlete_id}/activities", params)
+
+    def get_wellness(self, oldest, newest=None):
+        """Fetch daily wellness records for date range (YYYY-MM-DD strings)."""
+        params = {"oldest": oldest}
+        if newest: params["newest"] = newest
+        return self._get(f"/athlete/{self.athlete_id}/wellness", params)
 
 
 # ---------------------------------------------------------------------------
@@ -765,6 +772,131 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
     return result
 
 
+# ---------------------------------------------------------------------------
+# Wellness summary (#6 — readiness/fatigue signal layer)
+# ---------------------------------------------------------------------------
+
+def wellness_summary(client, days=14):
+    """Aggregate the last N days of intervals.icu wellness data into a readiness summary.
+
+    Pulls daily wellness records (RHR, HRV, sleep, subjective fatigue/soreness/stress/mood),
+    computes a baseline average, and flags deviations against the Yellow/Red Flag rules in
+    references/training_zones.md. Use 14+ days for a stable baseline.
+
+    Args:
+        client: IntervalsIcuClient instance.
+        days: lookback window in days (default 14).
+
+    Returns:
+        dict with `daily` records, `baseline` averages, `latest` day, `flags` list,
+        and `overall_status` ("green", "yellow", "red"). Returns `{"error": ..., "days": N}`
+        if no wellness data is available.
+    """
+    newest = datetime.now().strftime("%Y-%m-%d")
+    oldest = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    try:
+        wellness = client.get_wellness(oldest, newest)
+    except Exception as e:
+        return {"error": f"Failed to fetch wellness: {e}", "days": days}
+
+    if not wellness:
+        return {
+            "error": f"No wellness data found in last {days} days. "
+                     "Log wellness in intervals.icu (or sync from Garmin/Oura/etc.) to enable readiness coaching.",
+            "days": days,
+            "days_with_data": 0,
+        }
+
+    # Sort by date ascending; intervals.icu uses "id" = "YYYY-MM-DD"
+    wellness = sorted(wellness, key=lambda w: w.get("id", ""))
+
+    daily = []
+    for w in wellness:
+        sleep_secs = w.get("sleepSecs")
+        sleep_hours = round(sleep_secs / 3600, 1) if sleep_secs else None
+        daily.append({
+            "date": w.get("id"),
+            "resting_hr": w.get("restingHR"),
+            "hrv": w.get("hrv"),
+            "sleep_hours": sleep_hours,
+            "sleep_quality": w.get("sleepQuality"),
+            "fatigue": w.get("fatigue"),
+            "soreness": w.get("soreness"),
+            "stress": w.get("stress"),
+            "mood": w.get("mood"),
+            "weight": w.get("weight"),
+        })
+
+    # Baseline = mean of available values across the window (excluding the latest day,
+    # so today's values are compared against rolling history, not against themselves).
+    history = daily[:-1] if len(daily) > 1 else daily
+    rhrs = [d["resting_hr"] for d in history if d["resting_hr"]]
+    hrvs = [d["hrv"] for d in history if d["hrv"]]
+    sleeps = [d["sleep_hours"] for d in history if d["sleep_hours"]]
+
+    baseline = {}
+    if rhrs:
+        baseline["resting_hr_avg"] = round(sum(rhrs) / len(rhrs), 1)
+    if hrvs:
+        baseline["hrv_avg"] = round(sum(hrvs) / len(hrvs), 1)
+    if sleeps:
+        baseline["sleep_hours_avg"] = round(sum(sleeps) / len(sleeps), 1)
+
+    latest = daily[-1] if daily else {}
+    flags = []
+
+    # Yellow/Red flag rules from training_zones.md → Fatigue Indicators
+    if latest.get("resting_hr") and baseline.get("resting_hr_avg"):
+        delta = round(latest["resting_hr"] - baseline["resting_hr_avg"], 1)
+        if delta >= 10:
+            flags.append({"signal": "RHR", "severity": "red",
+                          "value": latest["resting_hr"], "baseline": baseline["resting_hr_avg"],
+                          "delta_bpm": delta,
+                          "rule": "RHR elevated >10 bpm above baseline (red flag)"})
+        elif delta >= 5:
+            flags.append({"signal": "RHR", "severity": "yellow",
+                          "value": latest["resting_hr"], "baseline": baseline["resting_hr_avg"],
+                          "delta_bpm": delta,
+                          "rule": "RHR elevated >5 bpm above baseline (yellow flag)"})
+
+    if latest.get("hrv") and baseline.get("hrv_avg") and baseline["hrv_avg"] > 0:
+        delta_pct = round((latest["hrv"] - baseline["hrv_avg"]) / baseline["hrv_avg"] * 100, 1)
+        if delta_pct <= -10:
+            flags.append({"signal": "HRV", "severity": "yellow",
+                          "value": latest["hrv"], "baseline": baseline["hrv_avg"],
+                          "delta_pct": delta_pct,
+                          "rule": "HRV depressed >10% below baseline (yellow flag)"})
+
+    if latest.get("sleep_hours") is not None and latest["sleep_hours"] < 6:
+        flags.append({"signal": "sleep", "severity": "yellow",
+                      "value": latest["sleep_hours"],
+                      "rule": "Sleep <6h last night (yellow flag — modify next session)"})
+
+    # Subjective scales (intervals.icu uses 1=best, 4=worst by default; some users invert).
+    # Flag elevated subjective stress/fatigue/soreness only when ≥4 (worst tier).
+    for key, label in (("fatigue", "fatigue"), ("soreness", "soreness"), ("stress", "stress")):
+        v = latest.get(key)
+        if v is not None and v >= 4:
+            flags.append({"signal": key, "severity": "yellow",
+                          "value": v,
+                          "rule": f"Subjective {label} elevated ({v}/4 — yellow flag, watch for compounding)"})
+
+    overall = "red" if any(f["severity"] == "red" for f in flags) \
+        else "yellow" if any(f["severity"] == "yellow" for f in flags) \
+        else "green"
+
+    return {
+        "days": days,
+        "days_with_data": len(daily),
+        "baseline": baseline,
+        "latest": latest,
+        "flags": flags,
+        "overall_status": overall,
+        "daily": daily,
+    }
+
+
 def load_env(env_path=None):
     """Load .env file from script dir or project root."""
     if env_path is None:
@@ -822,6 +954,10 @@ def build_parser():
     mode.add_argument("--list-recent", type=int, help="List N most recent activities")
     mode.add_argument("--weekly-summary", type=int, nargs="?", const=7,
                        help="Weekly training summary for last N days (default: 7)")
+    mode.add_argument("--wellness", type=int, nargs="?", const=14,
+                       help="Wellness/readiness summary for last N days (default: 14). "
+                            "Pulls RHR, HRV, sleep, and subjective fatigue/soreness/stress; "
+                            "flags deviations vs baseline against Yellow/Red Flag rules.")
     p.add_argument("--ftp", type=int, default=None,
                    help="FTP in watts. Prefer --use-athlete-profile to auto-fetch from intervals.icu. "
                         "If neither flag is given a neutral 200W default is used with a stderr warning.")
@@ -921,6 +1057,15 @@ if __name__ == "__main__":
             print(f"{i:>3}. {date}  {name:<30}  {dist:.1f}km  {f'{w:.0f}W' if w else '-':>5}")
     elif args.weekly_summary is not None:
         result = weekly_summary(client, days=args.weekly_summary, ftp=args.ftp, weight=args.weight)
+        out = json.dumps(result, indent=2, default=str, ensure_ascii=False)
+        if args.output:
+            with open(args.output, "w", encoding="utf-8") as f:
+                f.write(out)
+            print(f"Output written to {args.output}", file=sys.stderr)
+        else:
+            print(out)
+    elif args.wellness is not None:
+        result = wellness_summary(client, days=args.wellness)
         out = json.dumps(result, indent=2, default=str, ensure_ascii=False)
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:

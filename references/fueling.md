@@ -4,6 +4,7 @@ Reference for Claude-as-coach: pre-ride, during-ride, and post-ride fueling prot
 
 ## Table of Contents
 
+- [Quick-Reference (use in workflow output templates)](#quick-reference-use-in-workflow-output-templates)
 - [Fueling by Session Duration](#fueling-by-session-duration)
 - [Pre-Ride Nutrition](#pre-ride-nutrition)
 - [During-Ride Carbohydrate Targets](#during-ride-carbohydrate-targets)
@@ -12,6 +13,25 @@ Reference for Claude-as-coach: pre-ride, during-ride, and post-ride fueling prot
 - [GI Troubleshooting](#gi-troubleshooting)
 - [Hydration Guidelines](#hydration-guidelines)
 - [Fasted Training](#fasted-training)
+
+## Quick-Reference (use in workflow output templates)
+
+When coaching workflows prescribe a session, attach a one-line fueling cue using this lookup. Format: `Fuel: <during-ride carbs/h> + <pre-ride note> + <post-ride priority>`.
+
+| Duration × Intensity | One-line fueling cue |
+|---|---|
+| <45 min, any | `Fuel: water only — pre-ride meal sufficient. Post: normal meal.` |
+| 45-60 min Z1-Z2 | `Fuel: water or electrolyte. Post: normal meal within 2h.` |
+| 45-60 min Threshold/VO2max | `Fuel: 20-30g/h sports drink. Pre: low-fiber 2-3h before. Post: 0.8-1.2g/kg carb + 0.3g/kg protein within 30min.` |
+| 60-90 min any structured | `Fuel: 30-60g/h (drink/gel/banana). Pre: 0.5-1g/kg carb 1-2h before. Post: refuel within 30min.` |
+| 90-120 min | `Fuel: 60-80g/h glucose:fructose ~2:1. Pre: 1-2g/kg carb 2-3h before, low-fat. Post: aggressive refuel within 30min.` |
+| >120 min | `Fuel: 60-90g/h dual-source carbs. Pre: 1-2g/kg carb 2-3h before. Post: aggressive refuel; restore glycogen for next session.` |
+
+**Threshold/VO2max special case** at any duration: low-fiber, low-fat pre-ride within 2h; sip during warmup before intensity begins; bathroom 15-30 min before start.
+
+**Indoor/heat sessions**: bump hydration to 750-1000mL/h; add electrolyte tablet if >60min.
+
+For full pre/during/post detail, gut training progression, and GI troubleshooting, see the sections below.
 
 ## Fueling by Session Duration
 
@@ -44,12 +64,14 @@ Reference for Claude-as-coach: pre-ride, during-ride, and post-ride fueling prot
 - **Familiar foods only** before key sessions — don't experiment on important training days
 - **Caffeine** (3-6mg/kg, 30-60 min before): ergogenic for threshold/VO2max work; can increase GI urgency — test individually
 
-### For the Current Athlete (70kg)
+### Worked Example (70kg athlete)
+
+Multiply by your weight in kg to scale. For a 70kg athlete:
 
 | Timing | Carb Target | Example |
 |--------|-------------|---------|
-| 2-3h before | 75-150g | Bowl of rice/oats with banana, toast with honey |
-| 1-2h before | 37-74g | 2 slices toast with jam, banana |
+| 2-3h before | 70-140g (1-2g/kg) | Bowl of rice/oats with banana, toast with honey |
+| 1-2h before | 35-70g (0.5-1g/kg) | 2 slices toast with jam, banana |
 | 30-60 min before | 20-30g | Banana or sports drink |
 
 ## During-Ride Carbohydrate Targets
@@ -88,12 +110,14 @@ For sessions >90 min or when targeting >60g/h:
 | Within 30 min | Carbohydrate + protein | 0.8-1.2g carb/kg + 0.3-0.4g protein/kg |
 | Within 2 hours | Full meal | Balanced meal with carb, protein, fat |
 
-### For the Current Athlete (70kg)
+### Worked Example (70kg athlete)
+
+Multiply by your weight in kg to scale. For a 70kg athlete:
 
 | Component | Target | Example |
 |-----------|--------|---------|
-| Carb (immediate) | 60-90g | Recovery shake, rice + fruit, 2 bananas + yogurt |
-| Protein (immediate) | 22-30g | Protein shake, Greek yogurt, chicken breast |
+| Carb (immediate) | 56-84g (0.8-1.2g/kg) | Recovery shake, rice + fruit, 2 bananas + yogurt |
+| Protein (immediate) | 21-28g (0.3-0.4g/kg) | Protein shake, Greek yogurt, chicken breast |
 | Full meal (within 2h) | Balanced | Rice/pasta + protein + vegetables |
 
 ### Recovery Priority by Session Type

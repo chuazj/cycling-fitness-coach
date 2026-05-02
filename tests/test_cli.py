@@ -43,6 +43,14 @@ class TestIntervalsIcuApiCli(unittest.TestCase):
         ns = self._parse(["--weekly-summary", "14"])
         self.assertEqual(ns.weekly_summary, 14)
 
+    def test_wellness_default_days(self):
+        ns = self._parse(["--wellness"])
+        self.assertEqual(ns.wellness, 14)
+
+    def test_wellness_custom_days(self):
+        ns = self._parse(["--wellness", "30"])
+        self.assertEqual(ns.wellness, 30)
+
     def test_compact_flag(self):
         ns = self._parse(["--activity", "i999", "--compact"])
         self.assertTrue(ns.compact)

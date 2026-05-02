@@ -72,6 +72,33 @@ python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir "<Z
 python scripts/intervals_icu_api.py --weekly-summary -o output.json
 ```
 
+### Wellness / Readiness Summary
+```bash
+# Aggregate last 14 days of wellness records: RHR, HRV, sleep, fatigue/soreness/stress
+# Computes baseline and flags deviations against Yellow/Red Flag rules in training_zones.md
+python scripts/intervals_icu_api.py --wellness 14 -o wellness.json
+```
+Returns `error` field if athlete doesn't log wellness in intervals.icu (or no wearable sync). Used by Mid-Week Check-In (Workflow 6) and Weekly Review (Workflow 5).
+
+### Sparkline (Peak Power Trends visualization)
+```bash
+# Render a single duration's trend
+python scripts/sparkline.py --label "20min" --series "195,198,201,200,205" --unit W
+# -> 20min: ▁▃▅▅█  195→205W (+5.1%, +10W over 5 points)
+
+# Use empty entry for missing-week gap
+python scripts/sparkline.py --label "1min" --series "310,,315,320,318" --unit W
+# -> 1min: ▁ ▅█▇  310→318W (+2.6%, +8W over 4 points)
+```
+Pure-Python ASCII sparkline (no matplotlib). Used by Workflow 5 to refresh the sparkline subblock under `## Peak Power Trends` in `plans/active_plan.md`. For programmatic use, import `render_sparkline()` or `render_peak_power_trends_block()` from `scripts/sparkline.py`.
+
+### RPE Trend Aggregator
+```bash
+# Scan Obsidian workout reviews and detect rising-RPE-at-constant-IF (overreaching signal)
+python scripts/rpe_trend.py --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-coach/workout-reviews" --weeks 2 -o rpe_trend.json
+```
+Reads YAML frontmatter from each `.md`, extracts `(date, session_type, if, rpe)`, compares last `--weeks` weeks to the prior `--weeks` weeks per session type. Flags `rising_rpe_at_constant_if` when ΔRPE ≥ 1.0 with ΔIF within ±0.03. Used by Weekly Review (Workflow 5). Returns `error` field if no usable reviews found (silent skip in workflow).
+
 No build or lint infrastructure exists. Tests: `python -m unittest discover tests -v`
 
 ## Architecture
@@ -88,6 +115,8 @@ scripts/
   generate_zwo.py               ← Zwift .zwo XML generator using dataclasses for interval types
   pmc_calculator.py             ← PMC bootstrap (90-day history) + weekly update (planned vs actual, CTL/ATL/TSB, peaks)
   batch_generate_zwo.py         ← Batch .zwo generation from JSON array (full week of workouts)
+  sparkline.py                  ← Pure-Python ASCII sparkline helper for Peak Power Trends visualization
+  rpe_trend.py                  ← RPE trend aggregator (Obsidian frontmatter scan + functional-overreaching detection)
 references/
   training_zones.md             ← Power/HR zone definitions, TID model, weekly structure
   workout_analysis.md           ← Analysis framework, coaching response templates, ERG mode guidance

@@ -26,7 +26,7 @@ Static athlete data. Set at plan creation; updated only if athlete reports chang
 | Weight | `{value}kg` | `70kg` | |
 | FTP Last Tested | `YYYY-MM-DD` | `2026-03-01` | Updated after FTP test completion |
 | Training Days | comma-separated | `Tue, Thu, Sat, +1 flex` | |
-| Goal | free text | `FTP improvement` | |
+| Goal | enum | `ftp_improvement` | One of: `ftp_improvement`, `gravel_endurance`, `criterium`, `tt`, `base`. See `references/periodization.md` → Block Selection Logic → Goal taxonomy. Free-text supplement allowed for context (e.g., `gravel_endurance — Tour de Bintan 25 Oct`). |
 
 ### `## Plan Overview`
 
@@ -146,6 +146,19 @@ Running table of peak powers across the plan. Updated during weekly review.
 | Week N | int or empty | Best peak power during that week |
 
 Empty cells indicate no data for that week yet.
+
+**Sparkline subblock (auto-rendered, append after the table):**
+
+After the table, include a fenced block of one sparkline line per duration. Use `scripts/sparkline.py` (or `render_peak_power_trends_block()` programmatically) to render. Refresh during every weekly review so the latest trend is visible at a glance:
+
+```
+5s:    ▁▃▂▆█  450→480W (+6.7%, +30W over 5 points)
+1min:  ▁▂▄▇█  310→320W (+3.2%, +10W over 5 points)
+5min:  ▁▃▅▆█  240→252W (+5.0%, +12W over 5 points)
+20min: ▁▄▅▆█  195→205W (+5.1%, +10W over 5 points)
+```
+
+The sparkline reads the same row data (Baseline + Week 1..N) — pure rendering, no separate state.
 
 ### `## FTP Test History` *(optional — created on first FTP test)*
 

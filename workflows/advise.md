@@ -60,11 +60,12 @@ Covers Workflow 2 (training advice), Workflow 6 (mid-week check-in), and Workflo
 **Context**: [Current FTP, available time, recent load/TSB]
 **Assessment**: [Athlete's current state — fatigue, fitness, readiness]
 **This Week's Plan**:
-| Day | Session | Duration | Key Interval |
-|-----|---------|----------|--------------|
-| ... | ...     | ...      | ...          |
+| Day | Session | Duration | Key Interval | Fuel |
+|-----|---------|----------|--------------|------|
+| ... | ...     | ...      | ...          | {one-line cue from fueling.md → Quick-Reference} |
 **Key Focus**: [Target adaptation and why this matters now]
 **Watch For**: [Fatigue signals that would trigger plan adjustment]
+**Fueling**: see `references/fueling.md` → Quick-Reference for per-session cues; full detail in the rest of that doc.
 ```
 
 ---
@@ -75,7 +76,13 @@ When user asks about plan status ("check my plan", "what's next", "plan status")
 
 **Step 1:** Read `plans/active_plan.md`. If the file does not exist, inform user that no active plan is found and suggest creating one via Workflow 4.
 
-**Step 2:** Present current status:
+**Step 2 (optional but recommended):** Pull wellness/readiness signal:
+```bash
+python scripts/intervals_icu_api.py --wellness 14 -o wellness.json
+```
+This returns last-14-day RHR/HRV/sleep + flags vs baseline. Skip if athlete doesn't log wellness in intervals.icu (script returns `error` field — note in output and proceed without).
+
+**Step 3:** Present current status:
 ```
 ## Plan Status: {Plan Type} — Week {N} ({Phase})
 
@@ -90,13 +97,23 @@ When user asks about plan status ("check my plan", "what's next", "plan status")
 - Duration: {X}min | Target TSS: {X}
 - Execution notes: {pacing tips, cadence targets}
 - ZWO file: {filename}
+- **Fuel:** {one-line cue from `references/fueling.md` → Quick-Reference, matched to this session's duration × intensity}
+
+### Readiness (from --wellness)
+**Overall:** {green/yellow/red — from wellness_summary `overall_status`}
+- RHR: {latest} bpm vs baseline {baseline} ({delta_bpm:+} bpm) {flag if any}
+- HRV: {latest} vs baseline {baseline} ({delta_pct:+}%) {flag if any}
+- Sleep: {latest_hours}h last night {flag if <6h}
+- Subjective: fatigue {X}/4, soreness {X}/4, stress {X}/4 {flags if ≥4}
+
+If `overall_status: yellow` or `red`, recommend session modification per Recovery Prescription table (Workflow 2 above) before showing the planned session.
 
 ### PMC Snapshot
 CTL: {X} | ATL: {X} | TSB: {X}
 Status: {interpretation}
 ```
 
-No data fetching or API calls needed — this is a read-only status check from the plan file.
+If wellness data is unavailable (no `--wellness` records), skip the Readiness block and note: "Wellness data not logged in intervals.icu — readiness coaching limited to PMC + RPE trends."
 
 ---
 
@@ -127,10 +144,11 @@ python scripts/pmc_calculator.py --bootstrap --days 90
 **Protocol**: {2-week / 1-week} taper starting {date}
 
 ### Taper Schedule
-| Week | Day | Session | TSS |
-|------|-----|---------|-----|
-| ... | ... | ... | ... |
+| Week | Day | Session | TSS | Fuel |
+|------|-----|---------|-----|------|
+| ... | ... | ... | ... | {one-line cue from fueling.md → Quick-Reference} |
 
+**Race-day fueling**: rehearse during taper sessions — never try a new product/timing on race day. See `references/fueling.md` → Pre-Ride Nutrition for race-morning timing.
 **Projected race-day TSB**: ~{X}
 ```
 

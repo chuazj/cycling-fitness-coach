@@ -36,6 +36,7 @@ The script outputs JSON with:
 - What to improve
 ### Next Session
 [Specific recommendation]
+**Fuel:** [one-line cue from `references/fueling.md` → Quick-Reference, matched to next session's duration × intensity]
 
 **Session RPE (1-10)?** — reply with a number, or skip. Used for RPE:Power mismatch detection (see `references/workout_analysis.md` → Session RPE).
 ```
