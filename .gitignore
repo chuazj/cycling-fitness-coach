@@ -1,12 +1,49 @@
+# Credentials
 .env
-__pycache__/
-*.pyc
-output.json
+
+# Local Claude Code settings
 .claude/
 
-# Athlete-specific plan state (private — not for the public repo)
+# Python bytecode / caches
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Virtualenvs (if created inside the repo)
+.venv/
+venv/
+env/
+
+# Coverage
+.coverage
+htmlcov/
+
+# OS / IDE
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
+
+# Temp / backup
+*.log
+*.bak
+*.tmp
+*.orig
+
+# Athlete-specific plan state (PII — see CLAUDE.md → "plans/ is gitignored")
 plans/active_plan.md
 plans/block_history.md
 plans/archived_*.md
 plans/*_regen.json
 plans/*_original.md
+
+# Script outputs containing athlete data (HRV, RHR, RPE, FTP, weight, training history)
+# Anchored to repo root so test fixtures with the same name are unaffected.
+/output.json
+/wellness.json
+/rpe_trend.json
+/summary.json
+/trend.json
