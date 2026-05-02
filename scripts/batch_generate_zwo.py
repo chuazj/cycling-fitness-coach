@@ -61,6 +61,7 @@ def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
     errors = []
     total_duration = 0
     total_tss = 0
+    seen_filenames = set()
 
     for idx, workout_def in enumerate(workouts_data):
         filename = workout_def.get("filename")
@@ -76,6 +77,15 @@ def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
                 "error": "filename must be a bare filename (no path separators or '..')",
             })
             continue
+
+        # Reject duplicates — second-and-later writes would silently clobber the first
+        if filename in seen_filenames:
+            errors.append({
+                "index": idx, "filename": filename,
+                "error": "duplicate filename in batch (would clobber an earlier entry)",
+            })
+            continue
+        seen_filenames.add(filename)
 
         try:
             workout = workout_from_dict(workout_def)
@@ -163,7 +173,10 @@ def main():
         print(out)
 
     # Also print human-readable summary to stderr
-    print(f"\nGenerated {result['workouts_generated']} workout files in {args.output_dir}", file=sys.stderr)
+    if args.dry_run:
+        print(f"\nDRY RUN: would generate {result['workouts_generated']} workout files in {args.output_dir} (no files written)", file=sys.stderr)
+    else:
+        print(f"\nGenerated {result['workouts_generated']} workout files in {args.output_dir}", file=sys.stderr)
     for w in result["workouts"]:
         print(f"  {w['filename']:40s} {w['duration_min']:>5.0f}min  TSS ~{w['estimated_tss']}", file=sys.stderr)
     print(f"  {'Total':40s} {result['total_duration_min']:>5.0f}min  TSS ~{result['total_estimated_tss']}", file=sys.stderr)

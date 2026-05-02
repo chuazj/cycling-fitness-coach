@@ -693,6 +693,28 @@ class TestBatchGenerateEdgeCases(unittest.TestCase):
             self.assertEqual(result["workouts_generated"], 0)
             self.assertEqual(result["workouts_failed"], 1)
 
+    def test_duplicate_filename_rejected(self):
+        """Second occurrence of a filename in the batch is rejected so it can't
+        silently clobber the first write."""
+        workouts = [
+            {"filename": "ride.zwo", "name": "First", "workout": [
+                {"type": "SteadyState", "duration": 300, "power": 0.6}
+            ]},
+            {"filename": "ride.zwo", "name": "Second", "workout": [
+                {"type": "SteadyState", "duration": 300, "power": 0.7}
+            ]},
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = batch_generate(workouts, tmpdir, ftp=200)
+            self.assertEqual(result["workouts_generated"], 1)
+            self.assertEqual(result["workouts_failed"], 1)
+            self.assertEqual(result["errors"][0]["index"], 1)
+            self.assertEqual(result["errors"][0]["filename"], "ride.zwo")
+            self.assertIn("duplicate", result["errors"][0]["error"].lower())
+            # The first write must still be on disk (not clobbered)
+            with open(os.path.join(tmpdir, "ride.zwo"), encoding="utf-8") as f:
+                self.assertIn("First", f.read())
+
 
 class TestParsePowerCurveEdgeCases(unittest.TestCase):
     def test_mismatched_lengths(self):

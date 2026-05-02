@@ -350,6 +350,52 @@ class TestWeeklySummaryOptimization(unittest.TestCase):
         self.assertTrue(result["ftp_update_suggested"])
         self.assertGreater(result["suggested_ftp"], ftp)
 
+    def test_power_profile_populated_when_weight_provided(self):
+        """weekly_summary should expose the full week_peaks dict and call
+        analyze_power_profile when weight is provided so the workflow's
+        Power Profile table can be filled."""
+        from datetime import datetime
+        now = datetime.now()
+        activities = [
+            {"id": "i1", "name": "Ride", "moving_time": 3600,
+             "start_date_local": now.strftime("%Y-%m-%dT08:00:00"),
+             "icu_training_load": 80, "icu_intensity": 90, "icu_joules": 600000}
+        ]
+        # Curve covers all profile durations
+        curve = {"secs": [5, 60, 300, 1200], "watts": [800, 400, 280, 220]}
+        with patch.object(self.client, "list_activities", return_value=activities), \
+             patch.object(self.client, "get_power_curve", return_value=curve):
+            result = weekly_summary(self.client, days=7, ftp=200, weight=70)
+
+        self.assertIn("week_peaks", result)
+        self.assertEqual(set(result["week_peaks"].keys()), {"5s", "1min", "5min", "20min"})
+        self.assertEqual(result["week_peaks"]["5s"], 800.0)
+        self.assertEqual(result["week_peaks"]["20min"], 220.0)
+
+        self.assertIn("power_profile", result)
+        profile = result["power_profile"]
+        self.assertIn("w_per_kg", profile)
+        # 800/70 ≈ 11.43 W/kg for 5s
+        self.assertAlmostEqual(profile["w_per_kg"]["5s"], 11.43, places=2)
+        self.assertIn("profile_type", profile)
+
+    def test_power_profile_omitted_when_no_weight(self):
+        """If weight is missing/zero, power_profile is skipped (W/kg meaningless)."""
+        from datetime import datetime
+        now = datetime.now()
+        activities = [
+            {"id": "i1", "name": "Ride", "moving_time": 3600,
+             "start_date_local": now.strftime("%Y-%m-%dT08:00:00"),
+             "icu_training_load": 50, "icu_intensity": 80, "icu_joules": 500000}
+        ]
+        with patch.object(self.client, "list_activities", return_value=activities), \
+             patch.object(self.client, "get_power_curve",
+                          return_value={"secs": [1200], "watts": [200]}):
+            result = weekly_summary(self.client, days=7, ftp=200, weight=0)
+        self.assertNotIn("power_profile", result)
+        # week_peaks should still be populated (it doesn't need weight)
+        self.assertIn("week_peaks", result)
+
     def test_ftp_suggestion_within_3pct(self):
         """FTP suggestion should NOT trigger when 20min peak implies <=3% increase."""
         from datetime import datetime, timedelta
@@ -444,6 +490,34 @@ class TestWellnessSummary(unittest.TestCase):
             result = wellness_summary(self.client, days=14)
         self.assertIn("error", result)
         self.assertIn("network down", result["error"])
+
+    def test_single_record_partial_baseline_suppresses_deviation_flags(self):
+        """A single daily wellness record can't fire RHR/HRV deviation flags
+        because there's no historical baseline to compare against."""
+        records = [
+            self._wellness_record("2026-04-27", restingHR=80, hrv=40),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertTrue(result["partial_baseline"])
+        self.assertEqual(result["history_days"], 0)
+        self.assertEqual(result["baseline"], {})
+        # No RHR/HRV flag should fire — baseline is empty
+        deviation_flags = [f for f in result["flags"] if f["signal"] in ("RHR", "HRV")]
+        self.assertEqual(deviation_flags, [])
+        self.assertIsNotNone(result["baseline_note"])
+
+    def test_single_record_still_fires_latest_day_only_flags(self):
+        """Single-record windows can still fire sleep <6h and subjective ≥4 flags."""
+        records = [
+            self._wellness_record("2026-04-27", sleepSecs=18000, fatigue=4),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertTrue(result["partial_baseline"])
+        signals = {f["signal"] for f in result["flags"]}
+        self.assertIn("sleep", signals)
+        self.assertIn("fatigue", signals)
 
     def test_baseline_excludes_latest_day(self):
         """Baseline averages history only — today is compared against rolling baseline."""

@@ -422,7 +422,7 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
 
     # Efficiency Factor
     avg_hr = a.get("average_heartrate")
-    if np_val and avg_hr and avg_hr > 0:
+    if np_val is not None and avg_hr is not None and avg_hr > 0:
         m["efficiency_factor"] = round(np_val / avg_hr, 3)
 
     # Power to Weight
@@ -702,26 +702,35 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
                 else:
                     zone_duration["Z5+"] += moving_time
 
-    # FE-3: Fetch power curves only from top-3 TSS activities (reduces N API calls to 3)
+    # FE-3: Fetch power curves only from top-3 TSS activities (reduces N API calls to 3).
+    # Pull all key durations in one fetch per activity, then take the max across the
+    # top-3 for each duration — gives a usable "best 7 days" power profile for free.
     tss_sorted = sorted(
         [a for a in activities if a.get("icu_training_load")],
         key=lambda a: a.get("icu_training_load", 0),
         reverse=True,
     )[:3]
-    def _fetch_20min_peak(activity):
+    profile_durations = ("5s", "1min", "5min", "20min")
+
+    def _fetch_curve(activity):
         try:
-            curve = parse_power_curve(client.get_power_curve(activity.get("id")))
-            return curve.get("20min")
+            return parse_power_curve(client.get_power_curve(activity.get("id")))
         except Exception as e:
             print(f"WARNING: power curve fetch for {activity.get('id')} failed: {e}", file=sys.stderr)
-            return None
+            return {}
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        peaks = executor.map(_fetch_20min_peak, tss_sorted)
-    for p20 in peaks:
-        if p20 is not None:
-            if max_20min_peak is None or p20 > max_20min_peak:
-                max_20min_peak = p20
+    week_peaks = {}
+    if tss_sorted:
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            curves = list(executor.map(_fetch_curve, tss_sorted))
+        for curve in curves:
+            for dur in profile_durations:
+                v = curve.get(dur)
+                if v is None:
+                    continue
+                if dur not in week_peaks or v > week_peaks[dur]:
+                    week_peaks[dur] = v
+        max_20min_peak = week_peaks.get("20min")
 
     # Compute duration-weighted average IF
     avg_if = None
@@ -768,6 +777,12 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
             result["ftp_update_suggested"] = False
     else:
         result["ftp_update_suggested"] = False
+
+    # Power profile across the week (best of top-3 sessions per duration)
+    if week_peaks:
+        result["week_peaks"] = {dur: round(v, 1) for dur, v in week_peaks.items()}
+        if weight and weight > 0:
+            result["power_profile"] = analyze_power_profile(week_peaks, ftp, weight)
 
     return result
 
@@ -830,7 +845,13 @@ def wellness_summary(client, days=14):
 
     # Baseline = mean of available values across the window (excluding the latest day,
     # so today's values are compared against rolling history, not against themselves).
-    history = daily[:-1] if len(daily) > 1 else daily
+    # When there is only one daily record, history is empty — comparing a value against
+    # itself would produce zero deltas and no flag could ever fire. In that case we
+    # surface partial_baseline: True so callers know the deviation flags are suppressed
+    # (the latest-day-only flags — sleep <6h and subjective ≥4 — still apply).
+    history = daily[:-1] if len(daily) > 1 else []
+    partial_baseline = len(history) == 0
+
     rhrs = [d["resting_hr"] for d in history if d["resting_hr"]]
     hrvs = [d["hrv"] for d in history if d["hrv"]]
     sleeps = [d["sleep_hours"] for d in history if d["sleep_hours"]]
@@ -889,11 +910,19 @@ def wellness_summary(client, days=14):
     return {
         "days": days,
         "days_with_data": len(daily),
+        "history_days": len(history),
+        "partial_baseline": partial_baseline,
         "baseline": baseline,
         "latest": latest,
         "flags": flags,
         "overall_status": overall,
         "daily": daily,
+        "baseline_note": (
+            "Only one daily wellness record available — no historical baseline to "
+            "compare against. RHR / HRV deviation flags are suppressed; latest-day "
+            "flags (sleep <6h, subjective ≥4) still apply. Log a few more days to "
+            "enable full readiness coaching."
+        ) if partial_baseline else None,
     }
 
 

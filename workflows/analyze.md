@@ -258,6 +258,11 @@ python scripts/intervals_icu_api.py --weekly-summary -o output.json
 Rider type: {sprinter/time_trialist/pursuiter/all_rounder}
 ```
 
+Power Profile data sources:
+- `result["week_peaks"]` — peak watts per duration (always present when any power curve was fetched)
+- `result["power_profile"]` — W/kg, category, rider type (only present when weight was supplied; run with `--use-athlete-profile` to auto-fetch weight from intervals.icu)
+- If `power_profile` is absent, omit the W/kg and Category columns and note that weight is needed for full analysis.
+
 **Step 3:** If FTP update suggested by auto-detection, flag it:
 ```
 FTP Update Suggested: 20min best {X}W → estimated FTP {X}W (+{X}% vs current {FTP}W)

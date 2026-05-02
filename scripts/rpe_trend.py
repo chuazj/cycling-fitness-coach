@@ -3,7 +3,8 @@
 RPE Trend Aggregator for Cycling Fitness Coach.
 
 Scans Obsidian workout-review markdown files, extracts (date, session_type, IF, RPE)
-tuples from YAML frontmatter, and computes 2-week vs 4-week rolling RPE-at-IF trends.
+tuples from YAML frontmatter, and compares the last `--weeks` weeks to the prior
+`--weeks` weeks (symmetric windows) to detect rising-RPE-at-constant-IF trends.
 
 Detects the "rising RPE at constant IF" pattern that periodization.md flags as a
 functional-overreaching signal — earlier than PMC/TSB can detect, because TSS is
@@ -167,6 +168,11 @@ def compute_trend(reviews, weeks=4):
     by_type_recent = defaultdict(list)
     by_type_prior = defaultdict(list)
 
+    # Window convention: prior = (prior_start, recent_start], recent = (recent_start, today].
+    # Both windows are half-open with the same shape — lower-exclusive, upper-inclusive.
+    # The shared boundary date (recent_start) belongs to prior (its upper edge); the
+    # outer edge `today` belongs to recent (its upper edge). prior_start itself is
+    # excluded — the prior window starts one day after it.
     for r in reviews:
         d = datetime.strptime(r["date"], "%Y-%m-%d")
         if d > today or d <= prior_start:
@@ -257,8 +263,8 @@ def build_parser():
     p.add_argument("--vault-path", required=True,
                    help="Path to Obsidian workout-reviews directory "
                         "(typically <CYCLING_VAULT_PATH>/cycling-fitness-coach/workout-reviews/)")
-    p.add_argument("--weeks", type=int, default=4,
-                   help="Window size in weeks for recent vs prior comparison (default: 4)")
+    p.add_argument("--weeks", type=int, default=2,
+                   help="Window size in weeks (compares last N weeks vs prior N weeks; default: 2)")
     p.add_argument("-o", "--output",
                    help="Write summary JSON to file (default: stdout)")
     return p
