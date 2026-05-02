@@ -37,7 +37,7 @@ python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir "<Z
 ```
 
 **Option C — Direct XML (simple workouts):**
-Write XML directly using the template from the project CLAUDE.md → Zwift Workout File Standards.
+Write XML directly using the templates and tag spec in `references/zwo_format.md` and the example file `assets/template_sweetspot.zwo`.
 
 **Step 4:** Validate before saving:
 
@@ -54,7 +54,7 @@ Write XML directly using the template from the project CLAUDE.md → Zwift Worko
 | Tag reference | Consult h4l/zwift-workout-file-reference for attribute validation | CLAUDE.md conventions |
 
 **Step 5:** Save and report:
-- Save to project directory or user's Zwift folder: `C:\Users\zijia\AppData\Local\Zwift\Workouts\3831767\`
+- Save to the user's Zwift custom workouts folder — see SKILL.md → Zwift Workout Directory for the platform-specific path (`%LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\` on Windows, `~/Documents/Zwift/Workouts/<athlete_id>/` on macOS/Linux). Confirm the path with the user before writing.
 - Use naming convention: `W[week]_D[day]_[Type]_[Detail].zwo`
 - Remind user to restart Zwift if it's running (Zwift doesn't hot-reload .zwo files)
 

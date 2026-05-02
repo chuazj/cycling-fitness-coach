@@ -5,10 +5,10 @@ Fetches activity data, intervals, streams, power curves. Computes NP, IF, TSS, V
 Also provides weekly summary aggregation, power profile analysis, and auto-FTP detection.
 
 Usage:
-    python intervals_icu_api.py --activity i126468486 --ftp 200
+    python intervals_icu_api.py --activity i126468486 --ftp 200 --weight 70
     python intervals_icu_api.py --list-recent 10
     python intervals_icu_api.py --activity i126468486 --use-athlete-profile
-    python intervals_icu_api.py --weekly-summary 7 --ftp 200 --weight 70
+    python intervals_icu_api.py --weekly-summary 7 --use-athlete-profile
 """
 
 import argparse
@@ -216,7 +216,7 @@ def interval_stats(laps):
 
 FTP_TEST_KEYWORDS = ["ftp test", "ftp_test", "ramp test", "20 min test", "20min test", "8 min test", "8min test", "map test"]
 
-def detect_ftp_test(name, peaks, moving_time, ftp_ref=192):
+def detect_ftp_test(name, peaks, moving_time, ftp_ref=200):
     name_lower = (name or "").lower()
     by_name = any(kw in name_lower for kw in FTP_TEST_KEYWORDS)
     result = {"likely_ftp_test": False, "detection_methods": []}
@@ -320,7 +320,7 @@ def parse_streams(stream_data):
 # Main analysis
 # ---------------------------------------------------------------------------
 
-def analyze(client, activity_id, ftp=192, weight=74.0):
+def analyze(client, activity_id, ftp=200, weight=70.0):
     a = client.get_activity(activity_id)
     fetch_warnings = []
 
@@ -613,7 +613,7 @@ def analyze_power_profile(peaks, ftp, weight):
 # Weekly summary with auto-FTP detection (FE-1 + FE-3)
 # ---------------------------------------------------------------------------
 
-def weekly_summary(client, days=7, ftp=192, weight=74.0):
+def weekly_summary(client, days=7, ftp=200, weight=70.0):
     """Aggregate the last N days of activities into a weekly training summary.
 
     Args:
@@ -822,8 +822,12 @@ def build_parser():
     mode.add_argument("--list-recent", type=int, help="List N most recent activities")
     mode.add_argument("--weekly-summary", type=int, nargs="?", const=7,
                        help="Weekly training summary for last N days (default: 7)")
-    p.add_argument("--ftp", type=int, default=None, help="FTP in watts (default: 192 or athlete profile)")
-    p.add_argument("--weight", type=float, default=None, help="Body weight in kg (default: 74 or athlete profile)")
+    p.add_argument("--ftp", type=int, default=None,
+                   help="FTP in watts. Prefer --use-athlete-profile to auto-fetch from intervals.icu. "
+                        "If neither flag is given a neutral 200W default is used with a stderr warning.")
+    p.add_argument("--weight", type=float, default=None,
+                   help="Body weight in kg. Prefer --use-athlete-profile to auto-fetch from intervals.icu. "
+                        "If neither flag is given a neutral 70kg default is used with a stderr warning.")
     p.add_argument("--use-athlete-profile", action="store_true",
                    help="Auto-fetch FTP/weight from intervals.icu athlete profile")
     p.add_argument("-o", "--output", help="Output file path (default: stdout)")
@@ -860,11 +864,21 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"WARNING: Could not fetch athlete profile: {e}", file=sys.stderr)
 
-    # Final fallbacks after profile logic
+    # Final fallbacks after profile logic — neutral generic defaults, warn loudly
+    used_fallback = []
     if args.ftp is None:
-        args.ftp = 192
+        args.ftp = 200
+        used_fallback.append("FTP=200W")
     if args.weight is None:
-        args.weight = 74.0
+        args.weight = 70.0
+        used_fallback.append("weight=70kg")
+    if used_fallback:
+        print(
+            f"WARNING: using neutral default {' / '.join(used_fallback)} — "
+            "power/zone/TSS analysis will be inaccurate. "
+            "Pass --use-athlete-profile (recommended) or explicit --ftp/--weight.",
+            file=sys.stderr,
+        )
 
     # Validate bounds
     if not (50 <= args.ftp <= 500):

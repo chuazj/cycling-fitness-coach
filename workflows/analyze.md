@@ -66,72 +66,56 @@ Power data is estimated (no power meter). All power metrics (NP, IF, TSS, zones)
 - Use the `Write` tool (direct file write to vault folder)
 - Open in Obsidian: `obsidian open path="cycling-fitness-coach/workout-reviews/YYYY-MM-DD {Activity Name}.md"`
 
-**Step 5:** Update Block Progression Tracker in the project CLAUDE.md:
-- Read the `### Block Progression Tracker` table in the project's `CLAUDE.md`
-- Find the row matching the analyzed session by week/day (e.g., activity named "W1 D3 - Threshold 2x18" → row `W1 | D3`)
-- Update the row's **Status** to `✅ Done (DD Mon)` using the activity date
-- Update **Key Notes** with a compact summary: avg power, % FTP, key metric (NP/IF/TSS), execution rating, RPE if provided
-- If no matching row exists (e.g., unplanned outdoor ride), append a new row at the end of the current week
-- If the session is the last in a week, update the **Week Total** row with estimated TSS
+**Step 5:** Update the active plan with this session's result:
+- Read `plans/active_plan.md` → `## Current Week Schedule` table
+- Find the row matching the analyzed session by day/date (e.g., activity dated 02 Apr → row whose `Day` column matches that date)
+- Update the row's **Status** column from `pending` → `completed` (or `modified` if the session significantly deviated from plan, `skipped` if not done)
+- Append a one-line entry under the `**Completed session notes:**` block (or create the block if missing) with: avg power + % FTP, NP/IF/TSS, key observation (cardiac drift, fade, etc.), execution rating, RPE if provided
+- If no matching row exists (unplanned outdoor ride), append a new row to `## Current Week Schedule` with `Status: completed` and a brief note
 
-**Example update:**
+**Example completed-session note:**
 ```
-| W1 | D3 | Threshold 2x18 | ✅ Done (02 Apr) | 189/191W (98-100% FTP), NP 188W, IF 0.98, TSS 75, cardiac drift +3.1%. 5/5. RPE 7. |
+- **D3 (02 Apr)**: 189/191W (98-100% FTP), NP 188W, IF 0.98, TSS 75, cardiac drift +3.1%. 5/5. RPE 7.
 ```
 
-**IMPORTANT:** This step is mandatory after every workout analysis. Stale trackers cause wrong zone calculations and missed targets in future sessions.
+**IMPORTANT:** This step is mandatory after every workout analysis. Stale plan state causes wrong target lookup and missed adaptation triggers in future sessions. The schema is documented in `references/plan_state_schema.md`. If `plans/active_plan.md` does not exist, skip this step (athlete has no active plan).
 
 **Step 6:** FTP Change Propagation (conditional — only when `metrics.ftp_test` is present in script output):
 
-When the analysis script detects an FTP test, propagate the new FTP across all dependent sections in the project CLAUDE.md. **Always confirm with the athlete before making changes.**
+When the analysis script detects an FTP test, propagate the new FTP into the active plan. Zones are %FTP-relative (see `references/training_zones.md`) so no static watts table needs recalculation — workouts auto-scale on the next ZWO regeneration. **Always confirm with the athlete before making changes.**
 
 1. **Present the result and ask for confirmation:**
    ```
    FTP Test Detected: {20min_avg}W × 0.95 = {estimated_ftp}W
    Current FTP: {old_ftp}W → Proposed: {new_ftp}W ({+/-X%})
-   
+
    Confirm new FTP, or override? (e.g., "set 200W" / "yes" / "keep current")
    ```
    - If ramp test: use `estimated_ftp_ramp` (1min × 0.75) instead
    - If athlete overrides (e.g., rounds up based on training data), use their value
    - If athlete says "keep current" → skip all updates below
 
-2. **After confirmation, update these 4 sections in one pass:**
+2. **After confirmation, update `plans/active_plan.md`:**
 
-   **A. Athlete Profile stats table** (`### Current Stats`):
-   - FTP row → new value + test date (e.g., `| FTP | 200W | 2026-04-26 (validated via 20min test) |`)
-   - W/kg row → `new_ftp / weight` to 2 decimal places
-   
-   **B. FTP Test History table** (`### FTP Test History`):
-   - Append new row: `| {date} | {protocol} | {20min_avg}W | {estimated}W (→ set {confirmed}W) | {pacing_notes} |`
-   - Include pacing notes from the analysis (fade %, key observations)
-   - If athlete overrode the calculated value, note rationale
-   
-   **C. Power Zones table** (`## Power Zones Reference`):
-   - Update header: `Coggan 7-zone model based on **{new_ftp}W FTP**:`
-   - Recalculate all 7 zone rows using these boundaries:
-   
-     | Zone | Low % | High % | Power Range | W/kg |
-     |------|-------|--------|-------------|------|
-     | Z1 | — | 55% | <floor(FTP×0.55)W | <(FTP×0.55/weight) |
-     | Z2 | 56% | 75% | floor(FTP×0.56)-floor(FTP×0.75)W | proportional |
-     | Z3 | 76% | 90% | floor(FTP×0.76)-floor(FTP×0.90)W | proportional |
-     | Z4 | 91% | 105% | floor(FTP×0.91)-floor(FTP×1.05)W | proportional |
-     | Z5 | 106% | 120% | floor(FTP×1.06)-floor(FTP×1.20)W | proportional |
-     | Z6 | 121% | 150% | floor(FTP×1.21)-floor(FTP×1.50)W | proportional |
-     | Z7 | >150% | — | >floor(FTP×1.50)W | proportional |
-   
-   - Update Sweet Spot sub-zone: `88-94% FTP ({floor(FTP×0.88)}-{floor(FTP×0.94)}W) — extended to 96% in progressive overload blocks`
-   
-   **D. FTP Test Pacing Strategy** (`### 20-Minute Test (Preferred)`):
-   - Update start wattage: `{floor(new_ftp × 1.06)}W (106% FTP)`
-   - Update target avg: `{floor(new_ftp × 1.11)}W+ avg`
+   **A. Athlete Profile section** — update three fields:
+   - `FTP` → new value (e.g., `200W`)
+   - `FTP Last Tested` → activity date (`YYYY-MM-DD`)
+   - If a `W/kg` field exists in the table, recompute as `new_ftp / weight` to 2 decimals
+
+   **B. FTP Test History section** — append a row (create the section if missing, see schema in `references/plan_state_schema.md` → FTP Test History):
+   ```
+   | {date} | {protocol: 20min/ramp} | {raw_avg}W | {formula_estimate}W | {confirmed}W | {pacing notes / fade %} |
+   ```
+   If the athlete overrode the formula value, note the rationale in the pacing-notes column.
+
+   **C. (Optional) intervals.icu profile sync** — remind the athlete to update their FTP at https://intervals.icu/settings so future `--use-athlete-profile` calls pick up the new value. The skill does NOT write to intervals.icu.
 
 3. **Print a change summary:**
    ```
    FTP Updated: {old}W → {new}W (+{X}W / +{X}%)
    W/kg: {old} → {new}
-   Zones recalculated | Test history appended | Pacing targets updated
+   plans/active_plan.md updated | FTP Test History appended
+   Reminder: update FTP at intervals.icu/settings
    ```
 
 **IMPORTANT:** Do NOT skip confirmation. The athlete may want to round up/down based on training context, or keep the current FTP if the test was compromised.
@@ -156,7 +140,7 @@ After Step 5 (tracker updated with this session) and Step 6 (FTP propagation, if
 
 4. **Apply cascade matrix** (`adaptation_rules.md` §3) after protection overrides resolve:
    - Green → no change. Skip to step 6 below.
-   - Yellow/Red → generate proposed edits for the next 1–2 training rows in the tracker.
+   - Yellow/Red → generate proposed edits for the next 1–2 training rows in `plans/active_plan.md` → Current Week Schedule.
 
 5. **Upside check** (`adaptation_rules.md` §6) — only fires on 2+ consecutive on-plan sessions at power ≥ prescribed; never on a single session. Propose FTP retest window or next-keystone progression level.
 
@@ -173,19 +157,19 @@ After Step 5 (tracker updated with this session) and Step 6 (FTP propagation, if
    ```
 
 7. **On user response:**
-   - `yes` → edit the matching tracker rows in the project `CLAUDE.md`. Append one line to `plans/active_plan.md` → `## Adaptation Log`:
+   - `yes` → edit the matching session rows in `plans/active_plan.md` → `## Current Week Schedule` (or `## Week N+1 Schedule (Preview)` if cascade lands in next week). Append one line to `plans/active_plan.md` → `## Adaptation Log`:
      ```
      <!-- {date} (per-activity cascade) -->
      - **Trigger**: {severity + signal e.g. "Red zone violation: 14.4% Z5+ on Z2 day"}
-     - **Action**: {what was changed in tracker}
+     - **Action**: {what was changed in the schedule}
      - **Rationale**: {one-line reason referencing protection rules if applied}
      ```
-   - `no` → no tracker edits. Note in session review body: "Adaptation proposed but declined."
+   - `no` → no schedule edits. Note in session review body: "Adaptation proposed but declined."
    - `modify [instructions]` → apply the modified proposal; still log to Adaptation Log.
 
 8. **Overall Green → skip presentation.** Instead append one line to the session review: "Adaptation check: all signals green, no cascade needed."
 
-**IMPORTANT:** This step is separate from Step 5 (which records the completed session) and Step 6 (which handles FTP changes). Step 7 modifies FUTURE sessions only. Never edit past tracker rows here.
+**IMPORTANT:** This step is separate from Step 5 (which records the completed session) and Step 6 (which handles FTP changes). Step 7 modifies FUTURE sessions only. Never edit past schedule rows here.
 
 **Plan-Aware Analysis:** If `plans/active_plan.md` exists, cross-reference the analyzed activity against the current week schedule:
 - Was this session on-plan? Match by day/date and session type.

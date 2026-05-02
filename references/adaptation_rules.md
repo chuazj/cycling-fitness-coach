@@ -1,13 +1,13 @@
 # Per-Activity Adaptation Rules
 
-Reference for Claude-as-coach: **per-activity forward-cascade rules**. Runs after every workout analysis. Compares actual vs prescribed across 4 signals, classifies deviation, and proposes edits to the next 1–2 sessions in the Block Progression Tracker.
+Reference for Claude-as-coach: **per-activity forward-cascade rules**. Runs after every workout analysis. Compares actual vs prescribed across 4 signals, classifies deviation, and proposes edits to the next 1–2 sessions in `plans/active_plan.md` → Current Week Schedule (or Week N+1 Schedule (Preview) if cascade lands in next week).
 
 **Scope — what this layer does NOT cover:**
 - Weekly trend / multi-session adaptation (ACWR, TSB, completion rate, RPE trends) → see `periodization.md` → Adaptation Decision Trees.
 - Block-level changes (phase transitions, FTP retest, block type switch) → weekly review workflow.
 - This layer proposes *immediate next-session* cascades. The weekly review may further adjust the block.
 
-**Operating mode: propose-and-confirm.** Never edit the tracker silently. Always show the diff and wait for `yes` / `no` / `modify`.
+**Operating mode: propose-and-confirm.** Never edit the schedule silently. Always show the diff and wait for `yes` / `no` / `modify`.
 
 ---
 
@@ -16,8 +16,8 @@ Reference for Claude-as-coach: **per-activity forward-cascade rules**. Runs afte
 To compute deviation, resolve the prescribed targets for the analyzed session in this order:
 
 1. **`plans/active_plan.md` → Current Week Schedule** — use `Target TSS` column and `Key Interval` %FTP range (derive target IF as midpoint of %FTP range × 0.97 adjustment for duration). Preferred when plan file is current.
-2. **Tracker row in project `CLAUDE.md`** — use session name → session-type defaults table below. Fall back when `active_plan.md` is stale or missing.
-3. **Unplanned / off-plan activity** (no matching tracker row, or added as outdoor freestyle) — no prescribed TSS/IF; use **day-intent branch** (Section 5).
+2. **Session-type defaults** (table below) — use when `plans/active_plan.md` is stale or missing, or session name maps to a known type. Match by keywords in the activity name (e.g., "Sweet Spot", "Threshold", "VO2max").
+3. **Unplanned / off-plan activity** (no matching plan row AND no name keyword match) — no prescribed TSS/IF; use **day-intent branch** (Section 5).
 
 ### Session-Type Defaults (fallback targets)
 
@@ -31,7 +31,7 @@ To compute deviation, resolve the prescribed targets for the analyzed session in
 | VO2max | 0.85–0.92 | Z5 (work), Z2 (recovery) | — | Sustained Z6+ |
 | FTP Test | 0.95–1.05 | Z4 (effort block) | — | — |
 
-If session type is ambiguous, use tracker row's `Key Notes` column from the prior week's same-slot session as a hint.
+If session type is ambiguous, look at the prior week's same-slot session in `plans/active_plan.md` (or the archived previous block) for a hint.
 
 ---
 
@@ -81,7 +81,7 @@ Drift is interpreted alongside ambient conditions (heat/hydration) — a yellow 
 
 ## 3. Cascade Actions (overall severity → next sessions)
 
-**Next session** = the next non-rest training row in the tracker, chronologically after the analyzed session.
+**Next session** = the next non-rest training row in `plans/active_plan.md` → Current Week Schedule, chronologically after the analyzed session (or in the Week N+1 preview if the analyzed session was the last of the current week).
 **Second session** = the one after that.
 
 | Overall | Next session | Second session |
@@ -106,16 +106,16 @@ These override the cascade matrix — apply them first.
 1. **Rest day next** — never override a planned REST with work, regardless of upside signals.
 2. **FTP test within next 3 days** — protect the test. Any cascade downgrade lands on the session **before** the test, not the test itself. Never demote the test.
 3. **Taper week** (Block W4 or any explicit taper phase) — only protective cascades allowed (downgrade). Never add load.
-4. **Illness already declared** (Severity 1 or 2 in tracker notes) — skip this cascade entirely; `periodization.md` → Illness/Injury rules apply.
-5. **Keystone session next** (tracker row flagged `KEYSTONE`) — downgrade only on **red**. Yellow preserves the keystone; add readiness check instead.
+4. **Illness already declared** (Severity 1 or 2 noted in `plans/active_plan.md` → Adaptation Log within the last 14 days) — skip this cascade entirely; `periodization.md` → Illness/Injury rules apply.
+5. **Keystone session next** (schedule row flagged `KEYSTONE` in the `Session` or `Key Interval` column) — downgrade only on **red**. Yellow preserves the keystone; add readiness check instead.
 
 ---
 
 ## 5. Unplanned / Off-Plan Activity Branch
 
-When the analyzed activity has no matching tracker row (e.g., outdoor freestyle on a day without a prescription, or an extra ride):
+When the analyzed activity has no matching schedule row (e.g., outdoor freestyle on a day without a prescription, or an extra ride):
 
-1. **Locate day intent** from tracker: what was the row for that day? (REST, recovery, endurance, threshold, etc.)
+1. **Locate day intent** from `plans/active_plan.md` → Current Week Schedule: what was the row for that day? (REST, recovery, endurance, threshold, etc.)
 2. **Assess against day intent** using absolute-load thresholds (there's no prescribed TSS to compare against):
 
 | Day intent | Absolute-load yellow | Absolute-load red |
@@ -125,7 +125,7 @@ When the analyzed activity has no matching tracker row (e.g., outdoor freestyle 
 | Endurance (Z2) | TSS > 80 OR Z4+ > 10% OR Z5+ > 5% | TSS > 100 OR Z4+ > 20% OR Z5+ > 10% |
 | Sweet Spot / Threshold / O/U / VO2max | Treat as a modified prescribed session; fall back to session-type defaults (Section 1) | — |
 
-3. **Append a new tracker row** for the activity (per existing Step 5) and cascade from there.
+3. **Append a new row** to `plans/active_plan.md` → Current Week Schedule for the activity (per `workflows/analyze.md` Step 5) and cascade from there.
 
 ---
 
@@ -180,8 +180,8 @@ Present after the analysis block, before saving to Obsidian:
 ```
 
 On user response:
-- `yes` → edit the matching tracker rows in project `CLAUDE.md`. Append a one-line entry to `plans/active_plan.md` → `## Adaptation Log` noting trigger + action.
-- `no` → no tracker edits. Note in the session review body: "Adaptation proposed but declined."
+- `yes` → edit the matching session rows in `plans/active_plan.md` → `## Current Week Schedule` (or `## Week N+1 Schedule (Preview)` if cascade lands in next week). Append a one-line entry to `plans/active_plan.md` → `## Adaptation Log` noting trigger + action.
+- `no` → no schedule edits. Note in the session review body: "Adaptation proposed but declined."
 - `modify [instructions]` → apply the modified proposal, still log to Adaptation Log.
 
 ---
@@ -192,7 +192,7 @@ Reproduces the manual decision made without this layer to verify rule correctnes
 
 **Inputs (from activity):**
 - TSS 91, IF 0.786, VI 1.385, Z5+ 14.4%, cardiac drift −2.27%
-- Day intent (tracker): `Z2 Endurance Outdoor 50-70min` → treat as prescribed Endurance.
+- Day intent (from active plan): `Z2 Endurance Outdoor 50-70min` → treat as prescribed Endurance.
 - Prescribed targets (Section 1, Endurance): TSS ~60, IF 0.65–0.75, Z2 ≥60%, Z4+ <5%.
 
 **Signal review:**
@@ -220,7 +220,7 @@ Reproduces the manual decision made without this layer to verify rule correctnes
 | Sun 19 Apr | Pre-SS rest | REST | REST (unchanged, protected) | Rest-day protection |
 | Mon 20 Apr | SS 3x15 | Plan holds | Plan holds + pre-ride readiness check | Keystone protection; drift green so CV load OK; zone violation flags discipline, not fatigue |
 
-**Verification:** Matches the manual decision in tracker (`protect Mon keystone (doubly important after Sat TSS spike)`). Rules reproduce coach judgment. ✅
+**Verification:** Matches the manual coach decision (`protect Mon keystone (doubly important after Sat TSS spike)`). Rules reproduce coach judgment. ✅
 
 ---
 

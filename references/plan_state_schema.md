@@ -147,6 +147,19 @@ Running table of peak powers across the plan. Updated during weekly review.
 
 Empty cells indicate no data for that week yet.
 
+### `## FTP Test History` *(optional — created on first FTP test)*
+
+Append-only log of FTP test results. One row per completed test. Created by `workflows/analyze.md` Step 6 (FTP Change Propagation) when an FTP test is detected.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| Date | `YYYY-MM-DD` | Test activity date |
+| Protocol | string | `20min`, `ramp`, `8min`, `60min`, `MAP`, etc. |
+| Raw Avg | int | Raw test average power in watts (e.g., 20-min average for 20-min protocol) |
+| Formula Estimate | int | Calculated FTP from protocol formula (e.g., `20min × 0.95`) |
+| Confirmed | int | FTP value the athlete confirmed (may differ from formula if athlete overrode) |
+| Pacing Notes | string | Fade %, key observations, override rationale if applicable |
+
 ### `## Adaptation Log`
 
 Append-only log of adaptation decisions made by Claude. Format:

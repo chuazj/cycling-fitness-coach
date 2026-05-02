@@ -7,8 +7,8 @@ Covers Workflow 2 (training advice), Workflow 6 (mid-week check-in), and Workflo
 ## 2. Training Advice
 
 **Step 1:** Assess context before responding:
-- Current FTP, weight, training age (check project CLAUDE.md → Athlete Profile)
-- Current block and phase (check Block Progression Tracker)
+- Current FTP, weight, training age (check `plans/active_plan.md` → Athlete Profile; if no active plan, ask the athlete or check intervals.icu profile via `--use-athlete-profile`)
+- Current block and phase (check `plans/active_plan.md` → Plan Overview + Current Week Schedule)
 - Recent session load: count hard sessions in last 7 days, check for back-to-back intensity
 - Fatigue signals: RPE trends, HR:Power drift, missed targets in recent sessions
 - Schedule constraints: available days/hours this week
@@ -33,8 +33,19 @@ Covers Workflow 2 (training advice), Workflow 6 (mid-week check-in), and Workflo
 **"I'm tired, should I train today?"** — Fatigue assessment:
 1. Check resting HR — if +5 bpm above baseline → modify or rest
 2. Ask about sleep quality (last 2 nights) and life stress
-3. Prescribe based on fatigue level (see project CLAUDE.md → Recovery Prescription table)
+3. Prescribe based on fatigue level using the Recovery Prescription table below
 4. **Rule of thumb**: Modified workout > forced workout > skipped workout
+
+**Recovery Prescription table (fatigue → action):**
+
+| Fatigue signal | Action | Session adjustment |
+|---|---|---|
+| Mild (RPE +1 vs typical, sleep ok) | Train as planned, monitor first 15 min | None — abort if RPE doesn't settle |
+| Moderate (RHR +5 bpm OR poor sleep 1 night OR HRV down 5–10%) | Modify down one tier | SS → endurance Z2; threshold → SS; VO2max → threshold; cut duration 20% |
+| High (RHR +5–10 bpm AND poor sleep 2+ nights, OR HRV down >10%, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
+| Severe (RHR +10 bpm OR illness symptoms OR TSB <−30) | Full rest | No bike. Reassess next day. |
+| Sick (above-neck only) | Rest 1–2 days then Z1–Z2 only | Per `references/periodization.md` → Illness/Injury rules |
+| Sick (below-neck or systemic) | Full rest until 48h symptom-free | Per `references/periodization.md` → Illness/Injury rules |
 
 **"Can I swap/skip a session?"** — Schedule adaptation:
 1. Identify what the session targets (energy system, training stimulus)

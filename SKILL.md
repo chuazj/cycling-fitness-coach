@@ -139,7 +139,6 @@ Read these on demand based on the task:
 | `references/fueling.md` | Prescribing fueling strategies, diagnosing GI issues, pre/during/post-ride nutrition. Has carb targets by session duration, gut training protocol, GI troubleshooting, hydration guidelines, fasted training evidence. |
 | `references/plan_state_schema.md` | Reading or updating `plans/active_plan.md`. Has section definitions, column types, valid values, update operation rules. |
 | `references/obsidian_templates.md` | Writing notes to Obsidian vault. Has frontmatter templates and CLI commands. |
-| `references/block_history.md` | Reviewing past block performance. Has archived block results with per-session data and progression notes. |
 
 **Scripts and assets:**
 - `scripts/intervals_icu_api.py` — intervals.icu API client with metrics computation
@@ -148,3 +147,4 @@ Read these on demand based on the task:
 - `scripts/batch_generate_zwo.py` — Batch ZWO generation from JSON array (full week of workouts)
 - `assets/template_sweetspot.zwo` — Example workout template
 - `plans/active_plan.md` — Active training plan state (created by Workflow 4, not pre-existing)
+- `plans/block_history.md` — Athlete-specific archive of completed training blocks (created on first block rollover, not pre-existing)
