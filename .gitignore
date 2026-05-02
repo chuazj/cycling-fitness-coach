@@ -3,3 +3,10 @@ __pycache__/
 *.pyc
 output.json
 .claude/
+
+# Athlete-specific plan state (private — not for the public repo)
+plans/active_plan.md
+plans/block_history.md
+plans/archived_*.md
+plans/*_regen.json
+plans/*_original.md

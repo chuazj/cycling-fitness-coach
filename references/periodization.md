@@ -227,7 +227,7 @@ Short intervals (30s work bouts) accumulate significantly more time above 90% VO
 | 40/20s | 8-12× (40s on / 20s off) | 5.3-8min | 20s @ 40% | 115-125% FTP | 40-55 |
 | 15/15s | 20-30× (15s on / 15s off) | 5-7.5min | 15s @ 40% | 130-140% FTP | 35-50 |
 
-> **Format metabolic profile (Quittmann 2025; INSCYD 2025)**: 30/15s and 30/30s at 120–130% FTP with mid-cadence (90–100 rpm) are **aerobic-dominant** — they target VO2max with minimal glycolytic load. 15/15s @ 130–140% FTP is **glycolytic-dominant** — supramaximal intensity with brief recovery raises VLaMax (max lactate accumulation rate). For a primarily endurance-focused athlete (200W FTP, 200W goal), prefer 30/15s and 30/30s; reserve 15/15s for sprint-specific demands or variety, and avoid stacking it with other high-glycolytic work (Tabata, max-effort sprints) in the same week.
+> **Format metabolic profile (Quittmann 2025; INSCYD 2025)**: 30/15s and 30/30s at 120–130% FTP with mid-cadence (90–100 rpm) are **aerobic-dominant** — they target VO2max with minimal glycolytic load. 15/15s @ 130–140% FTP is **glycolytic-dominant** — supramaximal intensity with brief recovery raises VLaMax (max lactate accumulation rate). For a primarily endurance-focused athlete, prefer 30/15s and 30/30s; reserve 15/15s for sprint-specific demands or variety, and avoid stacking it with other high-glycolytic work (Tabata, max-effort sprints) in the same week.
 
 The **30/15s format** (2:1 work:rest ratio) is the specific protocol used in Rønnestad's landmark studies and should be the default starting point for VO2max development.
 
@@ -571,7 +571,7 @@ When an FTP test occurs mid-plan (e.g., scheduled Week 4 test, or user does an a
    - If FTP change ≤ 5%: keep existing TSS targets (the absolute watt shift is small enough that session difficulty stays appropriate)
 4. **Regenerate .zwo files**: Regenerate current week's remaining pending sessions and all future weeks with new FTP
 
-> **FTP rounding**: Setting a working FTP slightly above or below the test-estimated value is a valid coaching decision (e.g., estimated 188W → set 200W to target next-block progression). Document the rationale in the Adaptation Log when rounding by more than 2W.
+> **FTP rounding**: Setting a working FTP slightly above or below the test-estimated value is a valid coaching decision (e.g., estimated 198W → set 200W to target next-block progression). Document the rationale in the Adaptation Log when rounding by more than 2W.
 
 ---
 
