@@ -173,6 +173,7 @@ assets/
 - **Batch dry-run**: `batch_generate_zwo.py --dry-run` validates and computes stats without writing files
 - **FTP/weight bounds**: All scripts validate FTP (50-500W) and weight (30-200kg) — rejects nonsensical values
 - **Athlete profile source of truth**: `plans/active_plan.md` → Athlete Profile section holds the current FTP + weight. For one-off script runs, prefer `--use-athlete-profile` (auto-fetches from intervals.icu) over hard-coded `--ftp`/`--weight` flags so values don't drift
+- **`plans/` is gitignored**: `plans/active_plan.md`, `plans/block_history.md`, `plans/archived_*.md`, `plans/*_regen.json`, and `plans/*_original.md` contain athlete PII (FTP, weight, training history, personal notes). Never `git add` them — even by accident via `git add .`. Stage files explicitly.
 
 ### Context (background for debugging/understanding)
 
@@ -180,7 +181,8 @@ assets/
 - **Stream validation**: `zone_percent`, `zone_seconds`, and `cardiac_drift` are explicitly `None` (not absent) when power/HR streams are too short (fewer than 30 samples). Distinguishes "unavailable" from "no zones used".
 - **`--compact` flag**: `intervals_icu_api.py --compact` omits rarely-used fields (VI, EF, zone_seconds, per-interval distance/max_watts/intensity) for token-efficient coaching output
 - **`training_day_pattern`**: `pmc_calculator.py --bootstrap` output includes `training_day_pattern` (e.g., `["Tue", "Thu", "Sat"]`) — auto-detected from activity history day-of-week frequency. Use to pre-fill training days in the Create Plan workflow Step 2 instead of asking the athlete.
-- **weekly_summary top-3 optimization**: `weekly_summary()` fetches power curves only from the top-3 TSS activities (not all N), reducing API calls significantly for athletes with many weekly rides
+- **weekly_summary top-3 optimization**: `weekly_summary()` fetches power curves only from the top-3 TSS activities (not all N) via `ThreadPoolExecutor(max_workers=3)`. Result includes `week_peaks` (5s/1min/5min/20min max across the 3) and `power_profile` (Coggan classification) when weight is provided.
+- **wellness partial_baseline guard**: When only one daily wellness record is available (no historical baseline), `wellness_summary()` sets `partial_baseline: true`, populates `baseline_note`, and suppresses RHR/HRV deviation flags (latest-day-only flags like low-sleep still fire). Coaching output should surface `baseline_note` rather than treating the single record as a baseline.
 - **FTP test detection**: `detect_ftp_test()` returns `detection_methods` (list), not a single string — multiple detection heuristics can match simultaneously. Formula fields are per-method: `estimated_ftp_formula_20min` and `estimated_ftp_formula_ramp` (not a shared `estimated_ftp_formula`)
 - **FTP test bounds**: 20-min heuristic triggers only when 80–150% of reference FTP (rejects anomalous data)
 - **Indoor/outdoor context**: Derived from `detect_indoor(trainer, sport_type)` — `bool(trainer) or sport_type in ("VirtualRide", "VirtualRun")`. intervals.icu may return `trainer: null` for Zwift activities — `sport_type` fallback handles this.
