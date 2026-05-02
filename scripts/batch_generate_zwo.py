@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 Batch Zwift Workout (.zwo) Generator for Cycling Fitness Coach.
 
 Takes a JSON array of workout definitions and generates all .zwo files for a training week.
