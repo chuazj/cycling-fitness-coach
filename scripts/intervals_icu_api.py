@@ -1018,16 +1018,85 @@ if __name__ == "__main__":
     client = IntervalsIcuClient(athlete_id, api_key)
 
     if args.use_athlete_profile:
+        profile_error = None
         try:
             profile = client.get_athlete()
-            if profile.get("icu_ftp") and args.ftp is None:
-                args.ftp = profile["icu_ftp"]
-                print(f"Using FTP from athlete profile: {args.ftp}W", file=sys.stderr)
+            # FTP: try top-level icu_ftp first (legacy/some accounts), then walk
+            # sportSettings to find the bike entry. intervals.icu stores per-sport
+            # FTPs under sportSettings[i]['ftp'] where types includes Ride/VirtualRide.
+            if args.ftp is None:
+                ftp_value = profile.get("icu_ftp")
+                ftp_source = "icu_ftp"
+                if not ftp_value:
+                    for s in profile.get("sportSettings") or []:
+                        types = s.get("types") or []
+                        if any(t in types for t in ("Ride", "VirtualRide", "Cyclocross")):
+                            ftp_value = s.get("ftp")
+                            ftp_source = f"sportSettings[{','.join(types)}].ftp"
+                            break
+                if ftp_value:
+                    args.ftp = ftp_value
+                    print(f"Using FTP from athlete profile: {args.ftp}W (source: {ftp_source})", file=sys.stderr)
             if profile.get("icu_weight") and args.weight is None:
                 args.weight = profile["icu_weight"]
                 print(f"Using weight from athlete profile: {args.weight}kg", file=sys.stderr)
         except Exception as e:
+            profile_error = e
             print(f"WARNING: Could not fetch athlete profile: {e}", file=sys.stderr)
+
+        # If --use-athlete-profile was requested but didn't yield an FTP, prompt
+        # interactively rather than silently defaulting to 200W. Hard-error if
+        # stdin isn't a TTY (e.g., piped/CI) — caller must pass --ftp explicitly.
+        if args.ftp is None:
+            reason = ("profile fetch failed" if profile_error is not None
+                      else "no FTP in intervals.icu profile (check sportSettings → bike → ftp)")
+            if not sys.stdin.isatty():
+                p.error(f"--use-athlete-profile: {reason}, and stdin is not a TTY for prompt. "
+                        f"Pass --ftp <watts> explicitly.")
+            print(f"FTP unavailable: {reason}.", file=sys.stderr)
+            while True:
+                try:
+                    raw = input("Enter your FTP in watts (50-500): ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    print("\nAborted.", file=sys.stderr)
+                    sys.exit(1)
+                try:
+                    ftp_val = int(raw)
+                except ValueError:
+                    print(f"  invalid number: {raw!r}", file=sys.stderr)
+                    continue
+                if not (50 <= ftp_val <= 500):
+                    print(f"  FTP must be between 50 and 500W (got {ftp_val})", file=sys.stderr)
+                    continue
+                args.ftp = ftp_val
+                print(f"Using user-provided FTP: {args.ftp}W", file=sys.stderr)
+                break
+
+        # Same hardening for weight: prompt rather than silently default to 70kg.
+        if args.weight is None:
+            reason = ("profile fetch failed" if profile_error is not None
+                      else "no weight in intervals.icu profile (icu_weight is unset)")
+            if not sys.stdin.isatty():
+                p.error(f"--use-athlete-profile: {reason}, and stdin is not a TTY for prompt. "
+                        f"Pass --weight <kg> explicitly.")
+            print(f"Weight unavailable: {reason}.", file=sys.stderr)
+            while True:
+                try:
+                    raw = input("Enter your weight in kg (30-200): ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    print("\nAborted.", file=sys.stderr)
+                    sys.exit(1)
+                try:
+                    weight_val = float(raw)
+                except ValueError:
+                    print(f"  invalid number: {raw!r}", file=sys.stderr)
+                    continue
+                if not (30 <= weight_val <= 200):
+                    print(f"  weight must be between 30 and 200 kg (got {weight_val})", file=sys.stderr)
+                    continue
+                args.weight = weight_val
+                print(f"Using user-provided weight: {args.weight}kg", file=sys.stderr)
+                break
 
     # Final fallbacks after profile logic — neutral generic defaults, warn loudly
     used_fallback = []
