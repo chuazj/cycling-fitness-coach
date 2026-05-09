@@ -186,6 +186,8 @@ Useful for filtering workouts in Zwift:
 | 120% | 1.20 | VO2max |
 | 150% | 1.50 | Anaerobic |
 
+**Note — Zwift runtime rounding**: Zwift rounds the displayed/commanded ERG target to the nearest 5 W at runtime (e.g., 200 W × 0.96 = 192 W → 190 W). The `.zwo` file stores precise FTP fractions; rounding happens in the game, not the file. Behavior reported since ~Dec 2021; a Feb 2025 fix landed but user reports of continued rounding persist into 2026. Impact is sub-trainer-accuracy (~1% FTP), no training-effect concern.
+
 For a complete example .zwo file, see `assets/template_sweetspot.zwo`.
 
 ## File Installation
