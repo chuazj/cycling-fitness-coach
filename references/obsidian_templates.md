@@ -18,14 +18,14 @@ Reference for writing cycling coaching notes to the Obsidian vault.
 
 ```yaml
 ---
-date: YYYY-MM-DD
+date: "YYYY-MM-DD"
 type: workout-review
 session: "Session Name"
 session_type: sweet-spot|threshold|vo2max|over-under|endurance|recovery|ftp-test
 tss: X
 if: X.XX
 rating: pass|warn|fail
-rpe: null
+rpe: null   # Session RPE on a 1-10 scale (Borg CR-10), filled in after the ride
 tags:
   - cycling
   - workout-review
@@ -33,6 +33,8 @@ tags:
   - indoor|outdoor
 ---
 ```
+
+**Always quote the `date` field** (e.g., `"2026-05-09"`). YAML parses bare numeric-looking dates as integers, which `scripts/rpe_trend.py` will skip with a stderr warning. Quoting forces string parsing and avoids silent data loss in trend reports.
 
 Keep frontmatter lean — only fields used for filtering/sorting/trending across notes. Detailed metrics (NP, VI, HR, cadence, peaks, distance, duration, block/week/day) belong in the body text.
 

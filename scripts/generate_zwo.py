@@ -330,6 +330,7 @@ def calculate_workout_stats(workout: ZwiftWorkout, ftp: int = 200) -> dict:
     """Calculate workout statistics"""
     total_duration = 0
     total_work = 0  # kJ approximation
+    has_unstructured = False  # FreeRide / MaxEffort have no power target — TSS is a guess
 
     for interval in workout.intervals:
         if isinstance(interval, IntervalsT):
@@ -340,9 +341,11 @@ def calculate_workout_stats(workout: ZwiftWorkout, ftp: int = 200) -> dict:
         elif isinstance(interval, SteadyState):
             avg_power = interval.power
         elif isinstance(interval, FreeRide):
-            avg_power = 0.6  # Estimate
+            avg_power = 0.6  # Estimate — actual depends on rider effort
+            has_unstructured = True
         elif isinstance(interval, MaxEffort):
-            avg_power = 1.5  # Estimate
+            avg_power = 1.5  # Estimate — actual depends on rider effort
+            has_unstructured = True
         else:
             avg_power = 0.7
 
@@ -358,16 +361,24 @@ def calculate_workout_stats(workout: ZwiftWorkout, ftp: int = 200) -> dict:
     # Variable workouts (IntervalsT, over-unders) underreport TSS by ~5-10% vs NP-based actual
     has_high_variability = any(isinstance(i, IntervalsT) for i in workout.intervals)
 
+    # Unstructured intervals make TSS a wild guess — escalate the warning
+    warnings = []
+    if has_high_variability:
+        warnings.append("Variable workout detected — actual TSS will likely run 5-10% higher than "
+                        "estimated due to NP > avg power.")
+    if has_unstructured:
+        warnings.append("FreeRide/MaxEffort intervals present — TSS uses placeholder power "
+                        "(0.6 FTP for FreeRide, 1.5 FTP for MaxEffort). Actual TSS depends on "
+                        "rider effort and may vary by ±50%.")
+
     return {
         "total_duration_min": round(total_duration / 60, 1),
         "estimated_kj": round(total_work),
         "estimated_avg_intensity": round(avg_intensity, 2),
         "estimated_tss": round(tss),
         "tss_method": "avg_power (not NP — actual TSS may differ with high power variability)",
-        "tss_warning": (
-            "Variable workout detected — actual TSS will likely run 5-10% higher than "
-            "estimated due to NP > avg power."
-        ) if has_high_variability else None,
+        "tss_estimated": has_unstructured,  # True when FreeRide/MaxEffort make TSS speculative
+        "tss_warning": "; ".join(warnings) if warnings else None,
     }
 
 

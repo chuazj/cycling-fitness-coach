@@ -492,6 +492,48 @@ class TestCalculateWorkoutStats(unittest.TestCase):
         self.assertIn("tss_method", stats)
         self.assertIn("avg_power", stats["tss_method"])
 
+    def test_tss_estimated_false_for_structured_workout(self):
+        """B4: A workout with only SteadyState/Warmup/Cooldown/IntervalsT has a
+        deterministic TSS estimate — tss_estimated should be False."""
+        workout = ZwiftWorkout(
+            name="Structured",
+            intervals=[
+                Warmup(duration=600, power_low=0.5, power_high=0.7),
+                SteadyState(duration=1200, power=0.88),
+                Cooldown(duration=300, power_low=0.6, power_high=0.4),
+            ],
+        )
+        stats = calculate_workout_stats(workout, ftp=200)
+        self.assertIn("tss_estimated", stats)
+        self.assertFalse(stats["tss_estimated"])
+
+    def test_tss_estimated_true_when_freeride_present(self):
+        """B4: FreeRide power is a placeholder (0.6 FTP) — tss is speculative."""
+        workout = ZwiftWorkout(
+            name="With FreeRide",
+            intervals=[
+                Warmup(duration=300, power_low=0.5, power_high=0.7),
+                FreeRide(duration=1800),
+            ],
+        )
+        stats = calculate_workout_stats(workout, ftp=200)
+        self.assertTrue(stats["tss_estimated"])
+        self.assertIsNotNone(stats["tss_warning"])
+        self.assertIn("FreeRide", stats["tss_warning"])
+
+    def test_tss_estimated_true_when_maxeffort_present(self):
+        """B4: MaxEffort power is a placeholder (1.5 FTP) — tss is speculative."""
+        workout = ZwiftWorkout(
+            name="Sprints",
+            intervals=[
+                SteadyState(duration=600, power=0.6),
+                MaxEffort(duration=30),
+            ],
+        )
+        stats = calculate_workout_stats(workout, ftp=200)
+        self.assertTrue(stats["tss_estimated"])
+        self.assertIn("MaxEffort", stats["tss_warning"])
+
 
 # ===================================================================
 # pmc_calculator.py
@@ -1200,6 +1242,32 @@ class TestRpeTrendCollectReviews(unittest.TestCase):
             reviews, _ = self.collect(d)
             dates = [r["date"] for r in reviews]
             self.assertEqual(dates, ["2026-04-01", "2026-04-08", "2026-04-15"])
+
+    def test_invalid_date_warns_to_stderr_and_skips(self):
+        """B5: When date parses as bare int (unquoted in YAML), the file is
+        skipped with a stderr warning naming the file and explaining the fix."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            # date: 20269 → parses as int, str() gives "20269", strptime fails
+            bad_path = os.path.join(d, "bad_date.md")
+            with open(bad_path, "w", encoding="utf-8") as f:
+                f.write("---\ntype: workout-review\ndate: 20269\nif: 0.85\nrpe: 7\n---\n")
+            # Also include one valid file to confirm the bad one is skipped, not a hard error
+            good_path = os.path.join(d, "good.md")
+            with open(good_path, "w", encoding="utf-8") as f:
+                f.write("---\ntype: workout-review\ndate: \"2026-04-01\"\nif: 0.85\nrpe: 7\n---\n")
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                reviews, err = self.collect(d)
+            self.assertIsNone(err)
+            # Bad file skipped; good file kept
+            filenames = [r["filename"] for r in reviews]
+            self.assertNotIn("bad_date.md", filenames)
+            self.assertIn("good.md", filenames)
+            stderr_out = buf.getvalue()
+            self.assertIn("bad_date.md", stderr_out)
+            self.assertIn("Quote dates", stderr_out)
 
 
 class TestIntervalStatsEdgeCases(unittest.TestCase):

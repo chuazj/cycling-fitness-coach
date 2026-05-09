@@ -129,6 +129,9 @@ def collect_reviews(vault_path):
             date_str = str(date)
             datetime.strptime(date_str, "%Y-%m-%d")
         except ValueError:
+            print(f"WARNING: skipping {entry} — date field {date!r} is not a valid YYYY-MM-DD. "
+                  f"Quote dates in YAML frontmatter (e.g., date: \"2026-05-09\") to avoid this.",
+                  file=sys.stderr)
             continue
         reviews.append({
             "date": date_str,

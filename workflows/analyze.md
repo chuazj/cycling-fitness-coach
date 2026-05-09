@@ -20,7 +20,10 @@ The script outputs JSON with:
 - Interval breakdown (per-interval power, NP, HR, cadence, duration, intensity)
 - Computed metrics: NP, IF, TSS, VI, EF, peak powers, zone distribution, cardiac drift
 - `interval_consistency` — split into `hard_intervals` (work) and `easy_intervals` (recovery) for accurate consistency stats
-- `ftp_test` — auto-detected via activity name keywords, 20min peak heuristic, or ramp test duration; returns `detection_methods` (list — multiple heuristics can match simultaneously: `"activity_name"`, `"20min_effort_heuristic"`, `"ramp_test"`), `estimated_ftp_20min` (`20min x 0.95`), `estimated_ftp_ramp` (`1min x 0.75`)
+- `ftp_test` — auto-detected via activity name keywords, 20min peak heuristic, or ramp test duration. Fields:
+  - `detection_methods` — list (multiple heuristics can match simultaneously): `"activity_name"`, `"20min_effort_heuristic"`, `"ramp_test"`
+  - `estimated_ftp_20min` / `estimated_ftp_ramp` — the **estimated FTP value in watts** (rounded to 0.1)
+  - `estimated_ftp_formula_20min` / `estimated_ftp_formula_ramp` — the **formula expression as a string** (e.g., `"20min_avg × 0.95"`, `"last_completed_1min × 0.75"`) — useful when explaining the estimate to the athlete
 - `source: "intervals.icu"` — identifies data source
 
 **Step 3:** Provide coaching analysis using the output. Lead with the **Ride Card** — a 4-line quick-glance summary the athlete can read in 5 seconds — then full analysis below for athletes who want the detail:

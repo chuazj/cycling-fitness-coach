@@ -330,6 +330,7 @@ def parse_streams(stream_data):
 def analyze(client, activity_id, ftp=200, weight=70.0):
     a = client.get_activity(activity_id)
     fetch_warnings = []
+    fetch_errors = {}  # component -> error message; empty when all fetches succeeded
 
     # Fetch intervals, streams, and power curve concurrently (independent API calls)
     intervals_data, streams, power_curve = [], {}, {}
@@ -352,16 +353,19 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
             intervals_data = fut_intervals.result(timeout=60)
         except Exception as e:
             fetch_warnings.append(f"intervals_fetch_failed: {e}")
+            fetch_errors["intervals"] = str(e)
 
         try:
             streams = fut_streams.result(timeout=60)
         except Exception as e:
             fetch_warnings.append(f"streams_fetch_failed: {e}")
+            fetch_errors["streams"] = str(e)
 
         try:
             power_curve = fut_curve.result(timeout=60)
         except Exception as e:
             fetch_warnings.append(f"power_curve_fetch_failed: {e}")
+            fetch_errors["power_curve"] = str(e)
 
     watts = streams.get("watts", streams.get("power", []))
     hr = streams.get("heartrate", streams.get("heart_rate", []))
@@ -403,7 +407,14 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
         if 0.3 <= computed_if <= 2.0:
             m["intensity_factor"] = round(computed_if, 3)
         elif np_val and ftp:
+            print(f"WARNING: stored icu_intensity={if_val} (IF={computed_if:.3f}) out of plausible range "
+                  f"[0.3, 2.0] — recomputing from NP/FTP", file=sys.stderr)
+            fetch_warnings.append(f"if_out_of_range: stored IF={computed_if:.3f} dropped, recomputed from NP/FTP")
             m["intensity_factor"] = round(np_val / ftp, 3)
+        else:
+            print(f"WARNING: stored icu_intensity={if_val} (IF={computed_if:.3f}) out of plausible range "
+                  f"[0.3, 2.0] — no NP/FTP fallback available", file=sys.stderr)
+            fetch_warnings.append(f"if_out_of_range: stored IF={computed_if:.3f} dropped, no fallback")
     elif np_val and ftp:
         m["intensity_factor"] = round(np_val / ftp, 3)
 
@@ -528,6 +539,7 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
         },
         "data_completeness": data_completeness,
         "data_warnings": warnings,
+        "fetch_errors": fetch_errors,  # {} when all 3 concurrent fetches succeeded
         "laps": lap_list,
         "metrics": m,
         "streams_available": bool(watts or hr),

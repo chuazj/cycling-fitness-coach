@@ -21,6 +21,8 @@ To compute deviation, resolve the prescribed targets for the analyzed session in
 
 ### Session-Type Defaults (fallback targets)
 
+> **Reading this table — Target IF is *session-level*, not work-interval %FTP.** A "Sweet Spot" session prescribed at 88–94% FTP for the work intervals will land at session IF ~0.82–0.88 because the session also includes warmup, cooldown, and inter-interval recovery — those drag the overall IF below the work-interval power. See `references/training_zones.md` for **work-interval %FTP prescription targets** and `references/periodization.md` for block-level workout structure. The two sets of numbers are not in conflict; they describe different parts of the same session.
+
 | Session type (name contains) | Target IF | Primary zone | Z2 % floor | Contaminating zones |
 |---|---|---|---|---|
 | Recovery / Easy Spin | 0.50–0.60 | Z1 | — | Z3+ any content |

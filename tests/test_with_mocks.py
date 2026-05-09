@@ -188,6 +188,85 @@ class TestAnalyzeWithMocks(unittest.TestCase):
         self.assertTrue(any("power_curve" in w for w in result["data_warnings"]))
 
 
+class TestFetchErrorsField(unittest.TestCase):
+    """B6: analyze() output exposes a structured fetch_errors dict
+    so programmatic consumers can quickly check which concurrent fetch failed.
+    """
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test_athlete", "test_key")
+        self.activity_data = load_fixture("activity.json")
+        self.intervals_data = load_fixture("intervals.json")
+        self.power_curve_data = load_fixture("power_curve.json")
+
+    def test_fetch_errors_empty_on_full_success(self):
+        with patch.object(self.client, "get_activity", return_value=self.activity_data), \
+             patch.object(self.client, "get_intervals", return_value=self.intervals_data["icu_intervals"]), \
+             patch.object(self.client, "get_streams", return_value={}), \
+             patch.object(self.client, "get_power_curve", return_value=self.power_curve_data):
+            result = analyze(self.client, "i999", ftp=192, weight=74)
+        self.assertIn("fetch_errors", result)
+        self.assertEqual(result["fetch_errors"], {})
+
+    def test_fetch_errors_records_streams_failure(self):
+        with patch.object(self.client, "get_activity", return_value=self.activity_data), \
+             patch.object(self.client, "get_intervals", return_value=self.intervals_data["icu_intervals"]), \
+             patch.object(self.client, "get_streams", side_effect=Exception("boom")), \
+             patch.object(self.client, "get_power_curve", return_value=self.power_curve_data):
+            result = analyze(self.client, "i999", ftp=192, weight=74)
+        self.assertIn("streams", result["fetch_errors"])
+        self.assertIn("boom", result["fetch_errors"]["streams"])
+        self.assertNotIn("intervals", result["fetch_errors"])
+        self.assertNotIn("power_curve", result["fetch_errors"])
+
+    def test_fetch_errors_records_all_three(self):
+        with patch.object(self.client, "get_activity", return_value=self.activity_data), \
+             patch.object(self.client, "get_intervals", side_effect=Exception("intervals_boom")), \
+             patch.object(self.client, "get_streams", side_effect=Exception("streams_boom")), \
+             patch.object(self.client, "get_power_curve", side_effect=Exception("curve_boom")):
+            result = analyze(self.client, "i999", ftp=192, weight=74)
+        self.assertEqual(set(result["fetch_errors"].keys()), {"intervals", "streams", "power_curve"})
+
+
+class TestIFOutOfRangeWarning(unittest.TestCase):
+    """B3: When icu_intensity is out of plausible range [0.3, 2.0],
+    the stored value is dropped with a warning rather than silently."""
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test_athlete", "test_key")
+        self.intervals_data = load_fixture("intervals.json")
+        self.power_curve_data = load_fixture("power_curve.json")
+
+    def _activity_with_intensity(self, intensity_pct):
+        a = load_fixture("activity.json")
+        a["icu_intensity"] = intensity_pct
+        return a
+
+    def test_out_of_range_high_drops_with_warning(self):
+        # icu_intensity=250 means IF=2.5, well above the 2.0 ceiling
+        a = self._activity_with_intensity(250)
+        with patch.object(self.client, "get_activity", return_value=a), \
+             patch.object(self.client, "get_intervals", return_value=self.intervals_data["icu_intervals"]), \
+             patch.object(self.client, "get_streams", return_value={}), \
+             patch.object(self.client, "get_power_curve", return_value=self.power_curve_data):
+            result = analyze(self.client, "i999", ftp=192, weight=74)
+        # IF should fall back to NP/FTP (172/192 ≈ 0.896)
+        self.assertAlmostEqual(result["metrics"]["intensity_factor"], 0.896, places=2)
+        # Warning should surface in data_warnings
+        self.assertTrue(any("if_out_of_range" in w for w in result["data_warnings"]),
+                        f"Expected if_out_of_range warning, got: {result['data_warnings']}")
+
+    def test_in_range_no_warning(self):
+        a = self._activity_with_intensity(92)  # IF=0.92, valid
+        with patch.object(self.client, "get_activity", return_value=a), \
+             patch.object(self.client, "get_intervals", return_value=self.intervals_data["icu_intervals"]), \
+             patch.object(self.client, "get_streams", return_value={}), \
+             patch.object(self.client, "get_power_curve", return_value=self.power_curve_data):
+            result = analyze(self.client, "i999", ftp=192, weight=74)
+        self.assertAlmostEqual(result["metrics"]["intensity_factor"], 0.92, places=2)
+        self.assertFalse(any("if_out_of_range" in w for w in result["data_warnings"]))
+
+
 class TestDataCompleteness(unittest.TestCase):
     """Test data_completeness field and stream validation in analyze()."""
 
