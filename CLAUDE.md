@@ -59,7 +59,7 @@ python scripts/pmc_calculator.py --weekly-update \
 ### Batch Zwift Workout Generation
 ```bash
 # Generate all .zwo files for a week from JSON array.
-# --output-dir must be the user's Zwift custom workouts folder (see SKILL.md → Zwift Workout Directory),
+# --output-dir must be the user's Zwift custom workouts folder (see references/setup.md → Zwift Workout Directory),
 # NOT a repo path. Substitute <ZWIFT_WORKOUTS_DIR> with the platform-specific path:
 #   Windows:       %LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\
 #   macOS/Linux:   ~/Documents/Zwift/Workouts/<athlete_id>/
@@ -168,8 +168,8 @@ assets/
 - **Plan state**: `plans/active_plan.md` is the single source of truth for active training plans; structure documented in `references/plan_state_schema.md`
 - **Adaptation requires approval**: Claude proposes adaptations based on decision trees in `references/periodization.md`, but waits for user confirmation before modifying the plan
 - **Batch ZWO input**: JSON array where each item extends the `workout_from_dict()` schema with a `filename` field
-- **ZWO output directory**: Generated .zwo files go to the Zwift custom workouts folder (see SKILL.md → Zwift Workout Directory for path), NOT to `plans/workouts/` in the repo
-- **Obsidian vault**: See SKILL.md → Obsidian Integration for canonical paths and folder structure
+- **ZWO output directory**: Generated .zwo files go to the Zwift custom workouts folder (see `references/setup.md` → Zwift Workout Directory for path), NOT to `plans/workouts/` in the repo
+- **Obsidian vault**: See `references/setup.md` → Obsidian Integration for canonical paths and folder structure
 - **Batch dry-run**: `batch_generate_zwo.py --dry-run` validates and computes stats without writing files
 - **FTP/weight bounds**: All scripts validate FTP (50-500W) and weight (30-200kg) — rejects nonsensical values
 - **Athlete profile source of truth**: `plans/active_plan.md` → Athlete Profile section holds the current FTP + weight. For one-off script runs, prefer `--use-athlete-profile` (auto-fetches from intervals.icu) over hard-coded `--ftp`/`--weight` flags so values don't drift

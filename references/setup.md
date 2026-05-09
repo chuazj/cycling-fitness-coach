@@ -1,6 +1,6 @@
 # Setup — credentials, Obsidian vault, Zwift workout directory
 
-Per-user setup that doesn't change per-session. SKILL.md links here for the full detail; only a one-line cross-ref appears in the loaded skill body. **Read this once at the start of any session that needs to invoke a script or write notes.**
+Per-user setup that doesn't change per-session. **Read this once at the start of any session that needs to invoke a script or write notes.**
 
 ## intervals.icu API Integration
 

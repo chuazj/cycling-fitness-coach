@@ -30,7 +30,7 @@ python scripts/generate_zwo.py --json workout_def.json --output workout.zwo --ft
 
 **Option B — Batch generation (full week):**
 ```bash
-# --output-dir must be the user's Zwift custom workouts folder (see SKILL.md → Zwift Workout Directory), NOT a repo path.
+# --output-dir must be the user's Zwift custom workouts folder (see references/setup.md → Zwift Workout Directory), NOT a repo path.
 python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp 200
 # Dry run first to validate (safe to use any path — does not write files):
 python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp 200 --dry-run
@@ -54,7 +54,7 @@ Write XML directly using the templates and tag spec in `references/zwo_format.md
 | Tag reference | Consult h4l/zwift-workout-file-reference for attribute validation | CLAUDE.md conventions |
 
 **Step 5:** Save and report:
-- Save to the user's Zwift custom workouts folder — see SKILL.md → Zwift Workout Directory for the platform-specific path (`%LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\` on Windows, `~/Documents/Zwift/Workouts/<athlete_id>/` on macOS/Linux). Confirm the path with the user before writing.
+- Save to the user's Zwift custom workouts folder — see `references/setup.md` → Zwift Workout Directory for the platform-specific path (`%LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\` on Windows, `~/Documents/Zwift/Workouts/<athlete_id>/` on macOS/Linux). Confirm the path with the user before writing.
 - Use naming convention: `W[week]_D[day]_[Type]_[Detail].zwo`
 - Remind user to restart Zwift if it's running (Zwift doesn't hot-reload .zwo files)
 

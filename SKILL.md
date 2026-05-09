@@ -10,7 +10,7 @@ Act as a professional cycling fitness coach. Analyze workout data, provide actio
 
 ## Setup
 
-Per-user setup (intervals.icu credentials, intervals.icu URL → activity-ID extraction, Obsidian vault path, Zwift workout directory, folder structure for notes) — see `references/setup.md`. **Read it once** at the start of any session that needs to invoke a script or write notes; the values don't change per-session, so re-reading on every turn is wasted context.
+Per-user setup (intervals.icu credentials, intervals.icu URL → activity-ID extraction, Obsidian vault path, Zwift workout directory, folder structure for notes) — see `references/setup.md`. **Read it once** at the start of any session that needs to invoke a script or write notes.
 
 ## Coaching Process Rules
 

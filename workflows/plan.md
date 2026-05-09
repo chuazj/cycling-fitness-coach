@@ -72,7 +72,7 @@ If zone confidence is not `validated`, insert a field test session into Week 1 (
 - Run batch generation:
 ```bash
 python scripts/batch_generate_zwo.py --input {week_json} --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp {FTP}
-# <ZWIFT_WORKOUTS_DIR> = user's Zwift custom workouts folder (see SKILL.md → Zwift Workout Directory). Confirm path with user first.
+# <ZWIFT_WORKOUTS_DIR> = user's Zwift custom workouts folder (see references/setup.md → Zwift Workout Directory). Confirm path with user first.
 ```
 
 **Step 8:** Save plan summary to Obsidian vault:
@@ -96,7 +96,7 @@ python scripts/batch_generate_zwo.py --input {week_json} --output-dir "<ZWIFT_WO
 |-----|---------|--------------|------------|------|
 | ... | ...     | ...          | ...        | {one-line cue from fueling.md → Quick-Reference} |
 
-**Workout files**: Generated in the user's Zwift custom workouts folder (e.g. `%LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\week1\` on Windows) — see SKILL.md → Zwift Workout Directory
+**Workout files**: Generated in the user's Zwift custom workouts folder (e.g. `%LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\week1\` on Windows) — see `references/setup.md` → Zwift Workout Directory
 **Peak Power Baseline**: 5s: {X}W | 1min: {X}W | 5min: {X}W | 20min: {X}W
 **Fueling reference**: see `references/fueling.md` → Quick-Reference for per-session cues; full pre/during/post detail in the rest of that doc.
 ```

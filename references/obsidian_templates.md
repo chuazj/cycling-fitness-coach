@@ -2,7 +2,7 @@
 
 Reference for writing cycling coaching notes to the Obsidian vault.
 
-**Vault path**: Resolved per-user via `CYCLING_VAULT_PATH` (see SKILL.md → Obsidian Integration → Vault Location). Notes are written under `<CYCLING_VAULT_PATH>/cycling-fitness-coach/`. If unset, prompt the user for the vault subfolder before writing.
+**Vault path**: Resolved per-user via `CYCLING_VAULT_PATH` (see `references/setup.md` → Obsidian Integration → Vault Location). Notes are written under `<CYCLING_VAULT_PATH>/cycling-fitness-coach/`. If unset, prompt the user for the vault subfolder before writing.
 
 ## File Naming Convention
 
