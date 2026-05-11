@@ -1,8 +1,9 @@
 # Whoop Integration Plan
 
-**Status:** Pre-build — execute when Whoop band arrives.
+**Status:** Pre-build — **leaning no-build** after 2026-05-11 evidence; reassess on band arrival.
 **Drafted:** 2026-05-10
-**Author context:** Decision made jointly with Claude after evaluating (a) splitting the intervals.icu integration into its own skill, (b) building a standalone whoop-api skill, and (c) integrating Whoop as in-skill modules. Option (c) won.
+**Updated:** 2026-05-11 — pre-build Step 1 partially answered ahead of band arrival; see §1.5.
+**Author context:** Decision made jointly with Claude after evaluating (a) splitting the intervals.icu integration into its own skill, (b) building a standalone whoop-api skill, and (c) integrating Whoop as in-skill modules. Option (c) won — but see §1.5; the no-build branch (§10) is now the leading outcome.
 
 ---
 
@@ -14,6 +15,47 @@
 | Refactor `intervals_icu_api.py` first as setup work? | **No.** | Refactor without driver. Original "Option B" split was rejected as speculative. |
 | Build the multi-source readiness layer as part of Whoop integration? | **Yes.** | Earned by Whoop's arrival as a concrete second wellness source. Yellow/Red Flag rules need to apply to both sources → factor out. |
 | Full V2 endpoint coverage from day one? | **Yes.** | Surface is only 12 V2 endpoints (excluding the V1→V2 mapping endpoint); phasing overhead — two release cycles, two doc passes, two test passes — exceeds the risk-mitigation benefit on an API this small. Within the single build, workflow wiring still prioritizes the high-value path (Recovery + Sleep + Workout) so the first end-to-end demo lands on day-one work, but every endpoint gets client-side coverage from the start. |
+
+## 1.5. Pre-band evidence (2026-05-11)
+
+**Source:** User screenshot of intervals.icu's Whoop integration "Wellness Fields" panel.
+
+**Whoop → intervals.icu wellness sync covers exactly these 6 fields:**
+1. Sleep
+2. Resting HR
+3. HRV (rMSSD)
+4. Readiness (= Whoop Recovery score)
+5. Respiration
+6. SpO2
+
+**Whoop's Strain (daily training load) is NOT synced as a wellness field.** Whether Whoop workouts arrive as intervals.icu activity records (with strain on them) is a separate unanswered question — needs the band to confirm.
+
+**Cross-reference with existing `wellness_summary()` extraction** (`scripts/intervals_icu_api.py` lines 841–856):
+
+| Whoop sync field | `wellness_summary()` field | Status |
+|---|---|---|
+| Sleep | `sleepSecs`, `sleepQuality` | ✅ extracted + used in flag logic |
+| Resting HR | `restingHR` | ✅ extracted + used in flag logic |
+| HRV (rMSSD) | `hrv` | ✅ extracted + used in flag logic |
+| Readiness (Whoop Recovery) | — | 🟡 lands in the wellness record, but `wellness_summary()` does not currently read `readiness` out |
+| Respiration | — | 🟡 in record, not extracted |
+| SpO2 | — | 🟡 in record, not extracted |
+| Strain | — (not synced) | ❌ would require native Whoop build |
+
+**What this changes:**
+
+The original plan assumed Whoop Recovery would not flow through intervals.icu (§2 Step 1 "expected outcome: HRV/RHR/sleep flow but Recovery and Strain do not"). The screenshot disproves the Recovery half of that expectation. Recovery DOES flow; only Strain doesn't.
+
+**Implication for the build decision:**
+
+The native Whoop build's coaching value rests on three legs:
+1. **Recovery-gated workout decisions** → now achievable via 10-LOC extension to `wellness_summary()` (extract `readiness` field + add Yellow/Red Flag rule). **No native build needed for this leg.**
+2. **Strain↔TSS reconciliation** → still requires native Whoop, but: TSS is already the canonical load metric for power-meter cycling; Strain is HR-derived and largely redundant for a cyclist who rides with power. Low marginal value.
+3. **Sleep stages, skin temp, workout HR streams** → niche; not currently in any workflow.
+
+**Leading recommendation now: no native build.** Implement the small `wellness_summary()` extension instead (see §10 — expanded). Revisit only if the band arrives and reveals a coaching use case not anticipated here (e.g., overnight HRV trend at a finer resolution than intervals.icu surfaces, or Strain as a useful illness/overreaching signal independent of TSS).
+
+The verification gate in §2 Step 1 still applies — run it on band arrival to confirm Strain genuinely doesn't flow and to check whether Whoop workouts appear as intervals.icu activities.
 
 ## 2. Pre-build verification (do all 3 before committing to build)
 
@@ -31,10 +73,15 @@ Once the band arrives and is connected to your Whoop account:
    ```
 4. Inspect `wellness.json`. Look for: HRV, RHR, sleep duration, sleep score, **Whoop Recovery score**, **Whoop Strain**.
 
-**Decision rule:**
-- If HRV/RHR/sleep flow but Recovery and Strain do not → build is justified (this is the expected outcome).
-- If Recovery and Strain flow through → don't build native integration; `--wellness` already covers it.
-- If nothing flows → confirm Whoop sync chain works at all before deciding.
+**Decision rule** (refined 2026-05-11 with screenshot evidence — see §1.5):
+
+| Step 1 outcome | Action |
+|---|---|
+| HRV/RHR/sleep + Recovery flow; Strain does NOT flow (**expected per §1.5 screenshot**) | **No native build.** Extend `wellness_summary()` to read `readiness`, `respiration`, `spo2` from existing wellness records (~10 LOC). Update Yellow/Red Flag rules to consume Recovery. See §10 for the no-build action plan. |
+| HRV/RHR/sleep + Recovery + Strain ALL flow | No native build; `--wellness` already covers everything. |
+| HRV/RHR/sleep flow but Recovery and Strain do NOT (original expectation, now superseded by §1.5) | Build native integration as scoped here. |
+| Whoop workouts also flow as intervals.icu activity records (with strain on them) | Strain↔TSS reconciliation achievable via existing activity API; still no native build needed. |
+| Nothing flows | Sync chain broken — debug intervals.icu ↔ Whoop integration before any further work. |
 
 ### Step 2 — Whoop developer dashboard registration
 
@@ -233,14 +280,34 @@ What gets edited (light touch in most cases):
 | Strain↔TSS reconciliation invents conclusions | Both metrics measure load on different scales (Strain 0–21 logarithmic, TSS linear). Document the comparison as descriptive (delta direction) not normative (absolute equivalence). Calibrate per-athlete over weeks. |
 | Build time creep — "while we're here" cleanup of unrelated code | Strict scope: each commit references this plan's step number |
 
-## 10. The decision tree if step 1 reverses expectations
+## 10. The no-build branch (now leading per §1.5)
 
-If empirical Step 1 shows Whoop Recovery and Strain *do* flow through intervals.icu's `--wellness` (unlikely but possible — sync chains evolve):
+The 2026-05-11 screenshot evidence (see §1.5) shifted this from "unlikely contingency" to **the leading outcome**. The native Whoop build is paused pending band-arrival confirmation; the recommended action is a small `wellness_summary()` extension instead.
 
-- **Do not build native Whoop integration.** Use `--wellness` data.
-- Original "Option B" intervals.icu refactor remains rejected (no driver).
-- Add Whoop-specific interpretation logic to `wellness_summary()` directly (small change).
-- Revisit only if Whoop launches a feature that intervals.icu doesn't surface (e.g., Sleep stages, Strain components).
+### Concrete change list (no-build path)
+
+| File | Change | Effort |
+|---|---|---|
+| `scripts/intervals_icu_api.py` (`wellness_summary` ~line 845) | Add `"readiness": w.get("readiness")`, `"respiration": w.get("respiration")`, `"spo2": w.get("spo2")` to the daily record dict | ~3 lines |
+| Same function, baseline computation (~line 870) | Add `readiness` to baseline average list (alongside hrvs/rhrs/sleeps) | ~3 lines |
+| Same function, flag logic (~line 895) | Add Recovery-based Yellow/Red flag rule (e.g., Recovery <33 = Red, 34–66 = Yellow modify, ≥67 = green) | ~10 lines |
+| `references/training_zones.md` (Yellow/Red Flag rules section) | Document the Recovery thresholds and that Recovery is sourced from intervals.icu wellness (Whoop sync if user is on Whoop) | text edit |
+| `workflows/advise.md` (Mid-Week Check-In) | Reference Recovery in the wellness-aware decision tree | text edit |
+| `tests/test_pure_functions.py` | Add unit test for Recovery-based flag rule | ~20 lines |
+
+**Total:** ~36 LOC + 2 doc edits. One commit. No new module, no OAuth, no readiness-layer abstraction, no intervals.icu refactor.
+
+### Trigger conditions for revisiting the native build
+
+Only revisit if:
+- Band arrives and Step 1 contradicts §1.5 (Recovery actually does NOT flow) — then the original §2 build decision tree applies.
+- A new coaching use case appears that genuinely needs Strain (e.g., a non-cycling cross-training metric the user wants to budget against) — unlikely for a primarily cycling athlete.
+- Whoop adds an endpoint (e.g., per-night sleep-stage timeline) the intervals.icu sync doesn't surface AND a workflow wants it.
+- intervals.icu drops the Whoop integration entirely.
+
+### Original "Option B" intervals.icu refactor
+
+Remains rejected. The readiness-layer abstraction that earned it (`readiness.py`) is no longer being built. Stale module-split work has no driver; do not resurrect speculatively.
 
 This branch is documented so future-you doesn't fall into a sunk-cost build.
 
@@ -263,4 +330,4 @@ This branch is documented so future-you doesn't fall into a sunk-cost build.
 
 ---
 
-**Trigger to act on this plan:** Whoop band arrival + 48 hours of data flowing. Run Step 1 first.
+**Trigger to act on this plan:** Whoop band arrival + 48 hours of data flowing. Run Step 1 first — now expected to confirm the §10 no-build path (small `wellness_summary()` extension) per §1.5 evidence.
