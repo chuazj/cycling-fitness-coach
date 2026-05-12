@@ -95,7 +95,7 @@ Read these on demand based on the task:
 | `references/obsidian_templates.md` | Writing notes to Obsidian vault. Has frontmatter templates and CLI commands. |
 
 **Scripts and assets:**
-- `scripts/intervals_icu_api.py` — intervals.icu API client with metrics computation. Modes: `--activity` (single ride), `--latest`, `--list-recent N`, `--weekly-summary [N]` (training summary), `--wellness [N]` (RHR/HRV/sleep readiness summary with Yellow/Red flag detection)
+- `scripts/intervals_icu_api.py` — intervals.icu API client with metrics computation. Modes: `--activity` (single ride), `--latest`, `--list-recent N`, `--weekly-summary [N]` (training summary), `--wellness [N]` (RHR/HRV/sleep + Whoop Recovery/respiration/SpO2 readiness summary with Yellow/Red flag detection)
 - `scripts/generate_zwo.py` — Programmatic ZWO generation (single workout)
 - `scripts/pmc_calculator.py` — PMC bootstrap (90-day history) and weekly update (planned vs actual, CTL/ATL/TSB, peak powers)
 - `scripts/batch_generate_zwo.py` — Batch ZWO generation from JSON array (full week of workouts)

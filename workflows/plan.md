@@ -158,12 +158,14 @@ ACWR Zone: {safe/caution/danger/underprepared}
 
 ### Readiness (from --wellness, if available)
 **Overall:** {green/yellow/red}
+- Recovery: latest {X} vs 14-day baseline {readiness_avg} (Whoop bands — red <34, yellow 34-66, green ≥67)
 - RHR trend: latest {X} bpm vs 14-day baseline {Y} bpm ({delta:+} bpm)
 - HRV trend: latest {X} vs baseline {Y} ({delta_pct:+}%)
-- Sleep: avg {X}h over week (target ≥7h)
+- Sleep: avg {X}h over week (target ≥7h); sleep_score {X}/100 if present
+- Respiration: latest {X}/min vs baseline {respiration_avg}/min (>2/min above baseline can signal illness onset)
 - Flags: {list of yellow/red flags from wellness_summary, or "None"}
 
-If yellow/red flags present, weight the adaptation recommendation toward recovery (Rule Priority 1-2 in `references/periodization.md` → Adaptation Decision Trees → Rule Priority).
+Recovery score (when present) is the single best summary signal; treat the individual HRV/RHR/sleep lines as drill-down explanations of *why* Recovery is what it is. If yellow/red flags present, weight the adaptation recommendation toward recovery (Rule Priority 1-2 in `references/periodization.md` → Adaptation Decision Trees → Rule Priority).
 
 ### RPE Trend (from rpe_trend.py, if Obsidian reviews exist)
 **Overall flag:** {none / rising_rpe_at_constant_if}

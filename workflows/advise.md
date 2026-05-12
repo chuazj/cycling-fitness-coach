@@ -105,7 +105,7 @@ This returns last-14-day RHR/HRV/sleep + flags vs baseline. Skip if athlete does
 - RHR: {latest} bpm vs baseline {baseline} ({delta_bpm:+} bpm) {flag if any}
 - HRV: {latest} vs baseline {baseline} ({delta_pct:+}%) {flag if any}
 - Sleep: {latest_hours}h last night, score {sleep_score if present}/100 {flag if <6h}
-- Respiration: {latest}/min (compare against prior days; >2/min above baseline can signal illness onset)
+- Respiration: latest {X}/min vs baseline {respiration_avg}/min (>2/min above baseline can signal illness onset)
 - Subjective: fatigue {X}/4, soreness {X}/4, stress {X}/4 {flags if ≥4}
 
 Recovery score (when present) is the single best summary signal — it's already baseline-calibrated by the source (Whoop). Treat the individual HRV/RHR/sleep lines as drill-down explanations of *why* Recovery is what it is. If Recovery is absent (athlete not on a wearable that pushes it), fall back to HRV+RHR+sleep as before.

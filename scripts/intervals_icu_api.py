@@ -871,7 +871,10 @@ def wellness_summary(client, days=14):
     rhrs = [d["resting_hr"] for d in history if d["resting_hr"]]
     hrvs = [d["hrv"] for d in history if d["hrv"]]
     sleeps = [d["sleep_hours"] for d in history if d["sleep_hours"]]
+    # Readiness uses `is not None` (not truthiness) because Recovery=0 is a valid
+    # Whoop value (total wreck); RHR/HRV/sleep=0 are physically impossible.
     readinesses = [d["readiness"] for d in history if d["readiness"] is not None]
+    respirations = [d["respiration"] for d in history if d["respiration"] is not None]
 
     baseline = {}
     if rhrs:
@@ -882,6 +885,8 @@ def wellness_summary(client, days=14):
         baseline["sleep_hours_avg"] = round(sum(sleeps) / len(sleeps), 1)
     if readinesses:
         baseline["readiness_avg"] = round(sum(readinesses) / len(readinesses), 1)
+    if respirations:
+        baseline["respiration_avg"] = round(sum(respirations) / len(respirations), 1)
 
     latest = daily[-1] if daily else {}
     flags = []
@@ -954,8 +959,8 @@ def wellness_summary(client, days=14):
         "baseline_note": (
             "Only one daily wellness record available — no historical baseline to "
             "compare against. RHR / HRV deviation flags are suppressed; latest-day "
-            "flags (sleep <6h, subjective ≥4) still apply. Log a few more days to "
-            "enable full readiness coaching."
+            "flags (sleep <6h, subjective ≥4, Recovery <67) still apply. Log a few "
+            "more days to enable full readiness coaching."
         ) if partial_baseline else None,
     }
 

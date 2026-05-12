@@ -802,6 +802,47 @@ class TestWellnessSummary(unittest.TestCase):
         # baseline = mean of history (first 2 days) = (60+80)/2 = 70
         self.assertEqual(result["baseline"]["readiness_avg"], 70.0)
 
+    def test_recovery_zero_is_valid_red_flag(self):
+        """Recovery=0 is Whoop's lowest valid value (total wreck); must fire red.
+        Guards against a truthiness regression (`if d['readiness']` would skip 0)."""
+        records = [
+            self._wellness_record("2026-05-11", readiness=50),
+            self._wellness_record("2026-05-12", readiness=0),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        recovery_flags = [f for f in result["flags"] if f["signal"] == "recovery"]
+        self.assertEqual(len(recovery_flags), 1)
+        self.assertEqual(recovery_flags[0]["severity"], "red")
+        self.assertEqual(recovery_flags[0]["value"], 0)
+
+    def test_recovery_fires_under_partial_baseline(self):
+        """Recovery uses absolute thresholds, not deviation — must fire even with
+        a single record (where RHR/HRV deviation flags are suppressed)."""
+        records = [
+            self._wellness_record("2026-05-12", readiness=20, restingHR=80, hrv=40),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertTrue(result["partial_baseline"])
+        recovery_flags = [f for f in result["flags"] if f["signal"] == "recovery"]
+        self.assertEqual(len(recovery_flags), 1)
+        self.assertEqual(recovery_flags[0]["severity"], "red")
+        # RHR and HRV flags should be suppressed (no baseline)
+        deviation_flags = [f for f in result["flags"] if f["signal"] in ("RHR", "HRV")]
+        self.assertEqual(deviation_flags, [])
+
+    def test_respiration_in_baseline(self):
+        """respiration should be averaged into baseline (for illness-onset detection)."""
+        records = [
+            self._wellness_record("2026-05-10", respiration=13.0),
+            self._wellness_record("2026-05-11", respiration=13.4),
+            self._wellness_record("2026-05-12", respiration=15.0),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["baseline"]["respiration_avg"], 13.2)
+
 
 if __name__ == "__main__":
     unittest.main()
