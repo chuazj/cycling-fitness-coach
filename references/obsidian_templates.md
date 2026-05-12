@@ -25,7 +25,10 @@ session_type: sweet-spot|threshold|vo2max|over-under|endurance|recovery|ftp-test
 tss: X
 if: X.XX
 rating: pass|warn|fail
-rpe: null   # Session RPE on a 1-10 scale (Borg CR-10), filled in after the ride
+rpe: null            # Session RPE on a 1-10 scale (Borg CR-10), filled in after the ride
+whoop_recovery: X    # WHOOP recovery score 0-100 (pre-ride snapshot from intervals.icu wellness)
+whoop_sleep_h: X.X   # Hours slept previous night (sleepSecs / 3600)
+whoop_hrv: X         # WHOOP HRV in ms, pre-ride snapshot
 tags:
   - cycling
   - workout-review
@@ -36,7 +39,9 @@ tags:
 
 **Always quote the `date` field** (e.g., `"2026-05-09"`). YAML parses bare numeric-looking dates as integers, which `scripts/rpe_trend.py` will skip with a stderr warning. Quoting forces string parsing and avoids silent data loss in trend reports.
 
-Keep frontmatter lean — only fields used for filtering/sorting/trending across notes. Detailed metrics (NP, VI, HR, cadence, peaks, distance, duration, block/week/day) belong in the body text.
+**WHOOP fields are mandatory when WHOOP data is available** — they enable cross-session "response given recovery state" trending (e.g., "how do I respond to Threshold on yellow days?"). Set to `null` only when WHOOP data is genuinely unavailable for that day.
+
+Keep the rest of the frontmatter lean — only fields used for filtering/sorting/trending across notes. Detailed metrics (NP, VI, HR, cadence, peaks, distance, duration, block/week/day) belong in the body text.
 
 ### Training Plans
 

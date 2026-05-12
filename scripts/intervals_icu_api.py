@@ -1004,6 +1004,234 @@ def wellness_summary(client, days=14):
     }
 
 
+def readiness_check(client, lookback_days=14):
+    """Point-in-time pre-ride readiness verdict.
+
+    Aggregates today's WHOOP-synced wellness against a 14-day baseline and emits a
+    single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict with a session-type ceiling.
+    Intended as a one-shot replacement for manual sleep/recovery/TSB gate-checking.
+
+    Signals combined (worst-of-severity wins):
+      - Sleep hours (≥7h pass, 6-7h tiebroken by WHOOP sleep score, <6h fail)
+      - WHOOP recovery (green ≥67, yellow-high 50-66, yellow-low 34-49, red <34)
+      - HRV vs 14-day baseline (>=10% drop = yellow flag, inherited from wellness_summary)
+      - RHR vs 14-day baseline (≥5bpm = yellow, ≥10bpm = red)
+      - 3-day recovery slope (drop ≥10pt over 3 days = yellow trend flag)
+      - TSB context (informational, not gating)
+      - Subjective wellness staleness check (all = 1 across 3+ fields = noisy data warning)
+
+    Returns dict with `verdict`, `ceiling`, per-signal breakdown, and `verdict_text`
+    (human-readable rendering for stdout).
+    """
+    summary = wellness_summary(client, days=lookback_days)
+    if summary.get("error"):
+        return {"error": summary["error"], "lookback_days": lookback_days}
+
+    latest = summary.get("latest") or {}
+    baseline = summary.get("baseline") or {}
+    daily = summary.get("daily") or []
+    flags = list(summary.get("flags") or [])
+    today_recovery = latest.get("readiness")
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    # Pull today's raw record for CTL/ATL/TSB (wellness_summary strips these)
+    ctl = atl = tsb = None
+    try:
+        raw = client.get_wellness(today_str, today_str)
+        if raw:
+            today_raw = raw[0] if isinstance(raw, list) else raw
+            ctl_raw, atl_raw = today_raw.get("ctl"), today_raw.get("atl")
+            if ctl_raw is not None and atl_raw is not None:
+                ctl, atl = round(ctl_raw, 1), round(atl_raw, 1)
+                tsb = round(ctl - atl, 1)
+    except Exception:
+        pass  # CTL/ATL is optional context — silent fall-through
+
+    # 3-day recovery slope: today vs 3 days ago
+    slope_alarm = None
+    if today_recovery is not None and len(daily) >= 4:
+        d3_ago = daily[-4].get("readiness")
+        if d3_ago is not None:
+            delta = round(today_recovery - d3_ago, 1)
+            if delta <= -10:
+                slope_alarm = {
+                    "today": today_recovery,
+                    "three_days_ago": d3_ago,
+                    "delta": delta,
+                    "rule": "Recovery dropped >=10pt over 3 days (early-warning trend)",
+                }
+                flags.append({
+                    "signal": "recovery_slope", "severity": "yellow",
+                    "value": delta, "rule": slope_alarm["rule"],
+                })
+
+    # Subdivide recovery band
+    band = None
+    if today_recovery is not None:
+        if today_recovery >= 67:
+            band = "green"
+        elif today_recovery >= 50:
+            band = "yellow-high"
+        elif today_recovery >= 34:
+            band = "yellow-low"
+        else:
+            band = "red"
+
+    # Sleep with score tiebreaker (borderline 6-7h)
+    sleep_h = latest.get("sleep_hours")
+    sleep_score = latest.get("sleep_score")
+    sleep_status = "green"
+    sleep_note = None
+    if sleep_h is None:
+        sleep_status = "missing"
+    elif sleep_h < 6:
+        sleep_status = "red"
+    elif sleep_h < 7:
+        if sleep_score is not None and sleep_score >= 85:
+            sleep_status = "yellow"
+            sleep_note = f"borderline ({sleep_h}h) but score {sleep_score} keeps yellow (would have been red)"
+        elif sleep_score is not None and sleep_score < 70:
+            sleep_status = "red"
+            sleep_note = f"borderline ({sleep_h}h) and score {sleep_score} downgrades to red"
+        else:
+            sleep_status = "yellow"
+    # ≥7h = green by default
+
+    # Verdict: worst-of(sleep, recovery band, slope, RHR/HRV flags).
+    # Exclude the legacy "recovery" flag from the yellow/red check — the new `band`
+    # variable supersedes it (band has finer granularity: yellow-high vs yellow-low).
+    # Otherwise the 34-66 flag from wellness_summary would force every yellow-high
+    # day into yellow-low.
+    gating_flags = [f for f in flags if f.get("signal") != "recovery"]
+    has_red_flag = any(f["severity"] == "red" for f in gating_flags)
+    has_yellow_flag = any(f["severity"] == "yellow" for f in gating_flags)
+
+    if sleep_status == "red" or band == "red" or has_red_flag:
+        verdict_band = "RED"
+        verdict = "RED — recovery/Z2 only. Skip planned hard session."
+        ceiling = "Z1-Z2 endurance, 60min max, no intervals"
+    elif band == "yellow-low" or sleep_status == "yellow" or has_yellow_flag:
+        verdict_band = "YELLOW-LOW"
+        verdict = "YELLOW-LOW — Sweet Spot OK; downgrade Threshold to SS, swap VO2max to SS or Z2."
+        ceiling = "Sweet Spot 88-94% FTP max"
+    elif band == "yellow-high":
+        verdict_band = "YELLOW-HIGH"
+        verdict = "YELLOW-HIGH — Threshold/SS OK; VO2max marginal (proceed if motivated, abort if HR/RPE elevated)."
+        ceiling = "Threshold 97-101% FTP max; VO2max with abort triggers armed"
+    elif band == "green":
+        verdict_band = "GREEN"
+        verdict = "GREEN — all session types clear."
+        ceiling = "No restrictions"
+    else:
+        verdict_band = "INSUFFICIENT-DATA"
+        verdict = "INSUFFICIENT DATA — log a wellness entry or wait for WHOOP sync."
+        ceiling = "—"
+
+    # Subjective stale-data check (all 1 across 3+ filled fields = athlete probably not updating)
+    subj_keys = ["fatigue", "soreness", "stress", "mood"]
+    subj_vals = {k: latest.get(k) for k in subj_keys}
+    subj_filled = [v for v in subj_vals.values() if v is not None]
+    subj_stale = (len(subj_filled) >= 3 and all(v == 1 for v in subj_filled))
+
+    age_days = summary.get("latest_date_age_days")
+
+    result = {
+        "date": today_str,
+        "lookback_days": lookback_days,
+        "verdict_band": verdict_band,
+        "verdict": verdict,
+        "ceiling": ceiling,
+        "data_age_days": age_days,
+        "sleep": {"hours": sleep_h, "score": sleep_score, "status": sleep_status, "note": sleep_note},
+        "recovery": {"score": today_recovery, "band": band, "slope_3day": slope_alarm},
+        "hrv": {"today": latest.get("hrv"), "baseline": baseline.get("hrv_avg")},
+        "resting_hr": {"today": latest.get("resting_hr"), "baseline": baseline.get("resting_hr_avg")},
+        "tsb": {"ctl": ctl, "atl": atl, "tsb": tsb},
+        "subjective": {**subj_vals, "stale_warning": subj_stale,
+                       "stale_note": ("All values = 1 (best/default) — verify athlete is updating these manually"
+                                      if subj_stale else None)},
+        "flags": flags,
+        "overall_status": summary.get("overall_status"),
+    }
+    result["verdict_text"] = format_readiness_check(result)
+    return result
+
+
+def format_readiness_check(result):
+    """Render readiness_check result as human-readable text for stdout."""
+    if result.get("error"):
+        return f"ERROR: {result['error']}"
+
+    lines = [f"Date: {result['date']}"]
+    age = result.get("data_age_days")
+    if age is not None and age > 0:
+        lines.append(f"  ⚠ Latest wellness record is {age} day(s) old — today's WHOOP may not have synced yet")
+    lines.append("")
+
+    s = result["sleep"]
+    sleep_h = f"{s['hours']}h" if s["hours"] is not None else "—"
+    sleep_sc = f"score {s['score']}" if s["score"] is not None else "score —"
+    sleep_tag = {"green": "OK", "yellow": "WARN", "red": "FAIL", "missing": "?"}.get(s["status"], "?")
+    line = f"Sleep:        {sleep_h:<8} | {sleep_sc:<10} [{sleep_tag}]"
+    if s.get("note"):
+        line += f"  ({s['note']})"
+    lines.append(line)
+
+    h = result["hrv"]
+    if h["today"] is not None:
+        hrv_disp = round(h["today"], 1)
+        if h["baseline"] is not None:
+            d = round(h["today"] - h["baseline"], 1)
+            lines.append(f"HRV:          {hrv_disp}ms{'':<3} | {d:+}ms vs 14d baseline {h['baseline']}ms")
+        else:
+            lines.append(f"HRV:          {hrv_disp}ms{'':<3} | (no baseline yet)")
+
+    r = result["resting_hr"]
+    if r["today"] is not None:
+        if r["baseline"] is not None:
+            d = round(r["today"] - r["baseline"], 1)
+            lines.append(f"RHR:          {r['today']}bpm{'':<4} | {d:+}bpm vs 14d baseline {r['baseline']}bpm")
+        else:
+            lines.append(f"RHR:          {r['today']}bpm{'':<4} | (no baseline yet)")
+
+    rc = result["recovery"]
+    if rc["score"] is not None:
+        band_disp = {"green": "GREEN", "yellow-high": "YELLOW-HIGH",
+                     "yellow-low": "YELLOW-LOW", "red": "RED"}.get(rc["band"], "—")
+        lines.append(f"Recovery:     {rc['score']}{'':<7} | {band_disp}")
+        if rc.get("slope_3day"):
+            sl = rc["slope_3day"]
+            lines.append(f"  └─ 3-day slope: {sl['three_days_ago']} → {sl['today']} ({sl['delta']:+}pt) ⚠ trend alarm")
+
+    t = result["tsb"]
+    if t["tsb"] is not None:
+        state = ("fresh" if t["tsb"] >= 5 else "neutral" if t["tsb"] >= -10 else
+                 "productive" if t["tsb"] >= -30 else "overreached")
+        lines.append(f"TSB:          {t['tsb']:+}{'':<7} | CTL {t['ctl']} / ATL {t['atl']} ({state})")
+
+    sj = result["subjective"]
+    filled = [(k, sj[k]) for k in ("fatigue", "soreness", "stress", "mood") if sj.get(k) is not None]
+    if filled:
+        lines.append(f"Subjective:   " + ", ".join(f"{k}={v}" for k, v in filled))
+        if sj.get("stale_warning"):
+            lines.append(f"  └─ ⚠ {sj['stale_note']}")
+
+    lines += ["", "─" * 70,
+              f"VERDICT:  {result['verdict']}",
+              f"CEILING:  {result['ceiling']}",
+              "─" * 70]
+
+    yellow_red_flags = [f for f in (result.get("flags") or []) if f["severity"] in ("yellow", "red")]
+    if yellow_red_flags:
+        lines.append("")
+        lines.append("Active flags:")
+        for f in yellow_red_flags:
+            lines.append(f"  [{f['severity'].upper()}] {f['rule']}")
+
+    return "\n".join(lines)
+
+
 def load_env(env_path=None):
     """Load .env file from script dir or project root."""
     if env_path is None:
@@ -1065,6 +1293,10 @@ def build_parser():
                        help="Wellness/readiness summary for last N days (default: 14). "
                             "Pulls RHR, HRV, sleep, and subjective fatigue/soreness/stress; "
                             "flags deviations vs baseline against Yellow/Red Flag rules.")
+    mode.add_argument("--readiness-check", action="store_true",
+                       help="One-shot pre-ride verdict. Combines today's sleep/HRV/RHR/recovery/TSB/"
+                            "3-day slope/subjective into GREEN/YELLOW-HIGH/YELLOW-LOW/RED with session ceiling. "
+                            "Use --output for JSON; default is human-readable text.")
     p.add_argument("--ftp", type=int, default=None,
                    help="FTP in watts. Prefer --use-athlete-profile to auto-fetch from intervals.icu. "
                         "If neither flag is given a neutral 200W default is used with a stderr warning.")
@@ -1176,7 +1408,10 @@ if __name__ == "__main__":
                 print(f"Using user-provided weight: {args.weight}kg", file=sys.stderr)
                 break
 
-    # Final fallbacks after profile logic — neutral generic defaults, warn loudly
+    # Final fallbacks after profile logic — neutral generic defaults, warn loudly.
+    # Modes that don't use FTP/weight (--list-recent, --wellness, --readiness-check)
+    # should NOT see this warning since the defaults are never read by them.
+    needs_ftp_weight = not (args.list_recent or args.wellness is not None or args.readiness_check)
     used_fallback = []
     if args.ftp is None:
         args.ftp = 200
@@ -1184,7 +1419,7 @@ if __name__ == "__main__":
     if args.weight is None:
         args.weight = 70.0
         used_fallback.append("weight=70kg")
-    if used_fallback:
+    if used_fallback and needs_ftp_weight:
         print(
             f"WARNING: using neutral default {' / '.join(used_fallback)} — "
             "power/zone/TSS analysis will be inaccurate. "
@@ -1249,6 +1484,17 @@ if __name__ == "__main__":
             print(f"Output written to {args.output}", file=sys.stderr)
         else:
             print(out)
+    elif args.readiness_check:
+        result = readiness_check(client, lookback_days=14)
+        if args.output:
+            out = json.dumps(result, indent=2, default=str, ensure_ascii=False)
+            with open(args.output, "w", encoding="utf-8") as f:
+                f.write(out)
+            print(f"Output written to {args.output}", file=sys.stderr)
+        else:
+            # Default: human-readable text. Strip the redundant verdict_text key
+            # since we're printing it directly.
+            print(result.get("verdict_text") or json.dumps(result, indent=2, default=str, ensure_ascii=False))
     elif args.activity:
         aid = extract_id(args.activity)
         result = _apply_compact(analyze(client, aid, args.ftp, args.weight))
