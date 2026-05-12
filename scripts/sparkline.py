@@ -18,9 +18,12 @@ Usage (module):
 import argparse
 import sys
 
-# Force UTF-8 stdout on Windows (sparkline blocks are non-ASCII)
+# Force UTF-8 on Windows (sparkline blocks are non-ASCII; stderr may also carry them
+# if a future error message includes a rendered line).
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
+if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8")
 
 
 # 8-level Unicode block sparkline characters

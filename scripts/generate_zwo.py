@@ -20,9 +20,12 @@ from dataclasses import dataclass, field, fields
 from typing import Optional
 from xml.etree.ElementTree import Element, SubElement, tostring
 
-# Force UTF-8 stdout on Windows (default cp1252 cannot encode CJK workout names)
+# Force UTF-8 on Windows (default cp1252 cannot encode CJK workout names or Unicode
+# in error messages routed through stderr).
 if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr.encoding and sys.stderr.encoding.lower() != 'utf-8':
+    sys.stderr.reconfigure(encoding='utf-8')
 
 
 @dataclass

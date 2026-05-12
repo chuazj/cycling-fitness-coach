@@ -23,9 +23,13 @@ import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
-# Force UTF-8 stdout on Windows (default cp1252 cannot encode CJK activity names)
+# Force UTF-8 on Windows (default cp1252 cannot encode CJK activity names or em-dashes
+# in warning messages). Both streams need reconfiguring — stdout for JSON output, stderr
+# for the WARNING: ... messages this script emits which contain Unicode punctuation.
 if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr.encoding and sys.stderr.encoding.lower() != 'utf-8':
+    sys.stderr.reconfigure(encoding='utf-8')
 
 try:
     import requests
@@ -38,6 +42,18 @@ POWER_ZONES = {
     "Z1": (0.00, 0.55), "Z2": (0.55, 0.75), "Z3": (0.75, 0.90),
     "Z4": (0.90, 1.05), "Z5": (1.05, 1.20), "Z6": (1.20, 1.50), "Z7": (1.50, float("inf")),
 }
+
+# intervals.icu activity types that produce cycling power data. Used by weekly_summary
+# to scope both load aggregation and power-curve fetching to cycling — a high-TSS Run
+# would otherwise be picked for power-curve fetch (some watches estimate run power)
+# and pollute week_peaks / power_profile with non-cycling watts.
+CYCLING_TYPES = ("Ride", "VirtualRide", "EBikeRide", "Handcycle")
+
+
+def _is_cycling(activity):
+    """Treat empty/missing type as cycling (defensive — intervals.icu always sets type)."""
+    sport = activity.get("type") or ""
+    return not sport or sport in CYCLING_TYPES
 
 # Coggan male power profile table (W/kg thresholds) for rider profiling
 POWER_PROFILE = {
@@ -667,11 +683,9 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
     # Track max 20-min peak power for FTP detection (FE-3)
     max_20min_peak = None
 
-    cycling_types = ("Ride", "VirtualRide", "EBikeRide", "Handcycle")
     for a in activities:
         # Skip non-cycling activities (e.g., logged runs) — weekly summary is for cycling load
-        sport = a.get("type") or ""
-        if sport and sport not in cycling_types:
+        if not _is_cycling(a):
             continue
         moving_time = a.get("moving_time") or 0
         if moving_time <= 0:
@@ -717,8 +731,10 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
     # FE-3: Fetch power curves only from top-3 TSS activities (reduces N API calls to 3).
     # Pull all key durations in one fetch per activity, then take the max across the
     # top-3 for each duration — gives a usable "best 7 days" power profile for free.
+    # Filter to cycling here too — a high-TSS Run would otherwise consume a top-3 slot
+    # and contribute garbage (or empty) power-curve data to week_peaks.
     tss_sorted = sorted(
-        [a for a in activities if a.get("icu_training_load")],
+        [a for a in activities if a.get("icu_training_load") and _is_cycling(a)],
         key=lambda a: a.get("icu_training_load", 0),
         reverse=True,
     )[:3]

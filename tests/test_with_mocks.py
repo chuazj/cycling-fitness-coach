@@ -390,6 +390,45 @@ class TestWeeklySummaryOptimization(unittest.TestCase):
         self.assertIn("i2", power_curve_calls)  # TSS 80
         self.assertIn("i3", power_curve_calls)  # TSS 60
 
+    def test_excludes_non_cycling_from_top3(self):
+        """Top-3 power curve selection must skip non-cycling activities even when
+        their TSS is higher. A Run-with-high-TSS would otherwise pollute week_peaks
+        with non-cycling power data (some watches estimate run power)."""
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        activities = [
+            # Run with highest TSS — must NOT be selected for power curve fetch
+            {"id": "run1", "name": "Marathon", "type": "Run", "moving_time": 14400,
+             "start_date_local": now.strftime("%Y-%m-%dT08:00:00"),
+             "icu_training_load": 200, "icu_intensity": 80, "icu_joules": 800000},
+            # 3 cycling rides with lower TSS — all 3 should be selected
+            {"id": "ride1", "name": "Z2", "type": "Ride", "moving_time": 3600,
+             "start_date_local": (now - timedelta(days=1)).strftime("%Y-%m-%dT08:00:00"),
+             "icu_training_load": 80, "icu_intensity": 85, "icu_joules": 500000},
+            {"id": "ride2", "name": "Tempo", "type": "VirtualRide", "moving_time": 3600,
+             "start_date_local": (now - timedelta(days=2)).strftime("%Y-%m-%dT08:00:00"),
+             "icu_training_load": 60, "icu_intensity": 80, "icu_joules": 450000},
+            {"id": "ride3", "name": "Recovery", "type": "Ride", "moving_time": 3600,
+             "start_date_local": (now - timedelta(days=3)).strftime("%Y-%m-%dT08:00:00"),
+             "icu_training_load": 50, "icu_intensity": 75, "icu_joules": 400000},
+        ]
+        power_curve_calls = []
+
+        def mock_power_curve(aid):
+            power_curve_calls.append(aid)
+            return {"secs": [1200], "watts": [200]}
+
+        with patch.object(self.client, "list_activities", return_value=activities), \
+             patch.object(self.client, "get_power_curve", side_effect=mock_power_curve):
+            result = weekly_summary(self.client, days=7, ftp=192, weight=74)
+
+        # Run with highest TSS must NOT be fetched
+        self.assertNotIn("run1", power_curve_calls)
+        # All 3 cycling rides should be fetched
+        self.assertEqual(set(power_curve_calls), {"ride1", "ride2", "ride3"})
+        # Activity count reflects cycling-only aggregation
+        self.assertEqual(result["activity_count"], 3)
+
     def test_no_activities_returns_error(self):
         with patch.object(self.client, "list_activities", return_value=[]):
             result = weekly_summary(self.client, days=7)

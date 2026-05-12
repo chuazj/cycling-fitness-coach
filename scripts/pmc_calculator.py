@@ -22,9 +22,11 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
-# Force UTF-8 stdout on Windows
+# Force UTF-8 on Windows (default cp1252 can't encode Unicode in warning messages).
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
+if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8")
 
 # Import from sibling module
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -185,8 +187,10 @@ def bootstrap(client, days):
     # Compute PMC
     pmc = compute_pmc(all_days)
 
-    # Weekly TSS average (last 4 weeks, or fewer if history is shorter)
-    four_weeks_ago = (newest - timedelta(days=28)).strftime("%Y-%m-%d")
+    # Weekly TSS average (last 4 weeks, or fewer if history is shorter).
+    # days=27 (not 28) because `ds >= four_weeks_ago` is inclusive on both ends —
+    # the window then spans exactly 28 days = 4 weeks. Using 28 would yield 29 days.
+    four_weeks_ago = (newest - timedelta(days=27)).strftime("%Y-%m-%d")
     recent_days = [(ds, tss) for ds, tss in all_days if ds >= four_weeks_ago]
     recent_tss = sum(tss for _, tss in recent_days)
     num_weeks = max(1, len(recent_days) / 7)
