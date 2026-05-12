@@ -848,11 +848,15 @@ def wellness_summary(client, days=14):
             "hrv": w.get("hrv"),
             "sleep_hours": sleep_hours,
             "sleep_quality": w.get("sleepQuality"),
+            "sleep_score": w.get("sleepScore"),
             "fatigue": w.get("fatigue"),
             "soreness": w.get("soreness"),
             "stress": w.get("stress"),
             "mood": w.get("mood"),
             "weight": w.get("weight"),
+            "readiness": w.get("readiness"),
+            "respiration": w.get("respiration"),
+            "spo2": w.get("spO2"),
         })
 
     # Baseline = mean of available values across the window (excluding the latest day,
@@ -867,6 +871,7 @@ def wellness_summary(client, days=14):
     rhrs = [d["resting_hr"] for d in history if d["resting_hr"]]
     hrvs = [d["hrv"] for d in history if d["hrv"]]
     sleeps = [d["sleep_hours"] for d in history if d["sleep_hours"]]
+    readinesses = [d["readiness"] for d in history if d["readiness"] is not None]
 
     baseline = {}
     if rhrs:
@@ -875,6 +880,8 @@ def wellness_summary(client, days=14):
         baseline["hrv_avg"] = round(sum(hrvs) / len(hrvs), 1)
     if sleeps:
         baseline["sleep_hours_avg"] = round(sum(sleeps) / len(sleeps), 1)
+    if readinesses:
+        baseline["readiness_avg"] = round(sum(readinesses) / len(readinesses), 1)
 
     latest = daily[-1] if daily else {}
     flags = []
@@ -905,6 +912,21 @@ def wellness_summary(client, days=14):
         flags.append({"signal": "sleep", "severity": "yellow",
                       "value": latest["sleep_hours"],
                       "rule": "Sleep <6h last night (yellow flag — modify next session)"})
+
+    # Recovery score (0–100) — sourced from intervals.icu `readiness` field, which Whoop
+    # populates with its Recovery score (HRV + RHR + sleep + respiration roll-up).
+    # Whoop's standard bands are absolute (already baseline-calibrated by Whoop), so no
+    # deviation-from-baseline rule needed here.
+    recovery = latest.get("readiness")
+    if recovery is not None:
+        if recovery < 34:
+            flags.append({"signal": "recovery", "severity": "red",
+                          "value": recovery,
+                          "rule": "Recovery <34 (red flag — significantly modify or skip session)"})
+        elif recovery < 67:
+            flags.append({"signal": "recovery", "severity": "yellow",
+                          "value": recovery,
+                          "rule": "Recovery 34–66 (yellow flag — moderate session, listen to body)"})
 
     # Subjective scales (intervals.icu uses 1=best, 4=worst by default; some users invert).
     # Flag elevated subjective stress/fatigue/soreness only when ≥4 (worst tier).

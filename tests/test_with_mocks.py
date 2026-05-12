@@ -701,6 +701,107 @@ class TestWellnessSummary(unittest.TestCase):
             result = wellness_summary(self.client, days=14)
         self.assertEqual(result["latest"]["sleep_hours"], 7.5)
 
+    # Whoop-synced fields (readiness/respiration/spO2/sleepScore) — plan §10
+    # intervals.icu API key for SpO2 is `spO2` (camelCase), not `spo2`.
+
+    def test_extracts_whoop_synced_fields(self):
+        records = [
+            self._wellness_record(
+                "2026-05-12",
+                restingHR=60, hrv=48.3, sleepSecs=29940,
+                readiness=57.0, respiration=13.4, spO2=94.0, sleepScore=97.0,
+            ),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        latest = result["latest"]
+        self.assertEqual(latest["readiness"], 57.0)
+        self.assertEqual(latest["respiration"], 13.4)
+        self.assertEqual(latest["spo2"], 94.0)
+        self.assertEqual(latest["sleep_score"], 97.0)
+
+    def test_red_flag_recovery_below_34(self):
+        records = [
+            self._wellness_record("2026-05-10", readiness=60),
+            self._wellness_record("2026-05-11", readiness=55),
+            self._wellness_record("2026-05-12", readiness=25),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        recovery_flags = [f for f in result["flags"] if f["signal"] == "recovery"]
+        self.assertEqual(len(recovery_flags), 1)
+        self.assertEqual(recovery_flags[0]["severity"], "red")
+        self.assertEqual(recovery_flags[0]["value"], 25)
+        self.assertEqual(result["overall_status"], "red")
+
+    def test_yellow_flag_recovery_34_to_66(self):
+        records = [
+            self._wellness_record("2026-05-10", readiness=80),
+            self._wellness_record("2026-05-11", readiness=75),
+            self._wellness_record("2026-05-12", readiness=50),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        recovery_flags = [f for f in result["flags"] if f["signal"] == "recovery"]
+        self.assertEqual(len(recovery_flags), 1)
+        self.assertEqual(recovery_flags[0]["severity"], "yellow")
+
+    def test_green_recovery_67_plus_no_flag(self):
+        records = [
+            self._wellness_record("2026-05-10", readiness=70),
+            self._wellness_record("2026-05-11", readiness=72),
+            self._wellness_record("2026-05-12", readiness=80),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        recovery_flags = [f for f in result["flags"] if f["signal"] == "recovery"]
+        self.assertEqual(recovery_flags, [])
+
+    def test_recovery_threshold_boundary_34(self):
+        """Recovery == 34 should be yellow, not red (red is <34)."""
+        records = [
+            self._wellness_record("2026-05-11", readiness=70),
+            self._wellness_record("2026-05-12", readiness=34),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        recovery_flags = [f for f in result["flags"] if f["signal"] == "recovery"]
+        self.assertEqual(recovery_flags[0]["severity"], "yellow")
+
+    def test_recovery_threshold_boundary_67(self):
+        """Recovery == 67 should fire no flag (green starts at 67)."""
+        records = [
+            self._wellness_record("2026-05-11", readiness=70),
+            self._wellness_record("2026-05-12", readiness=67),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        recovery_flags = [f for f in result["flags"] if f["signal"] == "recovery"]
+        self.assertEqual(recovery_flags, [])
+
+    def test_recovery_absent_no_flag(self):
+        """No readiness in record → no recovery flag, no crash."""
+        records = [
+            self._wellness_record("2026-05-11", restingHR=55),
+            self._wellness_record("2026-05-12", restingHR=56),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        recovery_flags = [f for f in result["flags"] if f["signal"] == "recovery"]
+        self.assertEqual(recovery_flags, [])
+
+    def test_recovery_in_baseline(self):
+        """readiness should be averaged into baseline like rhr/hrv/sleep."""
+        records = [
+            self._wellness_record("2026-05-10", readiness=60),
+            self._wellness_record("2026-05-11", readiness=80),
+            self._wellness_record("2026-05-12", readiness=50),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        # baseline = mean of history (first 2 days) = (60+80)/2 = 70
+        self.assertEqual(result["baseline"]["readiness_avg"], 70.0)
+
 
 if __name__ == "__main__":
     unittest.main()

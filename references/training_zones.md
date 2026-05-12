@@ -105,6 +105,7 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 **Yellow Flags** (modify training):
 - Resting HR elevated >5 bpm
 - HRV depressed >10%
+- Recovery score 34–66 (Whoop band; moderate readiness)
 - Power:HR decoupling >5% early in ride
 - Legs heavy at start of intervals
 - Sleep quality declining
@@ -112,9 +113,15 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 **Red Flags** (take recovery):
 - Unable to hit target power
 - HR elevated >10 bpm baseline
+- Recovery score <34 (Whoop band; low readiness)
 - Motivation significantly decreased
 - Persistent muscle soreness
 - Illness symptoms
+
+**Recovery score notes:**
+- Sourced from intervals.icu's `readiness` wellness field. Whoop populates this with its Recovery score (HRV + RHR + sleep + respiration roll-up, already baseline-calibrated, so absolute bands apply).
+- Whoop bands: 0–33 red, 34–66 yellow, 67–100 green. `wellness_summary()` emits red/yellow flags at these thresholds; green produces no flag.
+- For athletes on other wearables (Garmin Body Battery, Oura Readiness) that also push to intervals.icu via the same `readiness` field, the same thresholds apply — but recalibrate if their scoring distribution differs noticeably from Whoop's.
 
 ## FTP Estimation Methods
 

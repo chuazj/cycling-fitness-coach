@@ -40,10 +40,10 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 
 | Fatigue signal | Action | Session adjustment |
 |---|---|---|
-| Mild (RPE +1 vs typical, sleep ok) | Train as planned, monitor first 15 min | None — abort if RPE doesn't settle |
-| Moderate (RHR +5 bpm OR poor sleep 1 night OR HRV down 5–10%) | Modify down one tier | SS → endurance Z2; threshold → SS; VO2max → threshold; cut duration 20% |
-| High (RHR +5–10 bpm AND poor sleep 2+ nights, OR HRV down >10%, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
-| Severe (RHR +10 bpm OR illness symptoms OR TSB <−30) | Full rest | No bike. Reassess next day. |
+| Mild (RPE +1 vs typical, sleep ok, Recovery ≥67) | Train as planned, monitor first 15 min | None — abort if RPE doesn't settle |
+| Moderate (RHR +5 bpm OR poor sleep 1 night OR HRV down 5–10% OR Recovery 34–66) | Modify down one tier | SS → endurance Z2; threshold → SS; VO2max → threshold; cut duration 20% |
+| High (RHR +5–10 bpm AND poor sleep 2+ nights, OR HRV down >10%, OR Recovery <34, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
+| Severe (RHR +10 bpm OR illness symptoms OR TSB <−30 OR Recovery <34 with red signals across HRV/RHR) | Full rest | No bike. Reassess next day. |
 | Sick (above-neck only) | Rest 1–2 days then Z1–Z2 only | Per `references/periodization.md` → Illness/Injury rules |
 | Sick (below-neck or systemic) | Full rest until 48h symptom-free | Per `references/periodization.md` → Illness/Injury rules |
 
@@ -101,10 +101,14 @@ This returns last-14-day RHR/HRV/sleep + flags vs baseline. Skip if athlete does
 
 ### Readiness (from --wellness)
 **Overall:** {green/yellow/red — from wellness_summary `overall_status`}
+- Recovery: {latest} {flag if any} {vs baseline {readiness_avg} if available}
 - RHR: {latest} bpm vs baseline {baseline} ({delta_bpm:+} bpm) {flag if any}
 - HRV: {latest} vs baseline {baseline} ({delta_pct:+}%) {flag if any}
-- Sleep: {latest_hours}h last night {flag if <6h}
+- Sleep: {latest_hours}h last night, score {sleep_score if present}/100 {flag if <6h}
+- Respiration: {latest}/min (compare against prior days; >2/min above baseline can signal illness onset)
 - Subjective: fatigue {X}/4, soreness {X}/4, stress {X}/4 {flags if ≥4}
+
+Recovery score (when present) is the single best summary signal — it's already baseline-calibrated by the source (Whoop). Treat the individual HRV/RHR/sleep lines as drill-down explanations of *why* Recovery is what it is. If Recovery is absent (athlete not on a wearable that pushes it), fall back to HRV+RHR+sleep as before.
 
 If `overall_status: yellow` or `red`, recommend session modification per Recovery Prescription table (Training Advice section above) before showing the planned session.
 
