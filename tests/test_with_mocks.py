@@ -514,6 +514,52 @@ class TestWeeklySummaryOptimization(unittest.TestCase):
         # week_peaks should still be populated (it doesn't need weight)
         self.assertIn("week_peaks", result)
 
+    def test_power_curve_errors_empty_on_success(self):
+        """When all power-curve fetches succeed, the errors dict is present but empty."""
+        from datetime import datetime
+        now = datetime.now()
+        activities = [
+            {"id": "ride1", "name": "Z2", "type": "Ride", "moving_time": 3600,
+             "start_date_local": now.strftime("%Y-%m-%dT08:00:00"),
+             "icu_training_load": 80, "icu_intensity": 80, "icu_joules": 500000},
+        ]
+        with patch.object(self.client, "list_activities", return_value=activities), \
+             patch.object(self.client, "get_power_curve",
+                          return_value={"secs": [1200], "watts": [200]}):
+            result = weekly_summary(self.client, days=7, ftp=192, weight=74)
+        self.assertIn("power_curve_errors", result)
+        self.assertEqual(result["power_curve_errors"], {})
+
+    def test_power_curve_errors_records_per_activity_failures(self):
+        """Per-activity power-curve fetch errors should surface keyed by activity id —
+        mirrors analyze()'s fetch_errors pattern so callers can distinguish
+        'no peaks because no activities' from 'no peaks because fetch failed'."""
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        activities = [
+            {"id": "ride1", "name": "Z2", "type": "Ride", "moving_time": 3600,
+             "start_date_local": now.strftime("%Y-%m-%dT08:00:00"),
+             "icu_training_load": 80, "icu_intensity": 80, "icu_joules": 500000},
+            {"id": "ride2", "name": "Tempo", "type": "Ride", "moving_time": 3600,
+             "start_date_local": (now - timedelta(days=1)).strftime("%Y-%m-%dT08:00:00"),
+             "icu_training_load": 70, "icu_intensity": 85, "icu_joules": 450000},
+        ]
+
+        def selective_failure(aid):
+            if aid == "ride2":
+                raise RuntimeError("HTTP 503 from intervals.icu")
+            return {"secs": [1200], "watts": [200]}
+
+        with patch.object(self.client, "list_activities", return_value=activities), \
+             patch.object(self.client, "get_power_curve", side_effect=selective_failure):
+            result = weekly_summary(self.client, days=7, ftp=192, weight=74)
+        self.assertIn("power_curve_errors", result)
+        self.assertIn("ride2", result["power_curve_errors"])
+        self.assertIn("503", result["power_curve_errors"]["ride2"])
+        self.assertNotIn("ride1", result["power_curve_errors"])
+        # Successful fetch should still produce week_peaks
+        self.assertIn("week_peaks", result)
+
     def test_ftp_suggestion_within_3pct(self):
         """FTP suggestion should NOT trigger when 20min peak implies <=3% increase."""
         from datetime import datetime, timedelta
@@ -870,6 +916,41 @@ class TestWellnessSummary(unittest.TestCase):
         # RHR and HRV flags should be suppressed (no baseline)
         deviation_flags = [f for f in result["flags"] if f["signal"] in ("RHR", "HRV")]
         self.assertEqual(deviation_flags, [])
+
+    def test_latest_date_age_zero_when_logged_today(self):
+        """A record dated today should produce latest_date_age_days = 0."""
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d")
+        records = [
+            self._wellness_record("2026-04-25", restingHR=50),
+            self._wellness_record(today, restingHR=52),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["latest_date_age_days"], 0)
+
+    def test_latest_date_age_positive_when_stale(self):
+        """A record dated several days ago should produce a positive age —
+        coaching templates use this to flag stale-readiness data."""
+        from datetime import datetime, timedelta
+        three_days_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
+        records = [
+            self._wellness_record("2026-04-25", restingHR=50),
+            self._wellness_record(three_days_ago, restingHR=52),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["latest_date_age_days"], 3)
+
+    def test_latest_date_age_none_for_malformed_date(self):
+        """A malformed date string should leave latest_date_age_days as None
+        rather than raising — wellness coaching must degrade, not crash."""
+        records = [
+            self._wellness_record("not-a-date", restingHR=52),
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertIsNone(result["latest_date_age_days"])
 
     def test_respiration_in_baseline(self):
         """respiration should be averaged into baseline (for illness-onset detection)."""

@@ -21,6 +21,12 @@ API key is permanent — no token refresh needed. Get yours from https://interva
 intervals.icu links: `https://intervals.icu/activities/i[numeric_id]` or `https://intervals.icu/activities/[numeric_id]`
 Extract ID with: `intervals\.icu/activities/(i?\d+)` (also accepts plain numeric IDs like `17478304236`)
 
+### Subjective Wellness Scale Convention
+
+`wellness_summary()` flags elevated subjective fatigue/soreness/stress when the value is **≥4** on intervals.icu's default 1-4 scale (where 1=best, 4=worst). intervals.icu lets athletes flip the direction (4=best, 1=worst) in their wellness settings — if you have flipped it, the flags will not fire correctly (your "worst" 1 would never satisfy `≥4`). Either keep the default direction OR update `wellness_summary` thresholds locally to match your scale.
+
+This convention does NOT affect Whoop-synced fields (Recovery, RHR, HRV, sleep, respiration, SpO2) which use Whoop's absolute bands regardless of user preference.
+
 ## Obsidian Integration
 
 Workout analyses, training plans, and weekly reviews are saved to the Obsidian vault for persistent tracking.

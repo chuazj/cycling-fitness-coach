@@ -135,6 +135,8 @@ python scripts/rpe_trend.py --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-c
 ```
 Returns per-session-type 2-week-vs-prior-2-week RPE deltas at constant IF. Detects functional overreaching earlier than PMC/TSB (which is RPE-blind). If `overall_flag: rising_rpe_at_constant_if`, escalate per `references/periodization.md` → RPE Trend Escalation. Skip silently if no Obsidian reviews exist yet (script returns `error` field).
 
+**Anchor note:** the windows are anchored on the **last review's date**, not on today — so the comparison is "last 2 weeks of training vs prior 2 weeks of training", not "last 2 calendar weeks". If the athlete has been off the bike, the trend reflects fatigue patterns in actual training history, not the rest period itself. Surface this to the athlete if their last review is older than 7 days.
+
 **Step 4:** Apply adaptation decision trees from `references/periodization.md`:
 - Check all IF/THEN rules: load adaptation, fatigue management, performance indicators, HR indicators, session execution
 - List all triggered rules and proposed actions
@@ -158,6 +160,7 @@ ACWR Zone: {safe/caution/danger/underprepared}
 
 ### Readiness (from --wellness, if available)
 **Overall:** {green/yellow/red}
+{If `latest_date_age_days` > 0, lead the section with: **⚠ Latest wellness record is {N} day(s) old ({latest_date}) — treat as historical, not current state.** This can happen when the athlete missed wellness logging or wearable sync.}
 - Recovery: latest {X} vs 14-day baseline {readiness_avg} (Whoop bands — red <34, yellow 34-66, green ≥67)
 - RHR trend: latest {X} bpm vs 14-day baseline {Y} bpm ({delta:+} bpm)
 - HRV trend: latest {X} vs baseline {Y} ({delta_pct:+}%)

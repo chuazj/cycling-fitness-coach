@@ -101,6 +101,7 @@ This returns last-14-day RHR/HRV/sleep + flags vs baseline. Skip if athlete does
 
 ### Readiness (from --wellness)
 **Overall:** {green/yellow/red — from wellness_summary `overall_status`}
+{If `latest_date_age_days` > 0, lead the section with: **⚠ Latest wellness record is {N} day(s) old ({latest_date}) — readings below are not today's.** Treat as historical, not current state.}
 - Recovery: {latest} {flag if any} {vs baseline {readiness_avg} if available}
 - RHR: {latest} bpm vs baseline {baseline} ({delta_bpm:+} bpm) {flag if any}
 - HRV: {latest} vs baseline {baseline} ({delta_pct:+}%) {flag if any}

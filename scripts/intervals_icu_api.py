@@ -740,11 +740,20 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
     )[:3]
     profile_durations = ("5s", "1min", "5min", "20min")
 
+    # Capture per-activity power-curve fetch errors so the caller can distinguish
+    # "no peaks because no top-3 activities" from "no peaks because the fetch failed".
+    # dict[aid] = error_msg; safe under ThreadPoolExecutor because CPython dict
+    # __setitem__ is atomic under the GIL and each worker writes a distinct key.
+    power_curve_errors = {}
+
     def _fetch_curve(activity):
+        aid = activity.get("id")
         try:
-            return parse_power_curve(client.get_power_curve(activity.get("id")))
+            return parse_power_curve(client.get_power_curve(aid))
         except Exception as e:
-            print(f"WARNING: power curve fetch for {activity.get('id')} failed: {e}", file=sys.stderr)
+            msg = str(e)
+            power_curve_errors[aid] = msg
+            print(f"WARNING: power curve fetch for {aid} failed: {msg}", file=sys.stderr)
             return {}
 
     week_peaks = {}
@@ -790,6 +799,7 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
         "zone_distribution_pct": zone_pct,
         "zone_distribution_seconds": zone_duration,
         "ftp_reference": ftp,
+        "power_curve_errors": power_curve_errors,  # {aid: msg}; {} when all fetches succeeded
     }
 
     # FE-3: Auto-FTP detection
@@ -962,6 +972,18 @@ def wellness_summary(client, days=14):
         else "yellow" if any(f["severity"] == "yellow" for f in flags) \
         else "green"
 
+    # Age of the most recent wellness record. 0 = logged today, 1 = yesterday, etc.
+    # If the athlete missed logging for a day or two, `latest` is *not* today's
+    # reading — coaching templates should surface the age when > 0 so the
+    # athlete doesn't act on stale numbers. None when the date is missing/malformed.
+    latest_date_age_days = None
+    if latest.get("date"):
+        try:
+            latest_dt = datetime.strptime(latest["date"], "%Y-%m-%d").date()
+            latest_date_age_days = (datetime.now().date() - latest_dt).days
+        except ValueError:
+            pass
+
     return {
         "days": days,
         "days_with_data": len(daily),
@@ -969,6 +991,7 @@ def wellness_summary(client, days=14):
         "partial_baseline": partial_baseline,
         "baseline": baseline,
         "latest": latest,
+        "latest_date_age_days": latest_date_age_days,
         "flags": flags,
         "overall_status": overall,
         "daily": daily,

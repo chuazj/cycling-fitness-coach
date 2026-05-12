@@ -151,6 +151,15 @@ def collect_reviews(vault_path):
 def compute_trend(reviews, weeks=4):
     """Compute RPE trend over the last `weeks` weeks vs the prior `weeks` weeks.
 
+    **Anchor semantics (important):** the "now" anchor is the LAST review's date,
+    not `datetime.now()`. This means the comparison is "last N weeks of *training*
+    vs prior N weeks of *training*", not "last N calendar weeks". If the athlete
+    has been off the bike for a stretch, the windows shift to whatever training
+    happened most recently — they don't include the time off as a "low-IF window".
+    This is intentional: it surfaces fatigue patterns in actual training, not
+    artefacts of rest. Callers wanting "last 2 calendar weeks" semantics should
+    filter `reviews` themselves before calling.
+
     Per session-type, computes:
       - n (sessions in recent window)
       - recent_avg_rpe, prior_avg_rpe, delta_rpe
