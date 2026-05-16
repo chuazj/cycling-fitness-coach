@@ -1234,6 +1234,8 @@ class TestWellnessFlagFiringAtMatureBaseline(unittest.TestCase):
         yellow = [f for f in result["flags"]
                   if f["severity"] == "yellow" and f["signal"] == "RHR"]
         self.assertEqual(len(yellow), 1)
+        # Single yellow signal → overall_status rolls up to yellow (T1 carryover)
+        self.assertEqual(result["overall_status"], "yellow")
 
     def test_yellow_flag_hrv_depressed_at_mature_baseline(self):
         records = _series("2026-05-01", 7, hrv=70)
@@ -1243,6 +1245,100 @@ class TestWellnessFlagFiringAtMatureBaseline(unittest.TestCase):
         hrv_flags = [f for f in result["flags"] if f["signal"] == "HRV"]
         self.assertEqual(len(hrv_flags), 1)
         self.assertEqual(hrv_flags[0]["severity"], "yellow")
+
+
+class TestFormatReadinessCheckSlopeRendering(unittest.TestCase):
+    """T3: format_readiness_check Recovery-slope line — renders when |Δ|≥5 with
+    directional phrasing (alarm / trending up / trending down). Suppressed below 5."""
+
+    def _result(self, slope_dict):
+        return {
+            "date": "2026-05-16",
+            "lookback_days": 14,
+            "verdict_band": "GREEN",
+            "verdict": "GREEN — all session types clear.",
+            "ceiling": "No restrictions",
+            "data_age_days": 0,
+            "sleep": {"hours": 8.0, "score": 95, "status": "green", "note": None},
+            "recovery": {"score": 70, "band": "green", "slope_3day": slope_dict},
+            "hrv": {"today": 50.0, "baseline": 48.0, "sample_size": 7},
+            "resting_hr": {"today": 58, "baseline": 60.0, "sample_size": 7},
+            "tsb": {"ctl": None, "atl": None, "tsb": None},
+            "subjective": {"fatigue": None, "soreness": None, "stress": None, "mood": None,
+                           "stale_warning": False, "stale_note": None},
+            "flags": [],
+            "overall_status": "green",
+        }
+
+    def test_slope_alarm_renders_warning_marker(self):
+        slope = {"today": 60, "three_days_ago": 80, "delta": -20, "alarm": True}
+        text = format_readiness_check(self._result(slope))
+        self.assertIn("80 → 60 (-20pt)", text)
+        self.assertIn("⚠ trend alarm", text)
+
+    def test_slope_positive_renders_trending_up(self):
+        slope = {"today": 75, "three_days_ago": 60, "delta": 15, "alarm": False}
+        text = format_readiness_check(self._result(slope))
+        self.assertIn("60 → 75 (+15pt)", text)
+        self.assertIn("trending up", text)
+        self.assertNotIn("⚠", text)
+
+    def test_slope_moderate_negative_renders_trending_down(self):
+        slope = {"today": 70, "three_days_ago": 78, "delta": -8, "alarm": False}
+        text = format_readiness_check(self._result(slope))
+        self.assertIn("78 → 70 (-8pt)", text)
+        self.assertIn("trending down", text)
+        self.assertNotIn("⚠", text)
+
+    def test_slope_below_threshold_suppressed(self):
+        """|Δ|<5 is noise — render Recovery line alone, no slope row."""
+        slope = {"today": 72, "three_days_ago": 76, "delta": -4, "alarm": False}
+        text = format_readiness_check(self._result(slope))
+        self.assertNotIn("→", text)  # No slope arrow present
+        self.assertNotIn("trending", text)
+        self.assertNotIn("trend alarm", text)
+
+    def test_slope_none_suppressed(self):
+        """None slope (e.g. fewer than 4 records of recovery) → no slope row."""
+        text = format_readiness_check(self._result(None))
+        self.assertNotIn("trending", text)
+        self.assertNotIn("trend alarm", text)
+
+
+class TestWellnessSummaryEdgeCases(unittest.TestCase):
+    """T4 + T5: edge cases for days_with_whoop_data polarity + mixed baseline depths."""
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def test_days_with_whoop_data_counts_sleep_score_alone(self):
+        """sleep_score is Whoop-exclusive (no manual UI for it). A record with
+        ONLY sleepScore populated should count as a Whoop-synced day —
+        confirms the positive polarity of the manual-sleep-entry exclusion."""
+        records = [{"id": "2026-05-12", "sleepScore": 95}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["days_with_whoop_data"], 1)
+
+    def test_baseline_maturity_uses_minimum_metric_sample_size(self):
+        """Mixed metric depths: one metric has 14d history, another has 2d.
+        baseline_maturity should report 'preliminary' (worst-of), not 'stable'
+        — otherwise the deviation flags for the thin metric would be misleading."""
+        # 15 records with respiration on all but only restingHR on the last 2 history-days
+        records = _series("2026-05-01", 14, respiration=13.0)
+        # Add restingHR only to the last 3 records (history=2, latest=1)
+        records[-3]["restingHR"] = 58
+        records[-2]["restingHR"] = 60
+        records.append({"id": "2026-05-15", "respiration": 13.0, "restingHR": 62})
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=20)
+        sizes = result["baseline_sample_sizes"]
+        self.assertEqual(sizes["respiration"], 14)
+        self.assertEqual(sizes["resting_hr"], 2)
+        # min(2, 14) = 2 < 7 → preliminary
+        self.assertEqual(result["baseline_maturity"], "preliminary")
+        # baseline_note must surface the smallest n so reader sees which metric blocks
+        self.assertIn("n=2", result["baseline_note"])
 
 
 if __name__ == "__main__":
