@@ -76,11 +76,11 @@ When user asks about plan status ("check my plan", "what's next", "plan status")
 
 **Step 1:** Read `plans/active_plan.md`. If the file does not exist, inform user that no active plan is found and suggest creating one via the Create Plan workflow.
 
-**Step 2 (optional but recommended):** Pull wellness/readiness signal:
+**Step 2 (optional but recommended):** Pull readiness verdict:
 ```bash
-python scripts/intervals_icu_api.py --wellness 14 -o wellness.json
+python scripts/intervals_icu_api.py --readiness-check -o readiness.json
 ```
-This returns last-14-day RHR/HRV/sleep + flags vs baseline. Skip if athlete doesn't log wellness in intervals.icu (script returns `error` field — note in output and proceed without).
+Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type ceiling, plus all underlying signals (sleep with WHOOP-score tiebreaker, Recovery band, HRV/RHR vs baseline with sample-size context, 3-day Recovery slope, CTL/ATL/TSB, subjective stale-warning, baseline maturity, latest_date_age). Deviation flags (RHR/HRV/respiration) are auto-suppressed when sample size <7 to avoid noise. Skip if athlete doesn't log wellness (script returns `error` field — note in output and proceed without).
 
 **Step 3:** Present current status:
 ```
@@ -99,26 +99,35 @@ This returns last-14-day RHR/HRV/sleep + flags vs baseline. Skip if athlete does
 - ZWO file: {filename}
 - **Fuel:** {one-line cue from `references/fueling.md` → Quick-Reference, matched to this session's duration × intensity}
 
-### Readiness (from --wellness)
-**Overall:** {green/yellow/red — from wellness_summary `overall_status`}
-{If `latest_date_age_days` > 0, lead the section with: **⚠ Latest wellness record is {N} day(s) old ({latest_date}) — readings below are not today's.** Treat as historical, not current state.}
-- Recovery: {latest} {flag if any} {vs baseline {readiness_avg} if available}
-- RHR: {latest} bpm vs baseline {baseline} ({delta_bpm:+} bpm) {flag if any}
-- HRV: {latest} vs baseline {baseline} ({delta_pct:+}%) {flag if any}
-- Sleep: {latest_hours}h last night, score {sleep_score if present}/100 {flag if <6h}
-- Respiration: latest {X}/min vs baseline {respiration_avg}/min (>2/min above baseline can signal illness onset)
-- Subjective: fatigue {X}/4, soreness {X}/4, stress {X}/4 {flags if ≥4}
+### Readiness (from --readiness-check)
+**Verdict:** {verdict_band} — {verdict text}
+**Ceiling:** {ceiling}
+{If `data_age_days` > 0, lead the section with: **⚠ Latest wellness record is {N} day(s) old — readings below are not today's.** Treat as historical, not current state.}
+{If `baseline_maturity` is "preliminary" or "insufficient", surface the `baseline_note` so the athlete understands deviation flags may be suppressed.}
 
-Recovery score (when present) is the single best summary signal — it's already baseline-calibrated by the source (Whoop). Treat the individual HRV/RHR/sleep lines as drill-down explanations of *why* Recovery is what it is. If Recovery is absent (athlete not on a wearable that pushes it), fall back to HRV+RHR+sleep as before.
+**Recovery lag interpretation:** Whoop Recovery is computed from last night's sleep, which primarily processed *yesterday's* training. A yellow Recovery today usually reflects yesterday's hard session — read it alongside yesterday's training, not today's plan. See `references/training_zones.md` → Recovery Score (Whoop / Wearable) for the full caveat.
 
-If `overall_status: yellow` or `red`, recommend session modification per Recovery Prescription table (Training Advice section above) before showing the planned session.
+- Recovery: {recovery.score} → {recovery.band} {if `recovery.slope_3day.alarm`: ⚠ slope {three_days_ago}→{today} ({delta:+}pt over 3 days)}
+- Sleep: {sleep.hours}h, score {sleep.score}/100 → {sleep.status}{if `sleep.note`: ({sleep.note})}
+- HRV: {hrv.today}ms vs {hrv.sample_size}d baseline {hrv.baseline}ms ({delta:+}ms) — *deviation flags inactive if sample_size <7*
+- RHR: {resting_hr.today}bpm vs {resting_hr.sample_size}d baseline {resting_hr.baseline}bpm ({delta:+}bpm) — *same baseline-maturity guard*
+- TSB context: {tsb.tsb:+} (CTL {tsb.ctl} / ATL {tsb.atl}) — {fresh/neutral/productive/overreached}
+{If at least one of fatigue/soreness/stress/mood is non-null, render:}
+- Subjective: {join only non-null fields, e.g. "fatigue=2, mood=3"}{if `subjective.stale_warning`: ⚠ all filled=1, athlete may not be updating manually}
+{Otherwise omit the Subjective row entirely.}
+
+**Active flags:** {list flags by severity, or "None — all clear"}
+
+Recovery score (when present) is the single best summary signal — Whoop has baseline-calibrated HRV+RHR+sleep+respiration into it. Use the individual lines below it as drill-down explanations of *why* Recovery is what it is. If Recovery is absent (athlete not on a wearable that pushes it), fall back to HRV+RHR+sleep — but with sample-size confidence in mind.
+
+If verdict is YELLOW-LOW or RED, apply the verdict's ceiling to the planned session (downgrade hard sessions per Recovery Prescription table — Training Advice section above) before showing the session.
 
 ### PMC Snapshot
 CTL: {X} | ATL: {X} | TSB: {X}
 Status: {interpretation}
 ```
 
-If wellness data is unavailable (no `--wellness` records), skip the Readiness block and note: "Wellness data not logged in intervals.icu — readiness coaching limited to PMC + RPE trends."
+If readiness data is unavailable (script returns `error`), skip the Readiness block and note: "Wellness data not logged in intervals.icu — readiness coaching limited to PMC + RPE trends."
 
 ---
 

@@ -103,25 +103,34 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 ## Fatigue Indicators
 
 **Yellow Flags** (modify training):
-- Resting HR elevated >5 bpm
-- HRV depressed >10%
-- Recovery score 34–66 (Whoop band; moderate readiness)
+- Resting HR elevated >5 bpm vs baseline (requires ≥7 days of baseline history; flag is suppressed at shorter windows because daily RHR swings of 3-5 bpm are normal noise)
+- HRV depressed >10% vs baseline (same ≥7-day requirement)
+- Recovery score 34–66 (Whoop band; moderate readiness) — fires regardless of baseline depth (absolute thresholds)
+- Respiration >2/min above baseline (illness-onset early warning; requires ≥7 days of baseline)
 - Power:HR decoupling >5% early in ride
 - Legs heavy at start of intervals
 - Sleep quality declining
 
 **Red Flags** (take recovery):
 - Unable to hit target power
-- HR elevated >10 bpm baseline
-- Recovery score <34 (Whoop band; low readiness)
+- RHR elevated >10 bpm vs baseline (requires ≥7 days of baseline history)
+- Recovery score <34 (Whoop band; low readiness) — fires regardless of baseline depth
 - Motivation significantly decreased
 - Persistent muscle soreness
 - Illness symptoms
+
+**Baseline maturity note:** `wellness_summary()` reports `baseline_maturity` and per-metric `baseline_sample_sizes`. Deviation-based flags (RHR, HRV, respiration) are auto-suppressed below n=7 history to avoid acting on single-night noise (HRV can swing ±15-25% night-to-night for healthy individuals). Recovery + sleep + subjective flags use absolute thresholds and fire regardless. n≥14 is the target for a "stable" baseline (HRV4Training convention).
 
 **Recovery score notes:**
 - Sourced from intervals.icu's `readiness` wellness field. Whoop populates this with its Recovery score (HRV + RHR + sleep + respiration roll-up, already baseline-calibrated, so absolute bands apply).
 - Whoop bands: 0–33 red, 34–66 yellow, 67–100 green. `wellness_summary()` emits red/yellow flags at these thresholds; green produces no flag.
 - For athletes on other wearables (Garmin Body Battery, Oura Readiness) that also push to intervals.icu via the same `readiness` field, the same thresholds apply — but recalibrate if their scoring distribution differs noticeably from Whoop's.
+- **Recovery lag**: Whoop Recovery is computed from *last night's sleep* — which primarily processed *yesterday's* training. A yellow/red Recovery this morning usually reflects yesterday's session load, not today's plan. When you see a Recovery drop, interrogate yesterday's training first (load, intensity, late finish, alcohol, illness) before second-guessing today's planned session. The corollary: a hard session done in the evening will not show up as Recovery suppression until ~24h later.
+- **3-day Recovery slope**: `recovery_slope_3day` in wellness output. A drop ≥10pt over 3 days is an early-warning trend that often precedes a single-day Recovery red — fires its own `recovery_slope` yellow flag.
+
+**Respiration notes:**
+- Sourced from Whoop via the `respiration` wellness field (breaths/min during sleep, typically 12-16 for healthy adults). Whoop folds it into the Recovery score, but a standalone deviation flag is more sensitive to illness onset because respiration rises 24-48h before Recovery formally drops.
+- Flag fires when latest > baseline + 2.0/min AND baseline has ≥7 days of history. CV is typically <3% for healthy individuals — even +1.5/min is unusual.
 
 ## FTP Estimation Methods
 

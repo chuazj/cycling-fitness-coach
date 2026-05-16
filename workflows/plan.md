@@ -127,7 +127,7 @@ python scripts/intervals_icu_api.py --activity {id} --use-athlete-profile -o out
 ```bash
 python scripts/intervals_icu_api.py --wellness 14 -o wellness.json
 ```
-Use the 14-day window so the latest 7 training days have a 7-day baseline. Skip if athlete doesn't log wellness (script returns `error` field — note in review output and proceed without).
+Use the 14-day window so the latest 7 training days have a 7-day baseline. Output includes `baseline_maturity` (insufficient/preliminary/consolidating/stable), per-metric `baseline_sample_sizes`, `recovery_slope_3day`, `subjective_stale_warning`, and `training_load` (CTL/ATL/TSB). Deviation flags (RHR/HRV/respiration) auto-suppress when sample size <7 — `baseline_note` explains when this applies. Skip if athlete doesn't log wellness (script returns `error` field — note in review output and proceed without).
 
 **Step 3c (recommended):** Aggregate RPE trends from Obsidian workout reviews:
 ```bash
@@ -159,16 +159,22 @@ Status: {interpretation}
 ACWR Zone: {safe/caution/danger/underprepared}
 
 ### Readiness (from --wellness, if available)
-**Overall:** {green/yellow/red}
+**Overall:** {green/yellow/red — from `overall_status`}
+**Baseline maturity:** {baseline_maturity} (n={smallest sample size}) — {if `baseline_note` present, paste verbatim; the note explains which flags are active vs suppressed}
 {If `latest_date_age_days` > 0, lead the section with: **⚠ Latest wellness record is {N} day(s) old ({latest_date}) — treat as historical, not current state.** This can happen when the athlete missed wellness logging or wearable sync.}
-- Recovery: latest {X} vs 14-day baseline {readiness_avg} (Whoop bands — red <34, yellow 34-66, green ≥67)
-- RHR trend: latest {X} bpm vs 14-day baseline {Y} bpm ({delta:+} bpm)
-- HRV trend: latest {X} vs baseline {Y} ({delta_pct:+}%)
-- Sleep: avg {X}h over week (target ≥7h); sleep_score {X}/100 if present
-- Respiration: latest {X}/min vs baseline {respiration_avg}/min (>2/min above baseline can signal illness onset)
-- Flags: {list of yellow/red flags from wellness_summary, or "None"}
 
-Recovery score (when present) is the single best summary signal; treat the individual HRV/RHR/sleep lines as drill-down explanations of *why* Recovery is what it is. If yellow/red flags present, weight the adaptation recommendation toward recovery (Rule Priority 1-2 in `references/periodization.md` → Adaptation Decision Trees → Rule Priority).
+**Recovery lag interpretation:** Whoop Recovery is computed from last night's sleep, which primarily processed *yesterday's* training. When reviewing the week's Recovery trend, align each day's score with the *previous* day's session, not the same day's. See `references/training_zones.md` → Recovery Score (Whoop / Wearable).
+
+- Recovery: latest {X} → {band} (Whoop bands: red <34, yellow 34-66, green ≥67) {if `recovery_slope_3day.alarm`: ⚠ 3-day slope {three_days_ago}→{today} ({delta:+}pt)}
+- RHR trend: latest {X} bpm vs {n}d baseline {Y} bpm ({delta:+} bpm) — *deviation flag suppressed if n<7*
+- HRV trend: latest {X} vs {n}d baseline {Y} ({delta_pct:+}%) — *same baseline-maturity guard*
+- Sleep: avg {X}h over week (target ≥7h); sleep_score {X}/100 if present
+- Respiration: latest {X}/min vs {n}d baseline {Y}/min ({delta:+}/min) — *flag at >+2/min from baseline (illness onset early-warning), suppressed below n=7*
+- Training load (from wellness): CTL {ctl} | ATL {atl} | TSB {tsb:+}
+{If `subjective_stale_warning: true`: ⚠ subjective fields all=1 across 3+ filled — verify athlete is updating manually, otherwise treat as default/unset}
+- Flags: {list of yellow/red flags from wellness_summary `flags` array, or "None"}
+
+Recovery score (when present) is the single best summary signal; treat the individual HRV/RHR/sleep lines as drill-down explanations of *why* Recovery is what it is. If yellow/red flags present, weight the adaptation recommendation toward recovery (Rule Priority 1-2 in `references/periodization.md` → Adaptation Decision Trees → Rule Priority). When `baseline_maturity` is "preliminary" or "insufficient", deviation flags are intentionally suppressed — fall back to Recovery + sleep + subjective fields for fatigue calls.
 
 ### RPE Trend (from rpe_trend.py, if Obsidian reviews exist)
 **Overall flag:** {none / rising_rpe_at_constant_if}
