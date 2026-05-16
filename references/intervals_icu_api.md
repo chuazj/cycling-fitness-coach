@@ -105,6 +105,9 @@ Returns an array of daily wellness records. Each record uses `id` = date string 
 
 Used by `wellness_summary()` (CLI: `--wellness N`) to compute baselines and flag deviations
 against the Yellow/Red Flag rules in `references/training_zones.md` → Fatigue Indicators.
+Also wrapped by `readiness_check()` (CLI: `--readiness-check`) which adds a single
+GREEN/YELLOW-HIGH/YELLOW-LOW/RED verdict + session-type ceiling on top of the same
+underlying signals.
 
 ---
 

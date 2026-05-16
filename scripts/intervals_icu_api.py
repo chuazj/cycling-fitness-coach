@@ -832,18 +832,43 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
 def wellness_summary(client, days=14):
     """Aggregate the last N days of intervals.icu wellness data into a readiness summary.
 
-    Pulls daily wellness records (RHR, HRV, sleep, subjective fatigue/soreness/stress/mood),
-    computes a baseline average, and flags deviations against the Yellow/Red Flag rules in
-    references/training_zones.md. Use 14+ days for a stable baseline.
+    Pulls daily wellness records (RHR, HRV, sleep, Whoop Recovery/respiration/SpO2,
+    subjective fatigue/soreness/stress/mood), computes baselines, and flags deviations
+    against the Yellow/Red Flag rules in references/training_zones.md. Deviation-based
+    flags (RHR/HRV/respiration) require ≥7 days of per-metric history to fire;
+    absolute-threshold flags (Recovery/sleep/subjective) fire regardless. Use 14+
+    days for a "stable" baseline.
 
     Args:
         client: IntervalsIcuClient instance.
         days: lookback window in days (default 14).
 
     Returns:
-        dict with `daily` records, `baseline` averages, `latest` day, `flags` list,
-        and `overall_status` ("green", "yellow", "red"). Returns `{"error": ..., "days": N}`
-        if no wellness data is available.
+        dict with the following keys (or `{"error": ..., "days": N}` if no wellness data):
+          - `days`: lookback window (input echo)
+          - `days_with_data`: total daily records returned
+          - `days_with_whoop_data`: records with ≥1 Whoop-exclusive field populated
+            (excludes manual sleep_hours entries)
+          - `history_days`: count of records used as baseline (daily minus latest)
+          - `partial_baseline`: bool, true only when history is empty (back-compat)
+          - `baseline_maturity`: "insufficient" / "preliminary" / "consolidating" / "stable"
+            (derived from smallest non-zero per-metric sample size; ≥7 = consolidating,
+            ≥14 = stable)
+          - `baseline_sample_sizes`: per-metric history counts
+            (e.g. `{"resting_hr": 4, "hrv": 4, "respiration": 4, ...}`)
+          - `baseline`: per-metric averages (only populated for metrics with history)
+          - `baseline_note`: tiered human-readable warning string, None when stable —
+            surface verbatim in coaching output
+          - `latest`: most recent daily record (snake_case keys, e.g. `spo2`)
+          - `latest_date_age_days`: 0 if today's record exists, None if date malformed
+          - `flags`: list of yellow/red flag dicts
+          - `overall_status`: "green" / "yellow" / "red" rollup over flags
+          - `daily`: full list of daily records (oldest first)
+          - `recovery_slope_3day`: dict with `today`/`three_days_ago`/`delta`/`alarm`
+            (alarm true when delta ≤ -10); None when <4 records or no readiness data
+          - `subjective_stale_warning`: true when 3+ subjective fields are filled and
+            all equal 1 (athlete probably not updating manually)
+          - `training_load`: dict with `ctl`/`atl`/`tsb` from latest raw wellness record
     """
     newest = datetime.now().strftime("%Y-%m-%d")
     oldest = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")

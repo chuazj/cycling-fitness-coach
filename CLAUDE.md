@@ -78,7 +78,15 @@ python scripts/intervals_icu_api.py --weekly-summary -o output.json
 # Computes baseline and flags deviations against Yellow/Red Flag rules in training_zones.md
 python scripts/intervals_icu_api.py --wellness 14 -o wellness.json
 ```
-Returns `error` field if athlete doesn't log wellness in intervals.icu (or no wearable sync). Used by the Mid-Week Check-In and Weekly Review workflows.
+Returns `error` field if athlete doesn't log wellness in intervals.icu (or no wearable sync). Used by the Weekly Review workflow (needs daily array for trend).
+
+### Readiness Check (pre-ride verdict)
+```bash
+# Single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type ceiling
+# Wraps wellness_summary, adds sleep-score tiebreaker, recovery slope, baseline-maturity guard
+python scripts/intervals_icu_api.py --readiness-check -o readiness.json
+```
+Used by the Mid-Week Check-In workflow. Deviation flags (RHR/HRV/respiration) auto-suppressed when sample size <7 to avoid noise. See `references/training_zones.md` → Fatigue Indicators for thresholds.
 
 ### Sparkline (Peak Power Trends visualization)
 ```bash
@@ -185,7 +193,7 @@ assets/
 - **`--compact` flag**: `intervals_icu_api.py --compact` omits rarely-used fields (VI, EF, zone_seconds, per-interval distance/max_watts/intensity) for token-efficient coaching output
 - **`training_day_pattern`**: `pmc_calculator.py --bootstrap` output includes `training_day_pattern` (e.g., `["Tue", "Thu", "Sat"]`) — auto-detected from activity history day-of-week frequency. Use to pre-fill training days in the Create Plan workflow Step 2 instead of asking the athlete.
 - **weekly_summary top-3 optimization**: `weekly_summary()` fetches power curves only from the top-3 TSS activities (not all N) via `ThreadPoolExecutor(max_workers=3)`. Result includes `week_peaks` (5s/1min/5min/20min max across the 3) and `power_profile` (Coggan classification) when weight is provided.
-- **wellness baseline maturity (tiered)**: `wellness_summary()` returns `baseline_maturity` (`insufficient` / `preliminary` / `consolidating` / `stable`) and per-metric `baseline_sample_sizes` (e.g. `{"resting_hr": 4, "hrv": 4, "respiration": 4, ...}`). RHR / HRV / respiration deviation flags are auto-suppressed when the per-metric sample size is below `MIN_BASELINE_SIZE = 7` — daily HRV/RHR swings of 10-25% are normal noise at shorter windows. Recovery, sleep, and subjective flags use absolute thresholds and fire regardless. `partial_baseline` boolean is still emitted (true only when history is empty) for back-compat. `baseline_note` is the tiered human-readable text — surface it verbatim in coaching output. Legacy: prior versions used only the binary `partial_baseline` (true at n=0 history only).
+- **wellness baseline maturity (tiered)**: `wellness_summary()` returns `baseline_maturity` (insufficient / preliminary / consolidating / stable) + per-metric `baseline_sample_sizes`. Deviation flags (RHR/HRV/respiration) auto-suppressed below `MIN_BASELINE_SIZE = 7`; absolute-threshold flags (Recovery/sleep/subjective) fire regardless. Surface `baseline_note` verbatim in coaching output. Rationale in `references/training_zones.md` → Baseline maturity note. Legacy `partial_baseline` boolean still emitted (true only when history is empty).
 - **Whoop fields from intervals.icu (what flows, what doesn't)**: Whoop syncs Recovery, HRV (rMSSD), RHR, sleep hours, sleep score, respiration, and SpO2 to intervals.icu. **Whoop strain is NOT synced** (dropped at the intervals.icu integration layer — not in `client.get_wellness()` output regardless of athlete settings). Don't propose features that depend on Whoop strain; use TSS for training load instead.
 - **wellness_summary output schema**: Beyond `baseline` + `latest` + `flags`, wellness_summary now returns `recovery_slope_3day` (today vs 3 days ago with `alarm: bool`), `subjective_stale_warning` (true when 3+ subjective fields all=1), `training_load` (CTL/ATL/TSB pulled from latest wellness record's server-side values), and `days_with_whoop_data` (count of records with ≥1 Whoop-sourced metric — disambiguates from `days_with_data` which counts all returned dates). `readiness_check()` consumes these from wellness_summary rather than recomputing — single source of truth.
 - **Mid-Week Check-In delegates to `--readiness-check`**: `workflows/advise.md` Mid-Week Check-In runs `intervals_icu_api.py --readiness-check`, not `--wellness 14`. The readiness-check tool returns the full wellness summary fields plus verdict_band (GREEN / YELLOW-HIGH / YELLOW-LOW / RED) + ceiling + sleep-score tiebreaker logic. Weekly Review (`workflows/plan.md`) still uses `--wellness 14` because it needs the per-day daily array for the weekly trend.
