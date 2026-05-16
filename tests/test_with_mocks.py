@@ -13,7 +13,14 @@ from unittest.mock import patch, MagicMock
 # Add scripts/ to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from intervals_icu_api import IntervalsIcuClient, analyze, weekly_summary, apply_compact, wellness_summary
+from intervals_icu_api import (
+    IntervalsIcuClient,
+    analyze,
+    apply_compact,
+    format_readiness_check,
+    weekly_summary,
+    wellness_summary,
+)
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
@@ -696,41 +703,10 @@ class TestWellnessSummary(unittest.TestCase):
         self.assertEqual(result["baseline"]["resting_hr_avg"], 51.0)
         self.assertEqual(result["latest"]["resting_hr"], 80)
 
-    def test_red_flag_rhr_elevated_10bpm(self):
-        records = [
-            self._wellness_record("2026-04-25", restingHR=50),
-            self._wellness_record("2026-04-26", restingHR=52),
-            self._wellness_record("2026-04-27", restingHR=62),  # +11 above 51 baseline
-        ]
-        with patch.object(self.client, "get_wellness", return_value=records):
-            result = wellness_summary(self.client, days=14)
-        red_flags = [f for f in result["flags"] if f["severity"] == "red"]
-        self.assertTrue(any(f["signal"] == "RHR" for f in red_flags))
-        self.assertEqual(result["overall_status"], "red")
-
-    def test_yellow_flag_rhr_elevated_5bpm(self):
-        records = [
-            self._wellness_record("2026-04-25", restingHR=50),
-            self._wellness_record("2026-04-26", restingHR=52),
-            self._wellness_record("2026-04-27", restingHR=57),  # +6 above 51 baseline
-        ]
-        with patch.object(self.client, "get_wellness", return_value=records):
-            result = wellness_summary(self.client, days=14)
-        yellow_flags = [f for f in result["flags"] if f["severity"] == "yellow"]
-        self.assertTrue(any(f["signal"] == "RHR" for f in yellow_flags))
-        self.assertEqual(result["overall_status"], "yellow")
-
-    def test_yellow_flag_hrv_depressed(self):
-        records = [
-            self._wellness_record("2026-04-25", hrv=70),
-            self._wellness_record("2026-04-26", hrv=72),
-            self._wellness_record("2026-04-27", hrv=60),  # -15.5% vs 71 baseline
-        ]
-        with patch.object(self.client, "get_wellness", return_value=records):
-            result = wellness_summary(self.client, days=14)
-        hrv_flags = [f for f in result["flags"] if f["signal"] == "HRV"]
-        self.assertEqual(len(hrv_flags), 1)
-        self.assertEqual(hrv_flags[0]["severity"], "yellow")
+    # NOTE: Original n=2-history flag-firing tests removed — superseded by
+    # TestWellnessFlagFiringAtMatureBaseline below, which asserts the same
+    # firing logic at n=7 history (R1: deviation flags require ≥7 days of
+    # history to fire, since shorter windows are statistically noise).
 
     def test_yellow_flag_short_sleep(self):
         records = [
@@ -962,6 +938,311 @@ class TestWellnessSummary(unittest.TestCase):
         with patch.object(self.client, "get_wellness", return_value=records):
             result = wellness_summary(self.client, days=14)
         self.assertEqual(result["baseline"]["respiration_avg"], 13.2)
+
+
+def _series(start_day, count, **kwargs):
+    """Helper: build N consecutive daily wellness records from start_day with the same kwargs."""
+    from datetime import date, timedelta
+    base = date.fromisoformat(start_day)
+    return [{"id": (base + timedelta(days=i)).isoformat(), **kwargs} for i in range(count)]
+
+
+class TestBaselineMaturity(unittest.TestCase):
+    """R1+R8: per-metric baseline sample sizes, tiered maturity, days_with_whoop_data."""
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def test_baseline_sample_sizes_per_metric(self):
+        """baseline_sample_sizes dict reports count of non-null history values per metric.
+        Latest day is excluded (it's compared against history, not part of it)."""
+        records = [
+            {"id": "2026-05-09", "restingHR": 58},
+            {"id": "2026-05-10", "restingHR": 59, "hrv": 50},
+            {"id": "2026-05-11", "restingHR": 60, "hrv": 52},
+            {"id": "2026-05-12", "restingHR": 61},  # latest
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        sizes = result["baseline_sample_sizes"]
+        self.assertEqual(sizes["resting_hr"], 3)
+        self.assertEqual(sizes["hrv"], 2)
+
+    def test_baseline_maturity_preliminary_when_below_7(self):
+        records = _series("2026-05-01", 5, restingHR=58, hrv=50, respiration=13.0)
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["baseline_maturity"], "preliminary")
+        self.assertIn("preliminary", (result.get("baseline_note") or "").lower())
+
+    def test_baseline_maturity_consolidating_when_7_to_13(self):
+        records = _series("2026-05-01", 8, restingHR=58, hrv=50, respiration=13.0)
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["baseline_maturity"], "consolidating")
+
+    def test_baseline_maturity_stable_when_14_plus(self):
+        records = _series("2026-05-01", 15, restingHR=58, hrv=50, respiration=13.0)
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["baseline_maturity"], "stable")
+        # Stable baseline → no maturity warning
+        self.assertIsNone(result.get("baseline_note"))
+
+    def test_baseline_maturity_insufficient_when_no_history(self):
+        records = [{"id": "2026-05-12", "restingHR": 60}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["baseline_maturity"], "insufficient")
+
+    def test_rhr_deviation_suppressed_when_sample_size_below_7(self):
+        """With only 3 days of history, RHR deviation flag is noise — suppress."""
+        records = [
+            {"id": "2026-05-09", "restingHR": 50},
+            {"id": "2026-05-10", "restingHR": 52},
+            {"id": "2026-05-11", "restingHR": 51},
+            {"id": "2026-05-12", "restingHR": 62},  # +11 vs ~51 baseline
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "RHR"], [])
+
+    def test_rhr_deviation_fires_when_sample_size_at_or_above_7(self):
+        records = _series("2026-05-01", 7, restingHR=50)
+        records.append({"id": "2026-05-08", "restingHR": 62})  # +12 vs 50
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        rhr_flags = [f for f in result["flags"] if f["signal"] == "RHR"]
+        self.assertEqual(len(rhr_flags), 1)
+        self.assertEqual(rhr_flags[0]["severity"], "red")
+
+    def test_hrv_deviation_suppressed_when_sample_size_below_7(self):
+        records = [
+            {"id": "2026-05-09", "hrv": 70},
+            {"id": "2026-05-10", "hrv": 72},
+            {"id": "2026-05-11", "hrv": 60},  # -15% vs 71
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "HRV"], [])
+
+    def test_days_with_whoop_data_counts_records_with_at_least_one_whoop_field(self):
+        records = [
+            {"id": "2026-05-08"},  # null everything
+            {"id": "2026-05-09", "restingHR": 58},
+            {"id": "2026-05-10", "readiness": 70},
+            {"id": "2026-05-11", "hrv": 50},
+            {"id": "2026-05-12"},  # null everything
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual(result["days_with_whoop_data"], 3)
+        # days_with_data (legacy) preserved for back-compat
+        self.assertEqual(result["days_with_data"], 5)
+
+    def test_days_with_whoop_data_excludes_manual_only_sleep_entries(self):
+        """sleep_hours can be entered manually via the intervals.icu UI, so it
+        is NOT a Whoop-only signal. A record with only sleepSecs populated
+        (no other Whoop field) must NOT count as a Whoop-synced day."""
+        records = [
+            {"id": "2026-05-02", "sleepSecs": 28800, "sleepQuality": 2,
+             "fatigue": 1, "soreness": 1},  # manual entry, no Whoop autosync
+            {"id": "2026-05-12", "restingHR": 60, "hrv": 50, "readiness": 70,
+             "sleepSecs": 28800, "sleepScore": 95},  # genuine Whoop sync
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        # Only the 2026-05-12 record has Whoop-exclusive fields populated
+        self.assertEqual(result["days_with_whoop_data"], 1)
+
+
+class TestRespirationFlag(unittest.TestCase):
+    """R4: respiration deviation flag (illness-onset early warning)."""
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def test_respiration_flag_fires_above_baseline_plus_2(self):
+        records = _series("2026-05-01", 8, respiration=13.0)
+        records[-1] = {"id": "2026-05-08", "respiration": 15.5}  # latest +2.5
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        resp_flags = [f for f in result["flags"] if f["signal"] == "respiration"]
+        self.assertEqual(len(resp_flags), 1)
+        self.assertEqual(resp_flags[0]["severity"], "yellow")
+
+    def test_respiration_flag_suppressed_when_baseline_immature(self):
+        records = [
+            {"id": "2026-05-09", "respiration": 13.0},
+            {"id": "2026-05-10", "respiration": 13.0},
+            {"id": "2026-05-11", "respiration": 15.5},  # +2.5
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "respiration"], [])
+
+    def test_respiration_flag_no_fire_within_normal_range(self):
+        records = _series("2026-05-01", 8, respiration=13.0)
+        records[-1] = {"id": "2026-05-08", "respiration": 14.5}  # +1.5, under +2 threshold
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "respiration"], [])
+
+
+class TestWellnessSummaryLiftedFields(unittest.TestCase):
+    """R6: Recovery slope + subjective-stale + training_load lifted from readiness_check."""
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def test_wellness_summary_includes_recovery_slope_3day(self):
+        records = [
+            {"id": "2026-05-09", "readiness": 80},
+            {"id": "2026-05-10", "readiness": 75},
+            {"id": "2026-05-11", "readiness": 70},
+            {"id": "2026-05-12", "readiness": 65},  # -15 vs 80 (3 days ago)
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertIn("recovery_slope_3day", result)
+        slope = result["recovery_slope_3day"]
+        self.assertEqual(slope["today"], 65)
+        self.assertEqual(slope["three_days_ago"], 80)
+        self.assertEqual(slope["delta"], -15)
+        slope_flags = [f for f in result["flags"] if f["signal"] == "recovery_slope"]
+        self.assertEqual(len(slope_flags), 1)
+
+    def test_recovery_slope_no_alarm_when_stable(self):
+        records = [
+            {"id": "2026-05-09", "readiness": 70},
+            {"id": "2026-05-10", "readiness": 72},
+            {"id": "2026-05-11", "readiness": 71},
+            {"id": "2026-05-12", "readiness": 73},  # +3 vs 70
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        slope = result["recovery_slope_3day"]
+        self.assertEqual(slope["delta"], 3)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "recovery_slope"], [])
+
+    def test_subjective_stale_warning_when_all_filled_are_1(self):
+        records = [{"id": "2026-05-12", "fatigue": 1, "soreness": 1, "stress": 1, "mood": 1}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertTrue(result["subjective_stale_warning"])
+
+    def test_no_subjective_stale_when_varied(self):
+        records = [{"id": "2026-05-12", "fatigue": 1, "soreness": 2, "stress": 1}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertFalse(result["subjective_stale_warning"])
+
+    def test_no_subjective_stale_when_fewer_than_3_fields(self):
+        """Threshold: only suspect 'stale' when 3+ fields are filled and all equal 1."""
+        records = [{"id": "2026-05-12", "fatigue": 1, "soreness": 1}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertFalse(result["subjective_stale_warning"])
+
+    def test_wellness_summary_includes_training_load(self):
+        records = [
+            {"id": "2026-05-11", "restingHR": 58, "ctl": 45.0, "atl": 50.0},
+            {"id": "2026-05-12", "restingHR": 60, "ctl": 48.0, "atl": 62.0},
+        ]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        tl = result["training_load"]
+        self.assertEqual(tl["ctl"], 48.0)
+        self.assertEqual(tl["atl"], 62.0)
+        self.assertEqual(tl["tsb"], -14.0)
+
+    def test_training_load_none_when_absent(self):
+        records = [{"id": "2026-05-12", "restingHR": 60}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        tl = result["training_load"]
+        self.assertIsNone(tl["ctl"])
+        self.assertIsNone(tl["atl"])
+        self.assertIsNone(tl["tsb"])
+
+
+class TestFormatReadinessCheckLabel(unittest.TestCase):
+    """R2: HRV/RHR labels must reflect actual baseline sample size, not hardcoded 14d."""
+
+    def _base_result(self, **overrides):
+        result = {
+            "date": "2026-05-16",
+            "lookback_days": 14,
+            "verdict_band": "GREEN",
+            "verdict": "GREEN — all session types clear.",
+            "ceiling": "No restrictions",
+            "data_age_days": 0,
+            "sleep": {"hours": 8.0, "score": 95, "status": "green", "note": None},
+            "recovery": {"score": 72, "band": "green", "slope_3day": None},
+            "hrv": {"today": 50.0, "baseline": 48.0, "sample_size": 4},
+            "resting_hr": {"today": 58, "baseline": 60.0, "sample_size": 4},
+            "tsb": {"ctl": None, "atl": None, "tsb": None},
+            "subjective": {"fatigue": None, "soreness": None, "stress": None, "mood": None,
+                           "stale_warning": False, "stale_note": None},
+            "flags": [],
+            "overall_status": "green",
+        }
+        result.update(overrides)
+        return result
+
+    def test_label_reflects_actual_sample_size_below_14(self):
+        text = format_readiness_check(self._base_result())
+        self.assertIn("4d baseline", text)
+        self.assertNotIn("14d baseline", text)
+
+    def test_label_says_14d_only_when_actually_14_plus(self):
+        result = self._base_result(
+            hrv={"today": 50.0, "baseline": 48.0, "sample_size": 14},
+            resting_hr={"today": 58, "baseline": 60.0, "sample_size": 14},
+        )
+        text = format_readiness_check(result)
+        self.assertIn("14d baseline", text)
+
+
+# ---------------------------------------------------------------------------
+# Updates to pre-existing wellness tests now that flags require ≥7d history.
+# The old tests asserted flag firing at n=2 history (3 records total). After R1,
+# RHR/HRV deviation flags are suppressed when sample_size < 7 (noise floor).
+# These tests are re-expressed at n=7 history so they continue to assert the
+# flag-firing logic (their original intent), just with realistic baseline depth.
+# ---------------------------------------------------------------------------
+class TestWellnessFlagFiringAtMatureBaseline(unittest.TestCase):
+    """Re-expression of older RHR/HRV deviation tests at matured baseline."""
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def test_red_flag_rhr_elevated_10bpm_at_mature_baseline(self):
+        records = _series("2026-05-01", 7, restingHR=51)
+        records.append({"id": "2026-05-08", "restingHR": 62})  # +11 vs 51
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        red = [f for f in result["flags"] if f["severity"] == "red" and f["signal"] == "RHR"]
+        self.assertEqual(len(red), 1)
+        self.assertEqual(result["overall_status"], "red")
+
+    def test_yellow_flag_rhr_elevated_5bpm_at_mature_baseline(self):
+        records = _series("2026-05-01", 7, restingHR=51)
+        records.append({"id": "2026-05-08", "restingHR": 57})  # +6 vs 51
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        yellow = [f for f in result["flags"]
+                  if f["severity"] == "yellow" and f["signal"] == "RHR"]
+        self.assertEqual(len(yellow), 1)
+
+    def test_yellow_flag_hrv_depressed_at_mature_baseline(self):
+        records = _series("2026-05-01", 7, hrv=70)
+        records.append({"id": "2026-05-08", "hrv": 60})  # -14% vs 70
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        hrv_flags = [f for f in result["flags"] if f["signal"] == "HRV"]
+        self.assertEqual(len(hrv_flags), 1)
+        self.assertEqual(hrv_flags[0]["severity"], "yellow")
 
 
 if __name__ == "__main__":

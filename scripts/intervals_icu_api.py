@@ -902,6 +902,30 @@ def wellness_summary(client, days=14):
     readinesses = [d["readiness"] for d in history if d["readiness"] is not None]
     respirations = [d["respiration"] for d in history if d["respiration"] is not None]
 
+    baseline_sample_sizes = {
+        "resting_hr": len(rhrs),
+        "hrv": len(hrvs),
+        "sleep_hours": len(sleeps),
+        "readiness": len(readinesses),
+        "respiration": len(respirations),
+    }
+
+    # Baseline maturity tiers — drives both deviation-flag suppression and
+    # the human-readable baseline_note. Threshold ≥7 days reflects the noise
+    # floor for HRV/RHR daily measurements (single-night swings of ±10-20%
+    # are common; require a week of history before treating deltas as signal).
+    # ≥14 days = "stable" matches HRV4Training / Marco Altini convention.
+    MIN_BASELINE_SIZE = 7
+    nonzero_sizes = [n for n in baseline_sample_sizes.values() if n > 0]
+    if not nonzero_sizes:
+        baseline_maturity = "insufficient"
+    elif min(nonzero_sizes) < MIN_BASELINE_SIZE:
+        baseline_maturity = "preliminary"
+    elif min(nonzero_sizes) < 14:
+        baseline_maturity = "consolidating"
+    else:
+        baseline_maturity = "stable"
+
     baseline = {}
     if rhrs:
         baseline["resting_hr_avg"] = round(sum(rhrs) / len(rhrs), 1)
@@ -917,8 +941,13 @@ def wellness_summary(client, days=14):
     latest = daily[-1] if daily else {}
     flags = []
 
-    # Yellow/Red flag rules from training_zones.md → Fatigue Indicators
-    if latest.get("resting_hr") and baseline.get("resting_hr_avg"):
+    # Yellow/Red flag rules from training_zones.md → Fatigue Indicators.
+    # Deviation-based flags (RHR, HRV, respiration) are suppressed when the
+    # per-metric history is shorter than MIN_BASELINE_SIZE — the comparison
+    # is too noisy to be actionable. Recovery and subjective flags use
+    # absolute thresholds and fire regardless of baseline depth.
+    if (latest.get("resting_hr") and baseline.get("resting_hr_avg")
+            and baseline_sample_sizes["resting_hr"] >= MIN_BASELINE_SIZE):
         delta = round(latest["resting_hr"] - baseline["resting_hr_avg"], 1)
         if delta >= 10:
             flags.append({"signal": "RHR", "severity": "red",
@@ -931,13 +960,28 @@ def wellness_summary(client, days=14):
                           "delta_bpm": delta,
                           "rule": "RHR elevated >5 bpm above baseline (yellow flag)"})
 
-    if latest.get("hrv") and baseline.get("hrv_avg") and baseline["hrv_avg"] > 0:
+    if (latest.get("hrv") and baseline.get("hrv_avg") and baseline["hrv_avg"] > 0
+            and baseline_sample_sizes["hrv"] >= MIN_BASELINE_SIZE):
         delta_pct = round((latest["hrv"] - baseline["hrv_avg"]) / baseline["hrv_avg"] * 100, 1)
         if delta_pct <= -10:
             flags.append({"signal": "HRV", "severity": "yellow",
                           "value": latest["hrv"], "baseline": baseline["hrv_avg"],
                           "delta_pct": delta_pct,
                           "rule": "HRV depressed >10% below baseline (yellow flag)"})
+
+    # Respiration: >2/min above baseline is an early illness-onset signal
+    # (Whoop's own research). Whoop folds respiration into Recovery, but a
+    # standalone flag catches the drift 24-48h before Recovery suppression.
+    if (latest.get("respiration") is not None
+            and baseline.get("respiration_avg") is not None
+            and baseline_sample_sizes["respiration"] >= MIN_BASELINE_SIZE):
+        delta = round(latest["respiration"] - baseline["respiration_avg"], 2)
+        if delta > 2.0:
+            flags.append({"signal": "respiration", "severity": "yellow",
+                          "value": round(latest["respiration"], 2),
+                          "baseline": baseline["respiration_avg"],
+                          "delta_per_min": delta,
+                          "rule": "Respiration >2/min above baseline (yellow flag — possible illness onset, monitor)"})
 
     if latest.get("sleep_hours") is not None and latest["sleep_hours"] < 6:
         flags.append({"signal": "sleep", "severity": "yellow",
@@ -984,23 +1028,115 @@ def wellness_summary(client, days=14):
         except ValueError:
             pass
 
+    # Recovery slope (3-day): early-warning trend that often precedes a single-day
+    # Recovery dip. Lifted from readiness_check into wellness_summary so the
+    # Mid-Week Check-In and Weekly Review workflows get the same signal as
+    # --readiness-check without re-implementing the math.
+    recovery_slope_3day = None
+    latest_recovery = latest.get("readiness")
+    if latest_recovery is not None and len(daily) >= 4:
+        d3_ago = daily[-4].get("readiness")
+        if d3_ago is not None:
+            delta = round(latest_recovery - d3_ago, 1)
+            recovery_slope_3day = {
+                "today": latest_recovery,
+                "three_days_ago": d3_ago,
+                "delta": delta,
+                "alarm": delta <= -10,
+            }
+            if delta <= -10:
+                flags.append({
+                    "signal": "recovery_slope", "severity": "yellow",
+                    "value": delta,
+                    "rule": "Recovery dropped >=10pt over 3 days (early-warning trend)",
+                })
+
+    # Subjective-stale heuristic: when 3+ subjective fields are populated and ALL
+    # equal 1 ("best" on intervals.icu default scale), the athlete is probably
+    # not updating these manually. Surface so coaching templates can downweight.
+    subj_keys = ["fatigue", "soreness", "stress", "mood"]
+    subj_filled = [latest.get(k) for k in subj_keys if latest.get(k) is not None]
+    subjective_stale_warning = len(subj_filled) >= 3 and all(v == 1 for v in subj_filled)
+
+    # Training load context (CTL/ATL/TSB) sourced from the latest raw wellness
+    # record. intervals.icu computes these server-side. Pulling here avoids a
+    # second API call in readiness_check and lets Mid-Week Check-In correlate
+    # readiness with current load without extra plumbing.
+    raw_latest = wellness[-1] if wellness else {}
+    ctl_raw = raw_latest.get("ctl")
+    atl_raw = raw_latest.get("atl")
+    training_load = {
+        "ctl": round(ctl_raw, 1) if ctl_raw is not None else None,
+        "atl": round(atl_raw, 1) if atl_raw is not None else None,
+        "tsb": (round(ctl_raw - atl_raw, 1)
+                if ctl_raw is not None and atl_raw is not None else None),
+    }
+
+    # Days-with-Whoop-data: records where at least one Whoop-exclusive metric
+    # is populated. Distinguishes "30 dates returned" from "N dates with actual
+    # wearable data" — coaching templates use this to gauge whether baseline
+    # numbers are trustworthy. Excludes `sleep_hours` because intervals.icu's
+    # UI lets athletes manually enter sleep (a record with only sleepSecs
+    # populated is a manual entry, not a Whoop sync). `sleep_score` IS
+    # Whoop-exclusive (no manual UI for it). Same for RHR/HRV/readiness/
+    # respiration/spO2 — those require a wearable push.
+    WHOOP_EXCLUSIVE_FIELDS = ("resting_hr", "hrv", "sleep_score",
+                              "readiness", "respiration", "spo2")
+    days_with_whoop_data = sum(
+        1 for d in daily if any(d.get(f) is not None for f in WHOOP_EXCLUSIVE_FIELDS)
+    )
+
+    # Re-derive overall_status after the slope flag may have been appended above.
+    # (The earlier assignment above doesn't see post-hoc flags — recomputing is
+    # cheaper than reordering the code and keeps the per-flag logic local.)
+    overall = "red" if any(f["severity"] == "red" for f in flags) \
+        else "yellow" if any(f["severity"] == "yellow" for f in flags) \
+        else "green"
+
+    # Tiered baseline note — replaces the binary partial_baseline message.
+    # Drives template-side warnings about how much to trust deviation flags.
+    if baseline_maturity == "insufficient":
+        baseline_note = (
+            "No historical baseline — only the latest day's wellness is available. "
+            "RHR / HRV / respiration deviation flags are suppressed; latest-day "
+            "flags (sleep <6h, subjective ≥4, Recovery <67) still apply. Log a few "
+            "more days to enable full readiness coaching."
+        )
+    elif baseline_maturity == "preliminary":
+        smallest = min(nonzero_sizes)
+        baseline_note = (
+            f"Baseline is preliminary (smallest metric n={smallest}; need ≥{MIN_BASELINE_SIZE} "
+            "for statistical confidence, ≥14 for stable). RHR / HRV / respiration "
+            "deviation flags are suppressed below n=7. Recovery + sleep + subjective "
+            "flags still apply."
+        )
+    elif baseline_maturity == "consolidating":
+        smallest = min(nonzero_sizes)
+        baseline_note = (
+            f"Baseline consolidating (n={smallest}, target 14 for stable). "
+            "Deviation flags active but treat single-day deltas with caution."
+        )
+    else:  # stable
+        baseline_note = None
+
     return {
         "days": days,
         "days_with_data": len(daily),
+        "days_with_whoop_data": days_with_whoop_data,
         "history_days": len(history),
         "partial_baseline": partial_baseline,
+        "baseline_maturity": baseline_maturity,
+        "baseline_sample_sizes": baseline_sample_sizes,
         "baseline": baseline,
         "latest": latest,
         "latest_date_age_days": latest_date_age_days,
         "flags": flags,
         "overall_status": overall,
         "daily": daily,
-        "baseline_note": (
-            "Only one daily wellness record available — no historical baseline to "
-            "compare against. RHR / HRV deviation flags are suppressed; latest-day "
-            "flags (sleep <6h, subjective ≥4, Recovery <67) still apply. Log a few "
-            "more days to enable full readiness coaching."
-        ) if partial_baseline else None,
+        "baseline_note": baseline_note,
+        "recovery_slope_3day": recovery_slope_3day,
+        "subjective_stale_warning": subjective_stale_warning,
+        "training_load": training_load,
     }
 
 
@@ -1029,42 +1165,21 @@ def readiness_check(client, lookback_days=14):
 
     latest = summary.get("latest") or {}
     baseline = summary.get("baseline") or {}
-    daily = summary.get("daily") or []
+    sample_sizes = summary.get("baseline_sample_sizes") or {}
     flags = list(summary.get("flags") or [])
     today_recovery = latest.get("readiness")
 
     today_str = datetime.now().strftime("%Y-%m-%d")
 
-    # Pull today's raw record for CTL/ATL/TSB (wellness_summary strips these)
-    ctl = atl = tsb = None
-    try:
-        raw = client.get_wellness(today_str, today_str)
-        if raw:
-            today_raw = raw[0] if isinstance(raw, list) else raw
-            ctl_raw, atl_raw = today_raw.get("ctl"), today_raw.get("atl")
-            if ctl_raw is not None and atl_raw is not None:
-                ctl, atl = round(ctl_raw, 1), round(atl_raw, 1)
-                tsb = round(ctl - atl, 1)
-    except Exception:
-        pass  # CTL/ATL is optional context — silent fall-through
+    # Training load + 3-day slope are now sourced from wellness_summary (R6).
+    # No extra API call needed; no recomputation here.
+    tl = summary.get("training_load") or {}
+    ctl, atl, tsb = tl.get("ctl"), tl.get("atl"), tl.get("tsb")
 
-    # 3-day recovery slope: today vs 3 days ago
-    slope_alarm = None
-    if today_recovery is not None and len(daily) >= 4:
-        d3_ago = daily[-4].get("readiness")
-        if d3_ago is not None:
-            delta = round(today_recovery - d3_ago, 1)
-            if delta <= -10:
-                slope_alarm = {
-                    "today": today_recovery,
-                    "three_days_ago": d3_ago,
-                    "delta": delta,
-                    "rule": "Recovery dropped >=10pt over 3 days (early-warning trend)",
-                }
-                flags.append({
-                    "signal": "recovery_slope", "severity": "yellow",
-                    "value": delta, "rule": slope_alarm["rule"],
-                })
+    # Pass the full slope dict through so format_readiness_check can render
+    # positive trends ("Recovery improving") too — not just alarms. The dict
+    # carries `alarm: bool` so downstream rendering can style accordingly.
+    slope_alarm = summary.get("recovery_slope_3day")
 
     # Subdivide recovery band
     band = None
@@ -1128,11 +1243,10 @@ def readiness_check(client, lookback_days=14):
         verdict = "INSUFFICIENT DATA — log a wellness entry or wait for WHOOP sync."
         ceiling = "—"
 
-    # Subjective stale-data check (all 1 across 3+ filled fields = athlete probably not updating)
+    # Subjective stale-data + subjective values: lifted from wellness_summary (R6).
     subj_keys = ["fatigue", "soreness", "stress", "mood"]
     subj_vals = {k: latest.get(k) for k in subj_keys}
-    subj_filled = [v for v in subj_vals.values() if v is not None]
-    subj_stale = (len(subj_filled) >= 3 and all(v == 1 for v in subj_filled))
+    subj_stale = bool(summary.get("subjective_stale_warning"))
 
     age_days = summary.get("latest_date_age_days")
 
@@ -1143,10 +1257,14 @@ def readiness_check(client, lookback_days=14):
         "verdict": verdict,
         "ceiling": ceiling,
         "data_age_days": age_days,
+        "baseline_maturity": summary.get("baseline_maturity"),
+        "baseline_note": summary.get("baseline_note"),
         "sleep": {"hours": sleep_h, "score": sleep_score, "status": sleep_status, "note": sleep_note},
         "recovery": {"score": today_recovery, "band": band, "slope_3day": slope_alarm},
-        "hrv": {"today": latest.get("hrv"), "baseline": baseline.get("hrv_avg")},
-        "resting_hr": {"today": latest.get("resting_hr"), "baseline": baseline.get("resting_hr_avg")},
+        "hrv": {"today": latest.get("hrv"), "baseline": baseline.get("hrv_avg"),
+                "sample_size": sample_sizes.get("hrv", 0)},
+        "resting_hr": {"today": latest.get("resting_hr"), "baseline": baseline.get("resting_hr_avg"),
+                       "sample_size": sample_sizes.get("resting_hr", 0)},
         "tsb": {"ctl": ctl, "atl": atl, "tsb": tsb},
         "subjective": {**subj_vals, "stale_warning": subj_stale,
                        "stale_note": ("All values = 1 (best/default) — verify athlete is updating these manually"
@@ -1181,17 +1299,19 @@ def format_readiness_check(result):
     h = result["hrv"]
     if h["today"] is not None:
         hrv_disp = round(h["today"], 1)
-        if h["baseline"] is not None:
+        n = h.get("sample_size") or 0
+        if h["baseline"] is not None and n > 0:
             d = round(h["today"] - h["baseline"], 1)
-            lines.append(f"HRV:          {hrv_disp}ms{'':<3} | {d:+}ms vs 14d baseline {h['baseline']}ms")
+            lines.append(f"HRV:          {hrv_disp}ms{'':<3} | {d:+}ms vs {n}d baseline {h['baseline']}ms")
         else:
             lines.append(f"HRV:          {hrv_disp}ms{'':<3} | (no baseline yet)")
 
     r = result["resting_hr"]
     if r["today"] is not None:
-        if r["baseline"] is not None:
+        n = r.get("sample_size") or 0
+        if r["baseline"] is not None and n > 0:
             d = round(r["today"] - r["baseline"], 1)
-            lines.append(f"RHR:          {r['today']}bpm{'':<4} | {d:+}bpm vs 14d baseline {r['baseline']}bpm")
+            lines.append(f"RHR:          {r['today']}bpm{'':<4} | {d:+}bpm vs {n}d baseline {r['baseline']}bpm")
         else:
             lines.append(f"RHR:          {r['today']}bpm{'':<4} | (no baseline yet)")
 
@@ -1200,9 +1320,12 @@ def format_readiness_check(result):
         band_disp = {"green": "GREEN", "yellow-high": "YELLOW-HIGH",
                      "yellow-low": "YELLOW-LOW", "red": "RED"}.get(rc["band"], "—")
         lines.append(f"Recovery:     {rc['score']}{'':<7} | {band_disp}")
-        if rc.get("slope_3day"):
-            sl = rc["slope_3day"]
-            lines.append(f"  └─ 3-day slope: {sl['three_days_ago']} → {sl['today']} ({sl['delta']:+}pt) ⚠ trend alarm")
+        sl = rc.get("slope_3day")
+        if sl and abs(sl.get("delta") or 0) >= 5:
+            # Render meaningful trends (≥5pt change over 3 days). Alarms get
+            # the ⚠ marker; positive trends get a neutral confirmation.
+            label = "⚠ trend alarm" if sl.get("alarm") else "trending up" if sl["delta"] > 0 else "trending down"
+            lines.append(f"  └─ 3-day slope: {sl['three_days_ago']} → {sl['today']} ({sl['delta']:+}pt) {label}")
 
     t = result["tsb"]
     if t["tsb"] is not None:
