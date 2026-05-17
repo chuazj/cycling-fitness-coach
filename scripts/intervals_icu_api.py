@@ -55,6 +55,17 @@ def _is_cycling(activity):
     sport = activity.get("type") or ""
     return not sport or sport in CYCLING_TYPES
 
+
+def _stdev(values):
+    """Sample standard deviation. Returns None for n<2 (math undefined).
+    Plain stdlib math, no numpy. Used for HRV 7-day rolling band per Plews/Buchheit."""
+    n = len(values)
+    if n < 2:
+        return None
+    mean = sum(values) / n
+    var = sum((v - mean) ** 2 for v in values) / (n - 1)
+    return math.sqrt(var)
+
 # Coggan male power profile table (W/kg thresholds) for rider profiling
 POWER_PROFILE = {
     "5s":    {"untrained": 8.0, "fair": 11.0, "moderate": 14.0, "good": 16.5, "very_good": 19.0, "excellent": 22.0, "exceptional": 24.0},
@@ -926,6 +937,10 @@ def wellness_summary(client, days=14):
     # Whoop value (total wreck); RHR/HRV/sleep=0 are physically impossible.
     readinesses = [d["readiness"] for d in history if d["readiness"] is not None]
     respirations = [d["respiration"] for d in history if d["respiration"] is not None]
+    # SpO2 truthiness is safe (0% is physically impossible) but use explicit
+    # filter for clarity. Used for baseline-maturity gating only — SpO2 flagging
+    # is an absolute threshold (<95%), not a deviation rule.
+    spo2s = [d["spo2"] for d in history if d["spo2"] is not None]
 
     baseline_sample_sizes = {
         "resting_hr": len(rhrs),
@@ -933,6 +948,7 @@ def wellness_summary(client, days=14):
         "sleep_hours": len(sleeps),
         "readiness": len(readinesses),
         "respiration": len(respirations),
+        "spo2": len(spo2s),
     }
 
     # Baseline maturity tiers — drives both deviation-flag suppression and
@@ -956,12 +972,29 @@ def wellness_summary(client, days=14):
         baseline["resting_hr_avg"] = round(sum(rhrs) / len(rhrs), 1)
     if hrvs:
         baseline["hrv_avg"] = round(sum(hrvs) / len(hrvs), 1)
+        # Coefficient of variation (CV) = SD/mean as % — stability signal.
+        # Rising CV during chronic load = early autonomic strain even before
+        # the mean drops. Plews/Buchheit / HRV4Training convention.
+        hrv_sd_full = _stdev(hrvs)
+        if hrv_sd_full is not None and baseline["hrv_avg"] > 0:
+            baseline["hrv_cv_pct"] = round(hrv_sd_full / baseline["hrv_avg"] * 100, 1)
+        # 7-day rolling mean + SD for the band check (Plews/Buchheit method).
+        # Window = last 7 days of history (= 7 days before today). Today is
+        # compared against this band; yesterday too for the 2-day persistence rule.
+        recent7 = hrvs[-7:] if len(hrvs) >= 7 else []
+        if recent7:
+            baseline["hrv_7d_mean"] = round(sum(recent7) / len(recent7), 1)
+            sd7 = _stdev(recent7)
+            if sd7 is not None:
+                baseline["hrv_7d_sd"] = round(sd7, 1)
     if sleeps:
         baseline["sleep_hours_avg"] = round(sum(sleeps) / len(sleeps), 1)
     if readinesses:
         baseline["readiness_avg"] = round(sum(readinesses) / len(readinesses), 1)
     if respirations:
         baseline["respiration_avg"] = round(sum(respirations) / len(respirations), 1)
+    if spo2s:
+        baseline["spo2_avg"] = round(sum(spo2s) / len(spo2s), 1)
 
     latest = daily[-1] if daily else {}
     flags = []
@@ -985,28 +1018,76 @@ def wellness_summary(client, days=14):
                           "delta_bpm": delta,
                           "rule": "RHR elevated >5 bpm above baseline (yellow flag)"})
 
-    if (latest.get("hrv") and baseline.get("hrv_avg") and baseline["hrv_avg"] > 0
+    # HRV gating uses Plews/Buchheit 7-day rolling band (μ ± 0.5σ). Replaces
+    # the older flat "10% below baseline" rule, which over-flagged athletes
+    # with high day-to-day HRV variance and under-flagged athletes with
+    # consistently narrow HRV. Requires ≥7 days of HRV history; falls back
+    # silently when the 7-day window is incomplete.
+    #   - Single-day below band → YELLOW "HRV below band"
+    #   - Two consecutive days below band → RED "HRV de-load trigger"
+    #     (escalates rather than duplicates; only the red fires in the 2-day case)
+    mu7 = baseline.get("hrv_7d_mean")
+    sd7 = baseline.get("hrv_7d_sd")
+    if (latest.get("hrv") and mu7 is not None and sd7 is not None
             and baseline_sample_sizes["hrv"] >= MIN_BASELINE_SIZE):
-        delta_pct = round((latest["hrv"] - baseline["hrv_avg"]) / baseline["hrv_avg"] * 100, 1)
-        if delta_pct <= -10:
+        lower_band = round(mu7 - 0.5 * sd7, 1)
+        today_below = latest["hrv"] < lower_band
+        # Yesterday = daily[-2]; today = daily[-1]. Use the same window for
+        # both checks — yesterday's value is included in the window, biasing
+        # the band slightly inward, but with n=7 the bias is small and the
+        # alternative (re-computing a separate band ending yesterday) needs
+        # ≥8 HRV samples and adds complexity for marginal gain.
+        yest_hrv = daily[-2].get("hrv") if len(daily) >= 2 else None
+        yest_below = yest_hrv is not None and yest_hrv < lower_band
+        if today_below and yest_below:
+            flags.append({"signal": "HRV", "severity": "red",
+                          "value": latest["hrv"], "yesterday": yest_hrv,
+                          "band_lower": lower_band, "band_mean": mu7, "band_sd": sd7,
+                          "rule": ("HRV below 7-day band (μ-0.5σ = {:.1f}ms) for 2 consecutive days "
+                                   "— de-load trigger; downgrade next quality session").format(lower_band)})
+        elif today_below:
             flags.append({"signal": "HRV", "severity": "yellow",
-                          "value": latest["hrv"], "baseline": baseline["hrv_avg"],
-                          "delta_pct": delta_pct,
-                          "rule": "HRV depressed >10% below baseline (yellow flag)"})
+                          "value": latest["hrv"], "band_lower": lower_band,
+                          "band_mean": mu7, "band_sd": sd7,
+                          "rule": ("HRV below 7-day band (μ-0.5σ = {:.1f}ms) today only "
+                                   "— watch tomorrow; if still below, de-load").format(lower_band)})
 
-    # Respiration: >2/min above baseline is an early illness-onset signal
-    # (Whoop's own research). Whoop folds respiration into Recovery, but a
-    # standalone flag catches the drift 24-48h before Recovery suppression.
+    # Respiration two-tier: WHOOP's own published illness-detection data shows
+    # +1.0 breath/min vs personal baseline is a reliable 24-48h pre-symptomatic
+    # signal; +2.0 typically coincides with active infection or significant
+    # stressor (high altitude, severe dehydration). Standalone flag fires
+    # before WHOOP folds respiration into Recovery and Recovery turns red.
     if (latest.get("respiration") is not None
             and baseline.get("respiration_avg") is not None
             and baseline_sample_sizes["respiration"] >= MIN_BASELINE_SIZE):
         delta = round(latest["respiration"] - baseline["respiration_avg"], 2)
         if delta > 2.0:
+            flags.append({"signal": "respiration", "severity": "red",
+                          "value": round(latest["respiration"], 2),
+                          "baseline": baseline["respiration_avg"],
+                          "delta_per_min": delta,
+                          "rule": "Respiration >2/min above baseline (red flag — likely active illness; Z1 30min or full rest)"})
+        elif delta > 1.0:
             flags.append({"signal": "respiration", "severity": "yellow",
                           "value": round(latest["respiration"], 2),
                           "baseline": baseline["respiration_avg"],
                           "delta_per_min": delta,
-                          "rule": "Respiration >2/min above baseline (yellow flag — possible illness onset, monitor)"})
+                          "rule": "Respiration >1/min above baseline (yellow flag — early illness onset signal; downgrade tomorrow's quality session)"})
+
+    # SpO2 absolute threshold. Wrist-PPG SpO2 has higher error than fingertip
+    # pulse oximetry, so treat as flag-not-diagnosis. Useful for: altitude/travel
+    # exposure, Singapore haze season, sleep-disordered breathing, early
+    # respiratory infection. No baseline gating — the absolute value IS the signal;
+    # a single low reading is worth surfacing even on a fresh wearable.
+    if latest.get("spo2") is not None and latest["spo2"] < 95:
+        severity = "red" if latest["spo2"] < 92 else "yellow"
+        note = ("(red flag — significant desaturation; rest and check for "
+                "illness / altitude / sleep apnea)" if severity == "red"
+                else "(yellow flag — possible respiratory stress, poor sleep "
+                     "environment, or early illness; pair with respiration check)")
+        flags.append({"signal": "spo2", "severity": severity,
+                      "value": latest["spo2"],
+                      "rule": f"SpO2 nightly avg {latest['spo2']}% (<95%) {note}"})
 
     if latest.get("sleep_hours") is not None and latest["sleep_hours"] < 6:
         flags.append({"signal": "sleep", "severity": "yellow",
@@ -1097,6 +1178,34 @@ def wellness_summary(client, days=14):
                 if ctl_raw is not None and atl_raw is not None else None),
     }
 
+    # Progression signal (separate from gating flags — this is "go harder",
+    # not "back off"). Fires when HRV is above the 7-day band (μ+0.5σ) for
+    # the last 3 days AND CTL is rising over the last 7 days. Indicates the
+    # athlete has adapted to current load and can absorb a 5-10% TSS bump.
+    # Mostly dormant during maintenance phases; matters during build blocks.
+    progression_signal = None
+    if (mu7 is not None and sd7 is not None
+            and baseline_sample_sizes["hrv"] >= MIN_BASELINE_SIZE):
+        upper_band = round(mu7 + 0.5 * sd7, 1)
+        last3_hrv = [d.get("hrv") for d in daily[-3:]]
+        if all(v is not None and v > upper_band for v in last3_hrv) and len(daily) >= 3:
+            # CTL rising check: today's CTL vs 7-days-ago. wellness[-8] = 7 days
+            # before wellness[-1] (today). Falls back to "unknown" if <8 records.
+            ctl_today = ctl_raw
+            ctl_7d_ago = wellness[-8].get("ctl") if len(wellness) >= 8 else None
+            ctl_rising = (ctl_today is not None and ctl_7d_ago is not None
+                          and ctl_today > ctl_7d_ago)
+            if ctl_rising:
+                progression_signal = {
+                    "rule": ("HRV above band (μ+0.5σ = {:.1f}ms) for 3 days AND CTL rising "
+                             "({:.1f} → {:.1f}) — green-light a 5-10% TSS bump on next "
+                             "quality session").format(upper_band, ctl_7d_ago, ctl_today),
+                    "hrv_last3": last3_hrv,
+                    "band_upper": upper_band,
+                    "ctl_7d_ago": round(ctl_7d_ago, 1),
+                    "ctl_today": round(ctl_today, 1),
+                }
+
     # Days-with-Whoop-data: records where at least one Whoop-exclusive metric
     # is populated. Distinguishes "30 dates returned" from "N dates with actual
     # wearable data" — coaching templates use this to gauge whether baseline
@@ -1162,6 +1271,7 @@ def wellness_summary(client, days=14):
         "recovery_slope_3day": recovery_slope_3day,
         "subjective_stale_warning": subjective_stale_warning,
         "training_load": training_load,
+        "progression_signal": progression_signal,
     }
 
 
@@ -1287,10 +1397,20 @@ def readiness_check(client, lookback_days=14):
         "sleep": {"hours": sleep_h, "score": sleep_score, "status": sleep_status, "note": sleep_note},
         "recovery": {"score": today_recovery, "band": band, "slope_3day": slope_alarm},
         "hrv": {"today": latest.get("hrv"), "baseline": baseline.get("hrv_avg"),
+                "cv_pct": baseline.get("hrv_cv_pct"),
+                "band_mean_7d": baseline.get("hrv_7d_mean"),
+                "band_sd_7d": baseline.get("hrv_7d_sd"),
                 "sample_size": sample_sizes.get("hrv", 0)},
         "resting_hr": {"today": latest.get("resting_hr"), "baseline": baseline.get("resting_hr_avg"),
                        "sample_size": sample_sizes.get("resting_hr", 0)},
+        "respiration": {"today": latest.get("respiration"),
+                        "baseline": baseline.get("respiration_avg"),
+                        "sample_size": sample_sizes.get("respiration", 0)},
+        "spo2": {"today": latest.get("spo2"),
+                 "baseline": baseline.get("spo2_avg"),
+                 "sample_size": sample_sizes.get("spo2", 0)},
         "tsb": {"ctl": ctl, "atl": atl, "tsb": tsb},
+        "progression_signal": summary.get("progression_signal"),
         "subjective": {**subj_vals, "stale_warning": subj_stale,
                        "stale_note": ("All values = 1 (best/default) — verify athlete is updating these manually"
                                       if subj_stale else None)},
@@ -1327,7 +1447,14 @@ def format_readiness_check(result):
         n = h.get("sample_size") or 0
         if h["baseline"] is not None and n > 0:
             d = round(h["today"] - h["baseline"], 1)
-            lines.append(f"HRV:          {hrv_disp}ms{'':<3} | {d:+}ms vs {n}d baseline {h['baseline']}ms")
+            line = f"HRV:          {hrv_disp}ms{'':<3} | {d:+}ms vs {n}d baseline {h['baseline']}ms"
+            # Add 7-day band context when available (Plews/Buchheit reference).
+            if h.get("band_mean_7d") is not None and h.get("band_sd_7d") is not None:
+                mu, sd = h["band_mean_7d"], h["band_sd_7d"]
+                line += f" | 7d band μ{mu}±{sd*0.5:.1f}"
+            if h.get("cv_pct") is not None:
+                line += f" | CV {h['cv_pct']}%"
+            lines.append(line)
         else:
             lines.append(f"HRV:          {hrv_disp}ms{'':<3} | (no baseline yet)")
 
@@ -1339,6 +1466,22 @@ def format_readiness_check(result):
             lines.append(f"RHR:          {r['today']}bpm{'':<4} | {d:+}bpm vs {n}d baseline {r['baseline']}bpm")
         else:
             lines.append(f"RHR:          {r['today']}bpm{'':<4} | (no baseline yet)")
+
+    rr = result.get("respiration") or {}
+    if rr.get("today") is not None:
+        n = rr.get("sample_size") or 0
+        if rr.get("baseline") is not None and n > 0:
+            d = round(rr["today"] - rr["baseline"], 2)
+            lines.append(f"Resp rate:    {rr['today']:.1f}/min  | {d:+}/min vs {n}d baseline {rr['baseline']:.1f}/min")
+        else:
+            lines.append(f"Resp rate:    {rr['today']:.1f}/min  | (no baseline yet)")
+
+    sp = result.get("spo2") or {}
+    if sp.get("today") is not None:
+        n = sp.get("sample_size") or 0
+        tag = "OK" if sp["today"] >= 95 else ("WARN" if sp["today"] >= 92 else "FAIL")
+        baseline_str = f"vs {n}d baseline {sp['baseline']}%" if sp.get("baseline") is not None and n > 0 else "(no baseline yet)"
+        lines.append(f"SpO2:         {sp['today']}%{'':<5} | {baseline_str} [{tag}]")
 
     rc = result["recovery"]
     if rc["score"] is not None:
@@ -1376,6 +1519,12 @@ def format_readiness_check(result):
         lines.append("Active flags:")
         for f in yellow_red_flags:
             lines.append(f"  [{f['severity'].upper()}] {f['rule']}")
+
+    prog = result.get("progression_signal")
+    if prog:
+        lines.append("")
+        lines.append("Progression signal:")
+        lines.append(f"  [GREEN-LIGHT] {prog['rule']}")
 
     return "\n".join(lines)
 
