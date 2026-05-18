@@ -108,7 +108,7 @@ python scripts/rpe_trend.py --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-c
 ```
 Reads YAML frontmatter from each `.md`, extracts `(date, session_type, if, rpe)`, compares last `--weeks` weeks to the prior `--weeks` weeks per session type. Flags `rising_rpe_at_constant_if` when ΔRPE ≥ 1.0 with ΔIF within ±0.03. Used by the Weekly Review workflow. Returns `error` field if no usable reviews found (silent skip in workflow).
 
-No build or lint infrastructure exists. Tests: `python -m unittest discover tests -v`
+No build or lint infrastructure exists. Tests: `python -m unittest discover tests -v` (111 tests across 4 files, runs in ~0.03s — run before AND after any script change).
 
 ## Wellness signal changes
 
