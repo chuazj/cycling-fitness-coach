@@ -38,12 +38,14 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 
 **Recovery Prescription table (fatigue → action):**
 
+> HRV framing uses **Plews/Buchheit 7-day rolling band** (μ ± 0.5σ) — the operational rule shipped in `--readiness-check`. Single-day below band = yellow; 2 consecutive days below band = red (de-load trigger). The legacy "% drop" framing is deprecated.
+
 | Fatigue signal | Action | Session adjustment |
 |---|---|---|
-| Mild (RPE +1 vs typical, sleep ok, Recovery ≥67) | Train as planned, monitor first 15 min | None — abort if RPE doesn't settle |
-| Moderate (RHR +5 bpm OR poor sleep 1 night OR HRV down 5–10% OR Recovery 34–66) | Modify down one tier | SS → endurance Z2; threshold → SS; VO2max → threshold; cut duration 20% |
-| High (RHR +5–10 bpm AND poor sleep 2+ nights, OR HRV down >10%, OR Recovery <34, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
-| Severe (RHR +10 bpm OR illness symptoms OR TSB <−30 OR Recovery <34 with red signals across HRV/RHR) | Full rest | No bike. Reassess next day. |
+| Mild (RPE +1 vs typical, sleep ok, Recovery ≥67, HRV in/above 7-day band) | Train as planned, monitor first 15 min | None — abort if RPE doesn't settle |
+| Moderate (RHR +5 bpm OR poor sleep 1 night OR HRV below 7-day band (single day) OR Recovery 34–66 OR HRV CV-trend rising +2pp over 14d OR respiration +1/min vs baseline) | Modify down one tier | SS → endurance Z2; threshold → SS; VO2max → threshold; cut duration 20% |
+| High (RHR ≥+10 bpm OR poor sleep 2+ nights, OR HRV below 7-day band 2 consecutive days, OR Recovery <34, OR respiration +2/min vs baseline, OR SpO2 <92%, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
+| Severe (RHR +10 bpm AND illness symptoms OR TSB <−30 OR Recovery <34 with red signals across HRV/RHR/respiration) | Full rest | No bike. Reassess next day. |
 | Sick (above-neck only) | Rest 1–2 days then Z1–Z2 only | Per `references/periodization.md` → Illness/Injury rules |
 | Sick (below-neck or systemic) | Full rest until 48h symptom-free | Per `references/periodization.md` → Illness/Injury rules |
 
@@ -80,7 +82,23 @@ When user asks about plan status ("check my plan", "what's next", "plan status")
 ```bash
 python scripts/intervals_icu_api.py --readiness-check -o readiness.json
 ```
-Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type ceiling, plus all underlying signals (sleep with WHOOP-score tiebreaker, Recovery band, HRV/RHR vs baseline with sample-size context, 3-day Recovery slope, CTL/ATL/TSB, subjective stale-warning, baseline maturity, latest_date_age). Deviation flags (RHR/HRV/respiration) are auto-suppressed when sample size <7 to avoid noise. Skip if athlete doesn't log wellness (script returns `error` field — note in output and proceed without).
+Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type ceiling, plus all underlying signals:
+
+| Signal | Rule | Gating? |
+|---|---|---|
+| Sleep | <6h red; 6-7h tiebroken by WHOOP sleep score (≥85 upgrade, <70 downgrade); ≥7h pass | Gating |
+| Recovery | Green ≥67 / Yellow-high 50-66 / Yellow-low 34-49 / Red <34 (ZJ's 4-band coaching split of WHOOP's 3-zone) | Gating |
+| HRV (rMSSD) | Plews/Buchheit 7-day band μ ± 0.5σ. Today below band = yellow; 2 consecutive days below = red (de-load trigger) | Gating |
+| **HRV CV-trend** | Last-7d CV ≥ prior-7d CV + 2.0pp (14-day split-window) = yellow informational flag. Early autonomic-strain signal | Informational (review weekly TSS) |
+| RHR | +5 bpm vs 14d baseline = yellow; +10 = red | Gating |
+| Respiration | +1.0/min vs 14d baseline = yellow (early illness); +2.0/min = red (active illness) | Gating |
+| SpO2 | Absolute threshold: <95% = yellow; <92% = red. **Apple Watch cross-check**: 3 spot readings ≥96% clears as wrist-PPG artifact (see [[#SpO2 cross-check]] below) | Gating (after cross-check) |
+| 3-day Recovery slope | ≥10pt drop over 3 days = yellow trend flag (even if today's Recovery is green) | Early-warning |
+| Progression signal | HRV ≥3 days above μ+0.5σ band AND CTL rising → green-light +5-10% TSS on next quality session | Positive (mostly dormant in maintenance) |
+| TSB | CTL/ATL/TSB rendered as fresh/neutral/productive/overreached | Context only (not gating) |
+| Subjective | All fatigue/soreness/stress/mood = 1 → stale-warning (athlete may not be updating manually) | Data-quality flag |
+
+Deviation flags (RHR/HRV/respiration) are auto-suppressed when per-metric sample size <7 to avoid noise. SpO2 fires regardless of baseline depth (absolute-threshold signal). CV-trend needs ≥14 days of HRV; below that it's silent. Skip the whole block if athlete doesn't log wellness (script returns `error` field — note in output and proceed without).
 
 **Step 3:** Present current status:
 ```
@@ -109,8 +127,13 @@ Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type c
 
 - Recovery: {recovery.score} → {recovery.band} {if `recovery.slope_3day.alarm`: ⚠ slope {three_days_ago}→{today} ({delta:+}pt over 3 days)}
 - Sleep: {sleep.hours}h, score {sleep.score}/100 → {sleep.status}{if `sleep.note`: ({sleep.note})}
-- HRV: {hrv.today}ms vs {hrv.sample_size}d baseline {hrv.baseline}ms ({delta:+}ms) — *deviation flags inactive if sample_size <7*
+- HRV: {hrv.today}ms vs {hrv.sample_size}d baseline {hrv.baseline}ms ({delta:+}ms){if `hrv.band_mean_7d` and `hrv.band_sd_7d`: | 7d band μ{band_mean_7d}±{band_sd_7d*0.5} (Plews/Buchheit)}{if `hrv.cv_pct`: | CV {cv_pct}%} — *deviation flags inactive if sample_size <7; CV-trend needs ≥14d*
+  {If `hrv.cv_trend.rising` is true:} └─ ⚠ CV trend: {cv_trend.prior_cv_pct}% → {cv_trend.recent_cv_pct}% ({delta_pp:+}pp over 14d) — widening variability, early autonomic-strain signal
 - RHR: {resting_hr.today}bpm vs {resting_hr.sample_size}d baseline {resting_hr.baseline}bpm ({delta:+}bpm) — *same baseline-maturity guard*
+{If `respiration.today` is non-null:}
+- Respiration: {respiration.today:.1f}/min vs {respiration.sample_size}d baseline {respiration.baseline:.1f}/min ({delta:+}/min) — *yellow at +1.0, red at +2.0 (illness early-warning)*
+{If `spo2.today` is non-null:}
+- SpO2: {spo2.today}% {OK/WARN/FAIL tag based on 95/92 thresholds} — *if WARN/FAIL, apply Apple Watch cross-check (see below) before holding the flag*
 - TSB context: {tsb.tsb:+} (CTL {tsb.ctl} / ATL {tsb.atl}) — {fresh/neutral/productive/overreached}
 {If at least one of fatigue/soreness/stress/mood is non-null, render:}
 - Subjective: {join only non-null fields, e.g. "fatigue=2, mood=3"}{if `subjective.stale_warning`: ⚠ all filled=1, athlete may not be updating manually}
@@ -118,9 +141,24 @@ Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type c
 
 **Active flags:** {list flags by severity, or "None — all clear"}
 
+{If `progression_signal` is non-null:}
+**Progression signal (positive):** {progression_signal.rule} — green-lights +5-10% TSS on the next quality session if athlete is in build phase. Skip during maintenance unless deliberately ramping back up.
+
 Recovery score (when present) is the single best summary signal — Whoop has baseline-calibrated HRV+RHR+sleep+respiration into it. Use the individual lines below it as drill-down explanations of *why* Recovery is what it is. If Recovery is absent (athlete not on a wearable that pushes it), fall back to HRV+RHR+sleep — but with sample-size confidence in mind.
 
 If verdict is YELLOW-LOW or RED, apply the verdict's ceiling to the planned session (downgrade hard sessions per Recovery Prescription table — Training Advice section above) before showing the session.
+
+### SpO2 cross-check (Apple Watch tiebreaker)
+
+WHOOP wrist-PPG SpO2 runs noisier than fingertip pulse-ox — treat <95% as flag-not-diagnosis. When the readiness check fires a SpO2 yellow/red flag, ask the athlete for 3 Apple Watch spot readings (different optical path, ~5 min apart, still arm), then apply:
+
+| Apple Watch (3 readings) | Action |
+|---|---|
+| All ≥96% | **Clear** the SpO2 flag as wrist-PPG artifact. Recompute verdict in-conversation by stepping down one band (don't re-run the script). |
+| Mixed 94-96% | **Hold** the flag at yellow — no clean tiebreak. |
+| Any ≤94% | **Confirm** the WHOOP signal — pair with respiration check for illness assessment. |
+
+This tiebreaker applies to **SpO2 only**. Do NOT use Apple Watch for HRV, RHR, or sleep cross-checks — different reliability profiles.
 
 ### PMC Snapshot
 CTL: {X} | ATL: {X} | TSB: {X}
