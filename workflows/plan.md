@@ -166,13 +166,18 @@ ACWR Zone: {safe/caution/danger/underprepared}
 **Recovery lag interpretation:** Whoop Recovery is computed from last night's sleep, which primarily processed *yesterday's* training. When reviewing the week's Recovery trend, align each day's score with the *previous* day's session, not the same day's. See `references/training_zones.md` → Recovery Score (Whoop / Wearable).
 
 - Recovery: latest {X} → {band} (Whoop bands: red <34, yellow 34-66, green ≥67) {if `recovery_slope_3day.alarm`: ⚠ 3-day slope {three_days_ago}→{today} ({delta:+}pt)}
-- RHR trend: latest {X} bpm vs {n}d baseline {Y} bpm ({delta:+} bpm) — *deviation flag suppressed if n<7*
-- HRV trend: latest {X} vs {n}d baseline {Y} ({delta_pct:+}%) — *same baseline-maturity guard*
+- RHR trend: latest {X} bpm vs {n}d baseline {Y} bpm ({delta:+} bpm) — *yellow at +5, red at +10; suppressed if n<7*
+- HRV trend: latest {X}ms vs {n}d baseline {Y}ms ({delta:+}ms){if `hrv.band_mean_7d` and `hrv.band_sd_7d`: | 7d band μ{band_mean_7d}±{band_sd_7d*0.5} (Plews/Buchheit)}{if `hrv.cv_pct`: | CV {cv_pct}%} — *yellow below band single day, red 2 consecutive days; suppressed if n<7*
+  {If `hrv.cv_trend.rising` is true:} └─ ⚠ CV trend: {cv_trend.prior_cv_pct}% → {cv_trend.recent_cv_pct}% ({delta_pp:+}pp over 14d) — widening variability, early autonomic-strain signal
 - Sleep: avg {X}h over week (target ≥7h); sleep_score {X}/100 if present
-- Respiration: latest {X}/min vs {n}d baseline {Y}/min ({delta:+}/min) — *flag at >+2/min from baseline (illness onset early-warning), suppressed below n=7*
+- Respiration: latest {X}/min vs {n}d baseline {Y}/min ({delta:+}/min) — *yellow at +1.0 (early illness onset), red at +2.0 (likely active illness); suppressed if n<7*
+{If `spo2.today` is non-null:}
+- SpO2: {spo2.today}% (week trend {spo2.baseline}%) — *yellow at <95%, red at <92%; no baseline gate. If yellow/red, apply Apple Watch tiebreaker (see `workflows/advise.md` → SpO2 cross-check)*
 - Training load (from wellness): CTL {ctl} | ATL {atl} | TSB {tsb:+}
 {If `subjective_stale_warning: true`: ⚠ subjective fields all=1 across 3+ filled — verify athlete is updating manually, otherwise treat as default/unset}
 - Flags: {list of yellow/red flags from wellness_summary `flags` array, or "None"}
+{If `progression_signal` is non-null:}
+- **Progression signal (positive):** {progression_signal.rule} — green-lights +5-10% TSS on the next quality session if athlete is in build phase. Mostly dormant in maintenance.
 
 Recovery score (when present) is the single best summary signal; treat the individual HRV/RHR/sleep lines as drill-down explanations of *why* Recovery is what it is. If yellow/red flags present, weight the adaptation recommendation toward recovery (Rule Priority 1-2 in `references/periodization.md` → Adaptation Decision Trees → Rule Priority). When `baseline_maturity` is "preliminary" or "insufficient", deviation flags are intentionally suppressed — fall back to Recovery + sleep + subjective fields for fatigue calls.
 

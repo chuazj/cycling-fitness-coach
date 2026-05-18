@@ -102,22 +102,34 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 
 ## Fatigue Indicators
 
+> Flag rules below mirror the `--readiness-check` and `--wellness` script output. When this doc and the script disagree, the script wins — fix this doc.
+
 **Yellow Flags** (modify training):
-- Resting HR elevated >5 bpm vs baseline (requires ≥7 days of baseline history; flag is suppressed at shorter windows because daily RHR swings of 3-5 bpm are normal noise)
-- HRV depressed >10% vs baseline (same ≥7-day requirement)
-- Recovery score 34–66 (Whoop band; moderate readiness) — fires regardless of baseline depth (absolute thresholds)
-- Respiration >2/min above baseline (illness-onset early warning; requires ≥7 days of baseline)
-- Power:HR decoupling >5% early in ride
+- RHR elevated ≥5 bpm vs 14-day baseline (requires ≥7 days of baseline history; flag is suppressed at shorter windows because daily RHR swings of 3-5 bpm are normal noise)
+- **HRV below 7-day rolling band** (μ − 0.5σ, Plews/Buchheit methodology) — single-day below band fires yellow; requires ≥7 days of HRV history (same maturity guard)
+- **HRV CV-trend rising**: last-7d CV ≥ prior-7d CV + 2.0pp (14-day split-window) — informational yellow, early autonomic-strain signal (CV widens before mean drops). Requires ≥14 days of HRV history
+- Recovery score 34–66 (Whoop band; moderate readiness) — fires regardless of baseline depth (absolute thresholds). For session prescription, the coaching framework subdivides this at 50: Yellow-high 50-66 passes Threshold/SS; Yellow-low 34-49 caps at SS
+- **Respiration +1.0/min above 14-day baseline** (early illness-onset signal; requires ≥7 days of baseline)
+- **SpO2 nightly average <95%** — fires regardless of baseline depth (absolute threshold). Apply Apple Watch tiebreaker before holding: 3 spot readings ≥96% clears as wrist-PPG artifact (see `workflows/advise.md` → SpO2 cross-check)
+- Sleep <6h last night — fires regardless of baseline depth
+- Subjective fatigue / soreness / stress ≥4 (worst tier on intervals.icu 1–4 scale)
+- Power:HR decoupling >5% early in ride (post-hoc, from activity analysis)
 - Legs heavy at start of intervals
 - Sleep quality declining
 
 **Red Flags** (take recovery):
 - Unable to hit target power
-- RHR elevated >10 bpm vs baseline (requires ≥7 days of baseline history)
+- RHR elevated ≥10 bpm vs 14-day baseline (requires ≥7 days of baseline history)
+- **HRV below 7-day band 2 consecutive days** (de-load trigger; escalation, not duplicate — only the red fires, not yellow + red on the same day)
 - Recovery score <34 (Whoop band; low readiness) — fires regardless of baseline depth
+- **Respiration +2.0/min above 14-day baseline** (likely active illness; Z1 30min or full rest)
+- **SpO2 nightly average <92%** — fires regardless of baseline depth. Significant desaturation; rest and check for illness / altitude / sleep apnea
 - Motivation significantly decreased
 - Persistent muscle soreness
 - Illness symptoms
+
+**Progression Signal** (positive — green-lights a TSS bump):
+- **HRV ≥3 consecutive days above (μ + 0.5σ) of 7-day band AND CTL rising over last 7 days** → +5-10% TSS on next quality session. Mostly dormant in maintenance; matters during build blocks.
 
 **Baseline maturity note:** `wellness_summary()` reports `baseline_maturity` and per-metric `baseline_sample_sizes`. Deviation-based flags (RHR, HRV, respiration) are auto-suppressed below n=7 history to avoid acting on single-night noise (HRV can swing ±15-25% night-to-night for healthy individuals). Recovery + sleep + subjective flags use absolute thresholds and fire regardless. n≥14 is the target for a "stable" baseline (HRV4Training convention).
 

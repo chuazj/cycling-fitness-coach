@@ -1325,9 +1325,16 @@ def readiness_check(client, lookback_days=14):
     Signals combined (worst-of-severity wins):
       - Sleep hours (≥7h pass, 6-7h tiebroken by WHOOP sleep score, <6h fail)
       - WHOOP recovery (green ≥67, yellow-high 50-66, yellow-low 34-49, red <34)
-      - HRV vs 14-day baseline (>=10% drop = yellow flag, inherited from wellness_summary)
+      - HRV vs 7-day rolling band (μ ± 0.5σ, Plews/Buchheit): today below = yellow,
+        2 consecutive days below = red de-load trigger (escalation, not duplicate)
+      - HRV CV-trend (14-day split-window): last-7d CV ≥ prior-7d CV + 2.0pp = yellow
+        informational flag, early autonomic-strain signal
       - RHR vs 14-day baseline (≥5bpm = yellow, ≥10bpm = red)
+      - Respiration vs 14-day baseline (+1.0/min = yellow, +2.0/min = red illness gate)
+      - SpO2 absolute threshold (<95% = yellow, <92% = red; no baseline gate)
       - 3-day recovery slope (drop ≥10pt over 3 days = yellow trend flag)
+      - Progression signal (HRV ≥3 days above μ+0.5σ AND CTL rising → +5-10% TSS;
+        informational, surfaced separately from gating flags)
       - TSB context (informational, not gating)
       - Subjective wellness staleness check (all = 1 across 3+ fields = noisy data warning)
 

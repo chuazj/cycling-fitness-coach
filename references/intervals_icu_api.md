@@ -95,13 +95,26 @@ GET /api/v1/athlete/{athlete_id}/wellness?oldest=YYYY-MM-DD&newest=YYYY-MM-DD
 Returns an array of daily wellness records. Each record uses `id` = date string (`YYYY-MM-DD`).
 
 **Key fields (verified, all optional — present only when logged or synced from a wearable):**
+
+*Manual / multi-source:*
 - `restingHR` — resting heart rate (bpm)
-- `hrv` — heart-rate variability (RMSSD or score, depending on source)
-- `sleepSecs` — total sleep in seconds
-- `sleepQuality` — subjective 1-4 scale (1=best, 4=worst)
+- `hrv` — heart-rate variability (RMSSD; WHOOP populates from slow-wave-sleep PPG)
+- `sleepSecs` — total sleep in seconds (manual UI OR WHOOP sync)
+- `sleepQuality` — subjective 1-4 scale (1=best, 4=worst; manual only)
 - `weight` — kg
-- `fatigue`, `soreness`, `stress`, `mood` — subjective 1-4 scales (1=best, 4=worst)
+- `fatigue`, `soreness`, `stress`, `mood` — subjective 1-4 scales (1=best, 4=worst; manual only — WHOOP does NOT populate)
 - `comments` — free-text notes
+
+*WHOOP-exclusive (populated only by WHOOP sync; confirmed active for this athlete since 2026-05-12):*
+- `readiness` — WHOOP Recovery score (0-100; HRV + RHR + sleep + respiration roll-up, baseline-calibrated)
+- `respiration` — nightly avg breathing rate (breaths/min; most reliable pre-symptomatic illness signal — flag at +1.0/+2.0 vs baseline)
+- `spO2` — nightly avg blood oxygen saturation (%; absolute-threshold flag at <95/<92, no baseline gate)
+- `sleepScore` — WHOOP composite sleep score (0-100; performance/consistency/efficiency/stress blend)
+
+*Training load (populated by intervals.icu PMC calculation, not WHOOP):*
+- `ctl` — Chronic Training Load (42-day exponentially-weighted average TSS)
+- `atl` — Acute Training Load (7-day exponentially-weighted average TSS)
+- `rampRate` — weekly CTL change rate
 
 Used by `wellness_summary()` (CLI: `--wellness N`) to compute baselines and flag deviations
 against the Yellow/Red Flag rules in `references/training_zones.md` → Fatigue Indicators.
