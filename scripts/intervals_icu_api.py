@@ -987,6 +987,31 @@ def wellness_summary(client, days=14):
             sd7 = _stdev(recent7)
             if sd7 is not None:
                 baseline["hrv_7d_sd"] = round(sd7, 1)
+        # 14-day CV trend: compare CV of last 7 days vs prior 7 days. Rising
+        # CV = widening day-to-day variability = early autonomic strain
+        # (Plews/Buchheit). Often precedes the HRV mean dropping below band
+        # by several days, so this catches overreaching earlier than the
+        # band check alone. Requires ≥14 days of HRV history. Threshold:
+        # +2.0 percentage points (≈ 1 SD of typical CV variation; coarse
+        # but matches the "meaningful but not noise" line for ZJ's
+        # typical CV range of 10-16%).
+        if len(hrvs) >= 14:
+            prior7 = hrvs[-14:-7]
+            recent_mean = sum(recent7) / len(recent7)
+            prior_mean = sum(prior7) / len(prior7)
+            recent_sd = _stdev(recent7)
+            prior_sd = _stdev(prior7)
+            if (recent_sd is not None and prior_sd is not None
+                    and recent_mean > 0 and prior_mean > 0):
+                recent_cv = recent_sd / recent_mean * 100
+                prior_cv = prior_sd / prior_mean * 100
+                delta_pp = round(recent_cv - prior_cv, 1)
+                baseline["hrv_cv_trend"] = {
+                    "recent_cv_pct": round(recent_cv, 1),
+                    "prior_cv_pct": round(prior_cv, 1),
+                    "delta_pp": delta_pp,
+                    "rising": delta_pp >= 2.0,
+                }
     if sleeps:
         baseline["sleep_hours_avg"] = round(sum(sleeps) / len(sleeps), 1)
     if readinesses:
@@ -1051,6 +1076,21 @@ def wellness_summary(client, days=14):
                           "band_mean": mu7, "band_sd": sd7,
                           "rule": ("HRV below 7-day band (μ-0.5σ = {:.1f}ms) today only "
                                    "— watch tomorrow; if still below, de-load").format(lower_band)})
+
+    # HRV CV-trend: widening autonomic variability is an early overreaching
+    # signal that often precedes the mean dropping below band. Yellow-only —
+    # informational, not gating. If it stacks with a below-band day, the
+    # band rule above already escalates appropriately.
+    cv_trend = baseline.get("hrv_cv_trend")
+    if cv_trend and cv_trend.get("rising"):
+        flags.append({"signal": "HRV_CV", "severity": "yellow",
+                      "value": cv_trend["recent_cv_pct"],
+                      "prior": cv_trend["prior_cv_pct"],
+                      "delta_pp": cv_trend["delta_pp"],
+                      "rule": ("HRV 7-day CV rose {:+.1f}pp ({}% → {}% over last 14d) "
+                               "— early autonomic strain signal; review weekly TSS").format(
+                                   cv_trend["delta_pp"], cv_trend["prior_cv_pct"],
+                                   cv_trend["recent_cv_pct"])})
 
     # Respiration two-tier: WHOOP's own published illness-detection data shows
     # +1.0 breath/min vs personal baseline is a reliable 24-48h pre-symptomatic
@@ -1398,6 +1438,7 @@ def readiness_check(client, lookback_days=14):
         "recovery": {"score": today_recovery, "band": band, "slope_3day": slope_alarm},
         "hrv": {"today": latest.get("hrv"), "baseline": baseline.get("hrv_avg"),
                 "cv_pct": baseline.get("hrv_cv_pct"),
+                "cv_trend": baseline.get("hrv_cv_trend"),
                 "band_mean_7d": baseline.get("hrv_7d_mean"),
                 "band_sd_7d": baseline.get("hrv_7d_sd"),
                 "sample_size": sample_sizes.get("hrv", 0)},
@@ -1455,6 +1496,14 @@ def format_readiness_check(result):
             if h.get("cv_pct") is not None:
                 line += f" | CV {h['cv_pct']}%"
             lines.append(line)
+            # CV trend (14d split-window). Render only when rising — stable
+            # CV doesn't warrant a line of its own; the absolute CV above
+            # already shows the level.
+            ct = h.get("cv_trend") or {}
+            if ct.get("rising"):
+                lines.append(f"  └─ ⚠ CV trend: {ct['prior_cv_pct']}% → "
+                             f"{ct['recent_cv_pct']}% ({ct['delta_pp']:+}pp over 14d) "
+                             f"— widening variability")
         else:
             lines.append(f"HRV:          {hrv_disp}ms{'':<3} | (no baseline yet)")
 
