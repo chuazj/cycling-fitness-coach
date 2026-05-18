@@ -1057,21 +1057,45 @@ class TestBaselineMaturity(unittest.TestCase):
 
 
 class TestRespirationFlag(unittest.TestCase):
-    """R4: respiration deviation flag (illness-onset early warning)."""
+    """R4: respiration two-tier deviation flag (illness-onset early warning).
+
+    Rule: delta > 2.0/min vs baseline = red (active illness); delta > 1.0/min = yellow
+    (early onset). WHOOP's published illness-detection data underpins these thresholds.
+    """
 
     def setUp(self):
         self.client = IntervalsIcuClient("test", "test")
 
-    def test_respiration_flag_fires_above_baseline_plus_2(self):
+    def test_respiration_red_at_delta_2_5(self):
+        """+2.5 above baseline fires RED (likely active illness)."""
         records = _series("2026-05-01", 8, respiration=13.0)
-        records[-1] = {"id": "2026-05-08", "respiration": 15.5}  # latest +2.5
+        records[-1] = {"id": "2026-05-08", "respiration": 15.5}  # +2.5
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        resp_flags = [f for f in result["flags"] if f["signal"] == "respiration"]
+        self.assertEqual(len(resp_flags), 1)
+        self.assertEqual(resp_flags[0]["severity"], "red")
+
+    def test_respiration_yellow_at_delta_1_5(self):
+        """+1.5 above baseline fires YELLOW (early illness onset, 24-48h pre-symptomatic)."""
+        records = _series("2026-05-01", 8, respiration=13.0)
+        records[-1] = {"id": "2026-05-08", "respiration": 14.5}  # +1.5
         with patch.object(self.client, "get_wellness", return_value=records):
             result = wellness_summary(self.client, days=14)
         resp_flags = [f for f in result["flags"] if f["signal"] == "respiration"]
         self.assertEqual(len(resp_flags), 1)
         self.assertEqual(resp_flags[0]["severity"], "yellow")
 
+    def test_respiration_no_flag_at_delta_0_5(self):
+        """+0.5 above baseline does not fire (within normal day-to-day variation)."""
+        records = _series("2026-05-01", 8, respiration=13.0)
+        records[-1] = {"id": "2026-05-08", "respiration": 13.5}  # +0.5
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "respiration"], [])
+
     def test_respiration_flag_suppressed_when_baseline_immature(self):
+        """Even +2.5 doesn't fire if baseline history <7 days (deviation is noise)."""
         records = [
             {"id": "2026-05-09", "respiration": 13.0},
             {"id": "2026-05-10", "respiration": 13.0},
@@ -1081,12 +1105,246 @@ class TestRespirationFlag(unittest.TestCase):
             result = wellness_summary(self.client, days=14)
         self.assertEqual([f for f in result["flags"] if f["signal"] == "respiration"], [])
 
-    def test_respiration_flag_no_fire_within_normal_range(self):
-        records = _series("2026-05-01", 8, respiration=13.0)
-        records[-1] = {"id": "2026-05-08", "respiration": 14.5}  # +1.5, under +2 threshold
+
+class TestHRVBandFlag(unittest.TestCase):
+    """R3: HRV 7-day rolling band check (Plews/Buchheit μ ± 0.5σ).
+
+    Rule: today below band = yellow; today AND yesterday below band = red (de-load
+    trigger). The 2-day case is escalation, not duplicate — only red fires, not
+    yellow + red on the same day. Replaces the legacy "% drop vs baseline" rule.
+    """
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def test_hrv_band_yellow_today_below_only(self):
+        """Today below band (yesterday in-band) fires YELLOW."""
+        # 7d history with mean ~50, SD small → band μ-0.5σ ≈ 48
+        # Yesterday 50 (in), today 40 (below)
+        records = _series("2026-05-01", 7, hrv=50.0)
+        records[-1] = {"id": "2026-05-07", "hrv": 50.0}  # yesterday in-band
+        records.append({"id": "2026-05-08", "hrv": 40.0})  # today below
         with patch.object(self.client, "get_wellness", return_value=records):
             result = wellness_summary(self.client, days=14)
-        self.assertEqual([f for f in result["flags"] if f["signal"] == "respiration"], [])
+        hrv_flags = [f for f in result["flags"] if f["signal"] == "HRV"]
+        self.assertEqual(len(hrv_flags), 1)
+        self.assertEqual(hrv_flags[0]["severity"], "yellow")
+
+    def test_hrv_band_red_two_consecutive_below(self):
+        """Today AND yesterday below band fires RED (de-load trigger). Only red fires —
+        not yellow + red on the same day (escalation, not duplicate)."""
+        # 6d history at 50 + yesterday 40 + today 40 → 7d baseline mean ≈ 48.6, band lower ≈ 46
+        records = _series("2026-05-01", 6, hrv=50.0)
+        records.append({"id": "2026-05-07", "hrv": 40.0})  # yesterday below
+        records.append({"id": "2026-05-08", "hrv": 40.0})  # today below
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        hrv_flags = [f for f in result["flags"] if f["signal"] == "HRV"]
+        self.assertEqual(len(hrv_flags), 1)  # NOT 2 — escalation, not duplicate
+        self.assertEqual(hrv_flags[0]["severity"], "red")
+
+    def test_hrv_band_no_flag_today_in_band(self):
+        """Today in/above band fires no HRV flag."""
+        records = _series("2026-05-01", 7, hrv=50.0)
+        records.append({"id": "2026-05-08", "hrv": 52.0})  # today above mean
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "HRV"], [])
+
+    def test_hrv_band_suppressed_below_min_baseline(self):
+        """Below 7 days of HRV history, band check is silent (band is too noisy)."""
+        records = _series("2026-05-01", 5, hrv=50.0)
+        records.append({"id": "2026-05-06", "hrv": 30.0})  # clear drop, but n=5
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "HRV"], [])
+
+    def test_hrv_band_fields_in_baseline(self):
+        """Baseline should expose hrv_7d_mean and hrv_7d_sd when ≥7 days available."""
+        records = _series("2026-05-01", 8, hrv=50.0)
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertIn("hrv_7d_mean", result["baseline"])
+        self.assertIn("hrv_7d_sd", result["baseline"])
+
+
+class TestHRVCVTrendFlag(unittest.TestCase):
+    """R5: HRV CV-trend (Plews/Buchheit autonomic-stability signal, shipped 2026-05-18).
+
+    Rule: last-7d CV ≥ prior-7d CV + 2.0pp (14-day split-window). Yellow informational
+    flag, not gating. Requires ≥14 days of HRV history. Catches widening day-to-day
+    variability before the HRV mean drops below band.
+    """
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def test_cv_trend_yellow_when_rising(self):
+        """Stable prior 7d (CV ~3%) → wild recent 7d (CV ~18%) fires YELLOW.
+
+        Note: baseline uses `history` (= daily[:-1]), so 14 days in history means
+        15 records total. The CV split-window operates on the 14d history."""
+        # Prior 7 days of history: tight around 50 (very low CV)
+        prior_hrvs = [50, 51, 49, 50, 51, 49, 50]
+        # Recent 7 days of history: wild swings (high CV)
+        recent_hrvs = [40, 60, 38, 62, 42, 60, 50]
+        # +1 "today" record (not part of CV calc, but needed so history has 14)
+        hrvs = prior_hrvs + recent_hrvs + [50]  # 15 total
+        records = [{"id": (f"2026-05-{i+1:02d}"), "hrv": h} for i, h in enumerate(hrvs)]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        cv_flags = [f for f in result["flags"] if f["signal"] == "HRV_CV"]
+        self.assertEqual(len(cv_flags), 1)
+        self.assertEqual(cv_flags[0]["severity"], "yellow")
+        self.assertGreaterEqual(cv_flags[0]["delta_pp"], 2.0)
+
+    def test_cv_trend_no_flag_when_stable(self):
+        """Both windows have similar (low) CV — no rising trend → no flag.
+        Need 15 records total → 14 in history."""
+        records = _series("2026-05-01", 15, hrv=50.0)
+        # All same value → both window CVs = 0, delta = 0
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "HRV_CV"], [])
+
+    def test_cv_trend_no_flag_when_falling(self):
+        """Falling CV (variability tightening) should NOT fire — the rule is rising-only."""
+        # Prior 7 days of history: wild
+        prior_hrvs = [40, 60, 38, 62, 42, 60, 50]
+        # Recent 7 days of history: stable
+        recent_hrvs = [50, 51, 49, 50, 51, 49, 50]
+        # +1 today
+        hrvs = prior_hrvs + recent_hrvs + [50]  # 15 total
+        records = [{"id": (f"2026-05-{i+1:02d}"), "hrv": h} for i, h in enumerate(hrvs)]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "HRV_CV"], [])
+
+    def test_cv_trend_suppressed_below_14_days_in_history(self):
+        """13 days of HRV in history is insufficient — split-window comparison needs 14.
+        14 records total = 13 in history → just below the threshold."""
+        records = _series("2026-05-01", 14, hrv=50.0)
+        records[-1] = {"id": "2026-05-14", "hrv": 30.0}  # wild swing on last day
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        # cv_trend should NOT be populated in baseline
+        self.assertNotIn("hrv_cv_trend", result["baseline"])
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "HRV_CV"], [])
+
+    def test_cv_trend_fields_in_baseline_at_14_days_history(self):
+        """At 14 days in history (15 records total), baseline exposes hrv_cv_trend."""
+        records = _series("2026-05-01", 15, hrv=50.0)
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertIn("hrv_cv_trend", result["baseline"])
+        cv_t = result["baseline"]["hrv_cv_trend"]
+        for k in ("recent_cv_pct", "prior_cv_pct", "delta_pp", "rising"):
+            self.assertIn(k, cv_t)
+
+
+class TestSpO2Flag(unittest.TestCase):
+    """R7: SpO2 absolute-threshold flag (Pass 1, shipped 2026-05-17).
+
+    Rule: <95% = yellow; <92% = red. Absolute threshold — fires regardless of baseline
+    depth (the value IS the signal, not the deviation). Wrist-PPG SpO2 has higher error
+    than fingertip pulse-ox, so the flag is paired with an Apple Watch tiebreaker in
+    coaching workflows.
+    """
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def test_spo2_yellow_at_94(self):
+        records = [{"id": "2026-05-08", "spO2": 94.0}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        spo2_flags = [f for f in result["flags"] if f["signal"] == "spo2"]
+        self.assertEqual(len(spo2_flags), 1)
+        self.assertEqual(spo2_flags[0]["severity"], "yellow")
+
+    def test_spo2_red_at_91(self):
+        records = [{"id": "2026-05-08", "spO2": 91.0}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        spo2_flags = [f for f in result["flags"] if f["signal"] == "spo2"]
+        self.assertEqual(len(spo2_flags), 1)
+        self.assertEqual(spo2_flags[0]["severity"], "red")
+
+    def test_spo2_no_flag_at_96(self):
+        records = [{"id": "2026-05-08", "spO2": 96.0}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "spo2"], [])
+
+    def test_spo2_no_flag_at_exactly_95(self):
+        """Boundary: 95% exactly is the threshold (flag only fires <95%)."""
+        records = [{"id": "2026-05-08", "spO2": 95.0}]
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertEqual([f for f in result["flags"] if f["signal"] == "spo2"], [])
+
+    def test_spo2_fires_regardless_of_baseline_depth(self):
+        """Unlike HRV/RHR/respiration, SpO2 has no baseline-maturity gate —
+        a single 94% reading on day 1 fires yellow."""
+        records = [{"id": "2026-05-08", "spO2": 94.0}]  # n=1 history (empty), but flag should fire
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        spo2_flags = [f for f in result["flags"] if f["signal"] == "spo2"]
+        self.assertEqual(len(spo2_flags), 1)
+
+
+class TestProgressionSignal(unittest.TestCase):
+    """R8: HRV progression signal (positive — green-lights TSS bump, shipped 2026-05-17).
+
+    Rule: HRV ≥3 consecutive days above (μ + 0.5σ) of 7-day band AND CTL rising
+    over last 7 days → +5-10% TSS green-light. Surfaced separately from gating
+    `flags` array — it's informational, not a downgrade trigger.
+    """
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+
+    def test_progression_fires_when_3_days_above_band_and_ctl_rising(self):
+        """3 consecutive HRV days above band + CTL rising over 7d → progression_signal populated."""
+        # 5 days of baseline + 3 days above + need at least 8 wellness records for CTL check
+        # CTL must rise from 7 days ago to today
+        records = []
+        for i in range(5):
+            records.append({"id": f"2026-05-0{i+1}", "hrv": 50.0, "ctl": 30.0})
+        # 3 days above band (μ ~50, σ ~0, band upper ≈ 50; use 60s to clear it comfortably)
+        records.append({"id": "2026-05-06", "hrv": 60.0, "ctl": 31.0})
+        records.append({"id": "2026-05-07", "hrv": 60.0, "ctl": 32.0})
+        records.append({"id": "2026-05-08", "hrv": 60.0, "ctl": 33.0})  # today
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertIsNotNone(result.get("progression_signal"))
+        prog = result["progression_signal"]
+        self.assertIn("rule", prog)
+        self.assertEqual(prog["ctl_today"], 33.0)
+        self.assertEqual(prog["ctl_7d_ago"], 30.0)
+
+    def test_progression_does_not_fire_when_ctl_flat(self):
+        """HRV above band but CTL not rising → no progression signal."""
+        records = []
+        for i in range(5):
+            records.append({"id": f"2026-05-0{i+1}", "hrv": 50.0, "ctl": 30.0})
+        records.append({"id": "2026-05-06", "hrv": 60.0, "ctl": 30.0})
+        records.append({"id": "2026-05-07", "hrv": 60.0, "ctl": 30.0})
+        records.append({"id": "2026-05-08", "hrv": 60.0, "ctl": 30.0})  # CTL flat
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertIsNone(result.get("progression_signal"))
+
+    def test_progression_does_not_fire_with_only_2_days_above(self):
+        """Need 3 consecutive days above band — 2 isn't enough."""
+        records = []
+        for i in range(6):
+            records.append({"id": f"2026-05-0{i+1}", "hrv": 50.0, "ctl": 30.0})
+        records.append({"id": "2026-05-07", "hrv": 60.0, "ctl": 32.0})  # day 1 above
+        records.append({"id": "2026-05-08", "hrv": 60.0, "ctl": 33.0})  # day 2 above (today)
+        with patch.object(self.client, "get_wellness", return_value=records):
+            result = wellness_summary(self.client, days=14)
+        self.assertIsNone(result.get("progression_signal"))
 
 
 class TestWellnessSummaryLiftedFields(unittest.TestCase):
