@@ -100,6 +100,10 @@ Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type c
 
 Deviation flags (RHR/HRV/respiration/SpO2) are auto-suppressed when per-metric sample size <7 to avoid noise — the SpO2 <90% red floor is the one exception (absolute, fires regardless). CV-trend needs ≥14 days of HRV; below that it's silent. Skip the whole block if athlete doesn't log wellness (script returns `error` field — note in output and proceed without).
 
+**Subjective override (within YELLOW-HIGH only):** the verdict above is driven by Recovery/HRV/sleep/SpO2; the intervals.icu subjective fields (fatigue/soreness/stress/mood, 1=best…4=worst) are otherwise only a data-quality check. When the verdict lands **YELLOW-HIGH** and the athlete logs subjective fields, apply this tiebreaker: if **soreness ≥3 OR fatigue ≥3 OR mood ≥3**, step the session ceiling down to **YELLOW-LOW** (Sweet Spot, not Threshold/VO2max). The athlete logs all six fields daily — genuine signal, not noise — so let it subdivide the borderline band. Does not apply to GREEN (subjective alone doesn't veto a clear day) or to YELLOW-LOW/RED (already conservative).
+
+**Wearable dependency (reuse note):** Recovery, respiration, SpO2 and sleepScore are WHOOP-exclusive fields — a non-WHOOP athlete loses those four signals and the readiness check degrades to HRV + RHR + sleep-hours only. The verdict still works but at lower resolution; recalibrate the Recovery bands if a different wearable's `readiness` field is present (see `references/training_zones.md` → Recovery score notes).
+
 **Step 3:** Present current status:
 ```
 ## Plan Status: {Plan Type} — Week {N} ({Phase})
@@ -205,3 +209,14 @@ python scripts/pmc_calculator.py --bootstrap --days 90
 ```
 
 **Step 6:** Generate taper week .zwo files and update plan if active.
+
+---
+
+## Scope Limitations
+
+### Menstrual Cycle
+
+This skill does **not** currently model menstrual-cycle phase in readiness or load prescription. For female athletes the cycle is a real modulator of recovery, thermoregulation, fuelling and perceived effort — the evidence base is still developing and individual variation is large, but the effect is not zero. Until a proper phase-aware protocol is added, treat this as a **known gap**:
+- Do not present the readiness verdict as complete for an athlete who menstruates — state the limitation.
+- If the athlete tracks their cycle, take their own phase-symptom reports as the primary signal and weight the subjective fields more heavily.
+- A full evidence-based protocol (phase-aware load, heat and fuelling adjustments) is a future addition — prioritise it if the skill is reused beyond the current single-athlete (male) scope.

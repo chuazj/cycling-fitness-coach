@@ -465,6 +465,12 @@ ACWR (Acute:Chronic Workload Ratio) = ATL ÷ CTL. Measures training load spikes 
 - **ACTION** prescribe 5 days of Z1-only riding (active recovery), then reassess
 - **WHY** rising RPE at constant intensity is the earliest reliable indicator of overreaching; PMC/TSB alone cannot detect this because TSS is RPE-blind
 
+**IF** performance is still depressed after a full FOR de-load (the 5-day Z1 block above) — power targets unreachable, peak powers down, RPE still elevated at low IF for another 1–2 weeks:
+- **THEN** this is **non-functional overreaching (NFOR)**, not FOR — the de-load did not restore performance, so the load exceeded the supercompensation window
+- **ACTION** extend recovery to a full **easy week (or two)**: Z1–Z2 only, ~40–50% normal volume; no intensity until peak powers AND RPE-at-IF both recover. Re-baseline FTP downward if targets still miss after recovery.
+- **IF symptoms persist beyond ~3 weeks of genuine rest** (chronic fatigue, mood disturbance, sustained performance decrement, elevated resting HR) → treat as suspected **overtraining syndrome (OTS)**: stop structured training and advise a medical review. OTS recovery is measured in months, not weeks.
+- **WHY** FOR resolves in days and is followed by supercompensation; NFOR needs weeks and yields no supercompensation; OTS needs months. Naming the tier early stops a weeks-long problem becoming a months-long one.
+
 **IF** session RPE consistently declining at same IF for 2+ weeks:
 - **THEN** positive adaptation — fitness is improving
 - **ACTION** note as confirmation that current plan is working; consider progressing to next intensity level
@@ -691,6 +697,7 @@ These adjust the block volume/intensity once the block type is picked.
    - TSB -20 to +10: normal start
    - TSB > +10: can start at slightly elevated TSS
 5. **Block-history rotation**: check the last 2–3 completed blocks in `plans/block_history.md`. If the athlete has done **2+ consecutive FTP Builder (or otherwise sweet-spot-dominant) blocks**, do NOT auto-route `ftp_improvement` → another FTP Builder. After ~8–12 weeks of the same stimulus the higher-yield move is a **stimulus rotation** — a VO2max block (raise the aerobic ceiling) or a Polarized block, then return to FTP Builder to convert the raised ceiling. Present the rotation option to the athlete with the rationale. A stalled FTP across consecutive same-shaped blocks is a stimulus-monotony signal, not a reason to build a fourth identical block.
+6. **Tropical / indoor-climate athletes**: for an athlete who trains primarily indoors in a hot-humid climate (Singapore, SE Asia), proactively offer a **Heat Adaptation overlay** (see Heat Adaptation section) at plan creation — air-conditioned indoor training "loses" the free climate stimulus, and the plasma-volume gain transfers partially to cool-condition performance. Surface it as a standing option; don't wait for the athlete to ask.
 
 ### Flexible Block Lengths
 

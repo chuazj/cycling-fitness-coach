@@ -46,6 +46,8 @@ For full pre/during/post detail, gut training progression, and GI troubleshootin
 
 **Evidence basis**: Jeukendrup (2014, *Sports Medicine*) established that single-source carbohydrate maxes out at ~60g/h due to intestinal transporter saturation. Multiple transportable carbohydrates (glucose + fructose via different transporters) allow higher absorption rates up to ~90-108g/h. The 120g/h figures cited in pro cycling (Pogacar, EF Pro Cycling) come from field practice, not controlled studies — formal evidence supports up to ~90-108g/h with trained gut.
 
+> **Currency note (2026):** the absorption ceilings above are anchored to Jeukendrup (2014) and remain broadly current. The 2023–26 literature continues to refine the high-intensity / shorter-duration end (the "fuel for the work required" → higher-carb-for-key-sessions trend). No prescription in this doc is wrong; re-verify the short-session targets against current reviews at the next skill refresh.
+
 ## Pre-Ride Nutrition
 
 ### Timing
