@@ -116,6 +116,8 @@ Returns an array of daily wellness records. Each record uses `id` = date string 
 - `atl` — Acute Training Load (7-day exponentially-weighted average TSS)
 - `rampRate` — weekly CTL change rate
 
+> **PMC source of truth.** Two PMC numbers exist: (a) intervals.icu's own `ctl`/`atl`/`rampRate` in this wellness payload, and (b) the values `pmc_calculator.py` computes from a 90-day TSS bootstrap. They can diverge slightly (different TSS inputs as activities sync, or rounding). **Precedence: trust intervals.icu's native `ctl`/`atl`/`rampRate`** as the source of truth for spot-checks and the readiness verdict — it is continuously maintained and matches what the athlete sees in the intervals.icu UI. Use `pmc_calculator.py` for what the wellness payload does NOT provide: the 90-day bootstrap baseline, daily TSS history, peak-power curve, and planned-vs-actual weekly projection. Never show two different CTL numbers in one review — quote the intervals.icu value; flag the script's value only if it disagrees by >3 CTL points, which signals an un-synced activity.
+
 Used by `wellness_summary()` (CLI: `--wellness N`) to compute baselines and flag deviations
 against the Yellow/Red Flag rules in `references/training_zones.md` → Fatigue Indicators.
 Also wrapped by `readiness_check()` (CLI: `--readiness-check`) which adds a single
@@ -174,3 +176,7 @@ Also accepts plain numeric IDs (e.g., `17478304236`).
 - **Power curve endpoint** — accurate peak powers from .fit data
 - **Richer interval data** — per-interval NP, intensity, and more
 - **No rate limits** — practical usage has no restrictions
+
+## Dependency Note
+
+intervals.icu is a **hard dependency** — the skill reads all activity and wellness data through this API and has no fallback data source. An activity that exists only on Strava/Garmin and has not synced to intervals.icu is invisible to the skill. If an expected ride is missing, check the intervals.icu sync (Strava/Garmin auto-sync, or a manual `.fit` upload) before assuming an API error. **Reuse note:** an athlete who does not use intervals.icu cannot use this skill as-is — the API client would need a new backend.
