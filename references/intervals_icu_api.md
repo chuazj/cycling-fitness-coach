@@ -108,7 +108,7 @@ Returns an array of daily wellness records. Each record uses `id` = date string 
 *WHOOP-exclusive (populated only by WHOOP sync; confirmed active for this athlete since 2026-05-12):*
 - `readiness` — WHOOP Recovery score (0-100; HRV + RHR + sleep + respiration roll-up, baseline-calibrated)
 - `respiration` — nightly avg breathing rate (breaths/min; most reliable pre-symptomatic illness signal — flag at +1.0/+2.0 vs baseline)
-- `spO2` — nightly avg blood oxygen saturation (%; absolute-threshold flag at <95/<92, no baseline gate)
+- `spO2` — nightly avg blood oxygen saturation (%; baseline-relative flag — yellow ≥2pp below 14-day baseline, red <90% absolute floor)
 - `sleepScore` — WHOOP composite sleep score (0-100; performance/consistency/efficiency/stress blend)
 
 *Training load (populated by intervals.icu PMC calculation, not WHOOP):*

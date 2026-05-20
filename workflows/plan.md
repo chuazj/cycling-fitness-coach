@@ -172,7 +172,7 @@ ACWR Zone: {safe/caution/danger/underprepared}
 - Sleep: avg {X}h over week (target ≥7h); sleep_score {X}/100 if present
 - Respiration: latest {X}/min vs {n}d baseline {Y}/min ({delta:+}/min) — *yellow at +1.0 (early illness onset), red at +2.0 (likely active illness); suppressed if n<7*
 {If `spo2.today` is non-null:}
-- SpO2: {spo2.today}% (week trend {spo2.baseline}%) — *yellow at <95%, red at <92%; no baseline gate. If yellow/red, apply Apple Watch tiebreaker (see `workflows/advise.md` → SpO2 cross-check)*
+- SpO2: {spo2.today}% (14d baseline {spo2.baseline}%) — *yellow ≥2pp below baseline (needs ≥7d history), red <90% absolute floor. If yellow/red, apply Apple Watch tiebreaker (see `workflows/advise.md` → SpO2 cross-check)*
 - Training load (from wellness): CTL {ctl} | ATL {atl} | TSB {tsb:+}
 {If `subjective_stale_warning: true`: ⚠ subjective fields all=1 across 3+ filled — verify athlete is updating manually, otherwise treat as default/unset}
 - Flags: {list of yellow/red flags from wellness_summary `flags` array, or "None"}

@@ -938,8 +938,9 @@ def wellness_summary(client, days=14):
     readinesses = [d["readiness"] for d in history if d["readiness"] is not None]
     respirations = [d["respiration"] for d in history if d["respiration"] is not None]
     # SpO2 truthiness is safe (0% is physically impossible) but use explicit
-    # filter for clarity. Used for baseline-maturity gating only — SpO2 flagging
-    # is an absolute threshold (<95%), not a deviation rule.
+    # filter for clarity. SpO2 uses a baseline-relative gate (≥2pp below the
+    # personal baseline = yellow) plus an absolute <90% red floor, so it needs
+    # both the history values (for the baseline) and the maturity count below.
     spo2s = [d["spo2"] for d in history if d["spo2"] is not None]
 
     baseline_sample_sizes = {
@@ -1114,20 +1115,40 @@ def wellness_summary(client, days=14):
                           "delta_per_min": delta,
                           "rule": "Respiration >1/min above baseline (yellow flag — early illness onset signal; downgrade tomorrow's quality session)"})
 
-    # SpO2 absolute threshold. Wrist-PPG SpO2 has higher error than fingertip
-    # pulse oximetry, so treat as flag-not-diagnosis. Useful for: altitude/travel
-    # exposure, Singapore haze season, sleep-disordered breathing, early
-    # respiratory infection. No baseline gating — the absolute value IS the signal;
-    # a single low reading is worth surfacing even on a fresh wearable.
-    if latest.get("spo2") is not None and latest["spo2"] < 95:
-        severity = "red" if latest["spo2"] < 92 else "yellow"
-        note = ("(red flag — significant desaturation; rest and check for "
-                "illness / altitude / sleep apnea)" if severity == "red"
-                else "(yellow flag — possible respiratory stress, poor sleep "
-                     "environment, or early illness; pair with respiration check)")
-        flags.append({"signal": "spo2", "severity": severity,
-                      "value": latest["spo2"],
-                      "rule": f"SpO2 nightly avg {latest['spo2']}% (<95%) {note}"})
+    # SpO2 — baseline-relative gate (replaces the legacy absolute <95/<92 gate).
+    # Wrist-PPG SpO2 has higher error than fingertip pulse oximetry, and a stable
+    # personal baseline can sit well below 95% (sensor floor / individual
+    # variation). An absolute <95% threshold therefore over-flags chronically for
+    # such athletes — it fires every night and pins the readiness verdict at
+    # yellow-low. Flag relative to the personal 14-day baseline instead, mirroring
+    # the RHR / HRV / respiration gates: yellow when ≥2pp below baseline. A hard
+    # absolute red floor (<90%) is always retained so a genuine severe
+    # desaturation can never be normalised away by a low personal baseline.
+    # When the baseline is immature (<MIN_BASELINE_SIZE days) only the red floor
+    # fires — the relative yellow stays silent, consistent with HRV/respiration,
+    # so the baseline-establishment window doesn't reintroduce the chronic flag.
+    spo2_today = latest.get("spo2")
+    if spo2_today is not None:
+        spo2_base = baseline.get("spo2_avg")
+        spo2_mature = (spo2_base is not None
+                       and baseline_sample_sizes["spo2"] >= MIN_BASELINE_SIZE)
+        spo2_delta = round(spo2_today - spo2_base, 1) if spo2_mature else None
+        if spo2_today < 90:
+            ctx = f" ({spo2_delta:+.1f}pp vs baseline {spo2_base}%)" if spo2_mature else ""
+            flags.append({"signal": "spo2", "severity": "red",
+                          "value": spo2_today, "baseline": spo2_base,
+                          "delta_pp": spo2_delta,
+                          "rule": (f"SpO2 {spo2_today}%{ctx} (<90% absolute floor — red flag: "
+                                   "significant desaturation; rest and check for illness / "
+                                   "altitude / sleep apnea)")})
+        elif spo2_mature and spo2_delta <= -2.0:
+            flags.append({"signal": "spo2", "severity": "yellow",
+                          "value": spo2_today, "baseline": spo2_base,
+                          "delta_pp": spo2_delta,
+                          "rule": (f"SpO2 {spo2_today}% ({spo2_delta:+.1f}pp vs baseline "
+                                   f"{spo2_base}%) (yellow flag — possible respiratory stress, "
+                                   "poor sleep environment, or early illness; pair with "
+                                   "respiration check)")})
 
     if latest.get("sleep_hours") is not None and latest["sleep_hours"] < 6:
         flags.append({"signal": "sleep", "severity": "yellow",
@@ -1331,7 +1352,8 @@ def readiness_check(client, lookback_days=14):
         informational flag, early autonomic-strain signal
       - RHR vs 14-day baseline (≥5bpm = yellow, ≥10bpm = red)
       - Respiration vs 14-day baseline (+1.0/min = yellow, +2.0/min = red illness gate)
-      - SpO2 absolute threshold (<95% = yellow, <92% = red; no baseline gate)
+      - SpO2 vs 14-day baseline (≥2pp below = yellow) + absolute <90% red floor;
+        relative yellow needs a mature baseline (≥7 days), red floor always fires
       - 3-day recovery slope (drop ≥10pt over 3 days = yellow trend flag)
       - Progression signal (HRV ≥3 days above μ+0.5σ AND CTL rising → +5-10% TSS;
         informational, surfaced separately from gating flags)
@@ -1535,9 +1557,25 @@ def format_readiness_check(result):
     sp = result.get("spo2") or {}
     if sp.get("today") is not None:
         n = sp.get("sample_size") or 0
-        tag = "OK" if sp["today"] >= 95 else ("WARN" if sp["today"] >= 92 else "FAIL")
-        baseline_str = f"vs {n}d baseline {sp['baseline']}%" if sp.get("baseline") is not None and n > 0 else "(no baseline yet)"
-        lines.append(f"SpO2:         {sp['today']}%{'':<5} | {baseline_str} [{tag}]")
+        today_sp = sp["today"]
+        base_sp = sp.get("baseline")
+        # Mirrors the wellness_summary SpO2 gate: baseline-relative when mature
+        # (≥7 days, = MIN_BASELINE_SIZE), absolute <90% red floor always.
+        sp_mature = base_sp is not None and n >= 7
+        if today_sp < 90:
+            tag = "FAIL"
+        elif sp_mature and round(today_sp - base_sp, 1) <= -2.0:
+            tag = "WARN"
+        else:
+            tag = "OK"
+        if sp_mature:
+            d = round(today_sp - base_sp, 1)
+            baseline_str = f"{d:+.1f}pp vs {n}d baseline {base_sp}%"
+        elif n > 0:
+            baseline_str = f"baseline maturing (n={n})"
+        else:
+            baseline_str = "(no baseline yet)"
+        lines.append(f"SpO2:         {today_sp}%{'':<5} | {baseline_str} [{tag}]")
 
     rc = result["recovery"]
     if rc["score"] is not None:

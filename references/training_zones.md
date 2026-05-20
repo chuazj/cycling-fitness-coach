@@ -110,7 +110,7 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 - **HRV CV-trend rising**: last-7d CV ≥ prior-7d CV + 2.0pp (14-day split-window) — informational yellow, early autonomic-strain signal (CV widens before mean drops). Requires ≥14 days of HRV history
 - Recovery score 34–66 (Whoop band; moderate readiness) — fires regardless of baseline depth (absolute thresholds). For session prescription, the coaching framework subdivides this at 50: Yellow-high 50-66 passes Threshold/SS; Yellow-low 34-49 caps at SS
 - **Respiration +1.0/min above 14-day baseline** (early illness-onset signal; requires ≥7 days of baseline)
-- **SpO2 nightly average <95%** — fires regardless of baseline depth (absolute threshold). Apply Apple Watch tiebreaker before holding: 3 spot readings ≥96% clears as wrist-PPG artifact (see `workflows/advise.md` → SpO2 cross-check)
+- **SpO2 ≥2pp below the 14-day baseline** — baseline-relative gate (requires ≥7 days of SpO2 history; relative yellow suppressed at shorter windows). Apply Apple Watch tiebreaker before holding: 3 spot readings ≥96% clears as wrist-PPG artifact (see `workflows/advise.md` → SpO2 cross-check)
 - Sleep <6h last night — fires regardless of baseline depth
 - Subjective fatigue / soreness / stress ≥4 (worst tier on intervals.icu 1–4 scale)
 - Power:HR decoupling >5% early in ride (post-hoc, from activity analysis)
@@ -123,7 +123,7 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 - **HRV below 7-day band 2 consecutive days** (de-load trigger; escalation, not duplicate — only the red fires, not yellow + red on the same day)
 - Recovery score <34 (Whoop band; low readiness) — fires regardless of baseline depth
 - **Respiration +2.0/min above 14-day baseline** (likely active illness; Z1 30min or full rest)
-- **SpO2 nightly average <92%** — fires regardless of baseline depth. Significant desaturation; rest and check for illness / altitude / sleep apnea
+- **SpO2 nightly average <90%** — absolute red floor, fires regardless of baseline depth. Significant desaturation; rest and check for illness / altitude / sleep apnea
 - Motivation significantly decreased
 - Persistent muscle soreness
 - Illness symptoms

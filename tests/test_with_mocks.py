@@ -1243,54 +1243,88 @@ class TestHRVCVTrendFlag(unittest.TestCase):
 
 
 class TestSpO2Flag(unittest.TestCase):
-    """R7: SpO2 absolute-threshold flag (Pass 1, shipped 2026-05-17).
+    """R7: SpO2 baseline-relative gate (Option B, 2026-05-20 — replaces the
+    legacy absolute <95/<92 gate).
 
-    Rule: <95% = yellow; <92% = red. Absolute threshold — fires regardless of baseline
-    depth (the value IS the signal, not the deviation). Wrist-PPG SpO2 has higher error
-    than fingertip pulse-ox, so the flag is paired with an Apple Watch tiebreaker in
-    coaching workflows.
+    Rule: yellow when today is ≥2pp below the personal 14-day baseline; red when
+    today is <90% (absolute floor, fires regardless of baseline maturity). The
+    relative yellow needs a mature baseline (≥7 days of SpO2 history); below that
+    only the red floor fires. Rationale: a stable wrist-PPG baseline can sit well
+    below 95%, so the old absolute <95% threshold over-flagged chronically.
     """
 
     def setUp(self):
         self.client = IntervalsIcuClient("test", "test")
 
-    def test_spo2_yellow_at_94(self):
-        records = [{"id": "2026-05-08", "spO2": 94.0}]
+    def _spo2_flags(self, records):
         with patch.object(self.client, "get_wellness", return_value=records):
             result = wellness_summary(self.client, days=14)
-        spo2_flags = [f for f in result["flags"] if f["signal"] == "spo2"]
-        self.assertEqual(len(spo2_flags), 1)
-        self.assertEqual(spo2_flags[0]["severity"], "yellow")
+        return [f for f in result["flags"] if f["signal"] == "spo2"]
 
-    def test_spo2_red_at_91(self):
-        records = [{"id": "2026-05-08", "spO2": 91.0}]
-        with patch.object(self.client, "get_wellness", return_value=records):
-            result = wellness_summary(self.client, days=14)
-        spo2_flags = [f for f in result["flags"] if f["signal"] == "spo2"]
-        self.assertEqual(len(spo2_flags), 1)
-        self.assertEqual(spo2_flags[0]["severity"], "red")
+    def test_no_flag_when_today_near_baseline(self):
+        """Litmus case: today ≈ personal baseline → no flag, even though the
+        absolute value (93%) is below the old 95% threshold."""
+        records = _series("2026-05-01", 9, spO2=93.1)
+        records[-1] = {"id": "2026-05-09", "spO2": 93.0}  # delta -0.1
+        self.assertEqual(self._spo2_flags(records), [])
 
-    def test_spo2_no_flag_at_96(self):
-        records = [{"id": "2026-05-08", "spO2": 96.0}]
-        with patch.object(self.client, "get_wellness", return_value=records):
-            result = wellness_summary(self.client, days=14)
-        self.assertEqual([f for f in result["flags"] if f["signal"] == "spo2"], [])
+    def test_yellow_when_2pp_below_baseline(self):
+        """Mature baseline 95%, today 93% → delta -2.0 → yellow."""
+        records = _series("2026-05-01", 9, spO2=95.0)
+        records[-1] = {"id": "2026-05-09", "spO2": 93.0}
+        flags = self._spo2_flags(records)
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(flags[0]["severity"], "yellow")
+        self.assertEqual(flags[0]["delta_pp"], -2.0)
 
-    def test_spo2_no_flag_at_exactly_95(self):
-        """Boundary: 95% exactly is the threshold (flag only fires <95%)."""
-        records = [{"id": "2026-05-08", "spO2": 95.0}]
-        with patch.object(self.client, "get_wellness", return_value=records):
-            result = wellness_summary(self.client, days=14)
-        self.assertEqual([f for f in result["flags"] if f["signal"] == "spo2"], [])
+    def test_no_flag_when_just_under_2pp(self):
+        """Mature baseline 95%, today 93.5% → delta -1.5 → below the 2pp trigger."""
+        records = _series("2026-05-01", 9, spO2=95.0)
+        records[-1] = {"id": "2026-05-09", "spO2": 93.5}
+        self.assertEqual(self._spo2_flags(records), [])
 
-    def test_spo2_fires_regardless_of_baseline_depth(self):
-        """Unlike HRV/RHR/respiration, SpO2 has no baseline-maturity gate —
-        a single 94% reading on day 1 fires yellow."""
-        records = [{"id": "2026-05-08", "spO2": 94.0}]  # n=1 history (empty), but flag should fire
-        with patch.object(self.client, "get_wellness", return_value=records):
-            result = wellness_summary(self.client, days=14)
-        spo2_flags = [f for f in result["flags"] if f["signal"] == "spo2"]
-        self.assertEqual(len(spo2_flags), 1)
+    def test_no_flag_when_above_baseline(self):
+        """Today above the personal baseline never flags."""
+        records = _series("2026-05-01", 9, spO2=93.0)
+        records[-1] = {"id": "2026-05-09", "spO2": 96.0}
+        self.assertEqual(self._spo2_flags(records), [])
+
+    def test_red_when_below_90_absolute_floor(self):
+        """<90% is red regardless of proximity to baseline — absolute floor.
+        Baseline 91%, today 89% (delta only -2) → red, not yellow."""
+        records = _series("2026-05-01", 9, spO2=91.0)
+        records[-1] = {"id": "2026-05-09", "spO2": 89.0}
+        flags = self._spo2_flags(records)
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(flags[0]["severity"], "red")
+
+    def test_red_floor_fires_when_baseline_immature(self):
+        """<90% red floor fires even with no baseline history (single record)."""
+        flags = self._spo2_flags([{"id": "2026-05-08", "spO2": 88.0}])
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(flags[0]["severity"], "red")
+
+    def test_no_yellow_when_baseline_immature(self):
+        """Relative yellow stays silent until the baseline matures — a low-but-≥90
+        reading on a fresh wearable does NOT flag. This is the point of Option B:
+        no chronic over-flag during the baseline-establishment window."""
+        self.assertEqual(self._spo2_flags([{"id": "2026-05-08", "spO2": 93.0}]), [])
+
+    def test_yellow_suppressed_at_6_days_history(self):
+        """6 days of history (7 records) is one short of MIN_BASELINE_SIZE — the
+        relative yellow stays silent until the 7th history day."""
+        records = _series("2026-05-01", 7, spO2=95.0)
+        records[-1] = {"id": "2026-05-07", "spO2": 92.0}  # delta -3 but immature
+        self.assertEqual(self._spo2_flags(records), [])
+
+    def test_yellow_fires_at_7_days_history(self):
+        """8 records → 7 days of history = MIN_BASELINE_SIZE exactly → relative
+        yellow becomes active."""
+        records = _series("2026-05-01", 8, spO2=95.0)
+        records[-1] = {"id": "2026-05-08", "spO2": 93.0}  # delta -2 → yellow
+        flags = self._spo2_flags(records)
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(flags[0]["severity"], "yellow")
 
 
 class TestProgressionSignal(unittest.TestCase):
