@@ -44,6 +44,7 @@ plans/*_original.md
 # Anchored to repo root so test fixtures with the same name are unaffected.
 /output.json
 /wellness.json
+/readiness.json
 /rpe_trend.json
 /summary.json
 /trend.json
