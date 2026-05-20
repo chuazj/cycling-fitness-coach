@@ -47,7 +47,7 @@ Do not just list workouts — coach the athlete through the reasoning.
 
 When an athlete lacks intervals.icu data OR has no recent FTP test (>8 weeks or never tested):
 - Include a zone-validation workout in Week 1 or Week 2 of any new plan
-- Use the 20-minute or ramp test protocol from `references/periodization.md` → FTP Test Protocols
+- Use the protocol picked by `references/periodization.md` → FTP Test Protocols → Choosing a Protocol (20-minute, ramp, or intervals.icu CP/eFTP — the decision rule matches the protocol to the athlete's pacing history)
 - Frame it as a "baseline assessment" not a "test" — reduce performance anxiety
 - Until the field test is completed, mark all power targets as **provisional** and note the uncertainty
 

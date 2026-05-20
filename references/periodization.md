@@ -53,6 +53,12 @@ The primary block for systematic FTP improvement. Progressive overload through i
 - Sat: FTP Test — 20-minute test protocol
 - Flex: Rest or very easy spin
 
+**Block-level coaching notes:**
+- **Expected outcome — set realistic expectations.** One 4-week FTP Builder block typically yields **2–4% FTP gain** for an intermediate athlete on this sweet-spot-focused stimulus. Novice or detrained riders may see 4–6%; advanced riders near their ceiling often gain <2%. Larger targets (e.g. +6–8%) are **multi-block goals** — budget 2–3 blocks (8–12 weeks). State this up front (Coaching Process Rule 1) so the test result is read correctly: a 192–195W result off a 188W FTP is a *successful* block, not a failure. If the athlete frames a goal implying >4% in 4 weeks, reframe it to a realistic per-block rate before building the plan.
+- **Target intensity distribution (pyramidal).** Across the week aim ~60–70% Z1–Z2, ~25–35% Z3–Z4 (sweet spot/threshold), ~5% Z5+. This is a pyramid, not polarized — the Z3–Z4 content is intentional. Flag drift if Z1–Z2 falls below ~55% (aerobic base being squeezed) or if Flex/endurance days creep above Z2 (easy days not easy).
+- **ERG variety.** At least one Flex-day session per block should be sim-mode or free-ride (not ERG) — develops the power-modulation and self-pacing skills ERG suppresses. See `references/workout_analysis.md` → ERG Mode.
+- Hard sessions are Tue + Thu — never back-to-back. Sat is the volume anchor with a moderate-intensity insertion.
+
 ### VO2max Block (3 weeks + 1 recovery)
 
 For athletes who need top-end power development after establishing a solid sweet spot base. Default uses short intervals (30/15s) as the primary VO2max format per Rønnestad 2015–2025 (greater time >90% VO2max, time-efficient); classic long intervals are included for sustained-effort capacity.
@@ -173,6 +179,10 @@ Training days: **Tuesday, Thursday, Saturday, + 1 Flex day**
 When creating a plan, baseline weekly TSS = athlete's recent 4-week average weekly TSS from intervals.icu bootstrap data. If no history available, estimate from:
 - 4 sessions/week × ~60min average = ~240min
 - Average IF ~0.70 → baseline weekly TSS ≈ 200-250
+
+### Weekly Ramp Rate
+
+Block templates step weekly TSS up by ~10% on consecutive build weeks. **+10%/week is the aggressive end** — classic guidance is a ~5–8%/week CTL ramp, and a +10% TSS step on an already-elevated base can push ACWR into the >1.3 caution zone (see Adaptation Decision Trees → Workload Ratio). Treat +10% as a ceiling, not a default: for athletes with CTL <30, an inconsistent training history, or any ACWR/RPE/HRV yellow flag, ramp **5–8%/week** instead. The ACWR tree is the backstop — but prefer not to design a block that needs the backstop every week.
 
 ---
 
@@ -560,6 +570,22 @@ Integrating heavy strength training with cycling improves economy, time-to-exhau
 - **Individual variation**: The 0.75 multiplier is a population average (range 0.72-0.80). Athletes with high VO2max relative to FTP may overestimate by 5-15% (Lillo-Beviá & Pallarés, 2020). Cross-validate with session RPE — if threshold sessions feel like RPE 9-10 instead of 7-8, FTP is likely overestimated.
 - **ZWO**: set `ftptest="1"` on workout element
 
+### Critical Power (CP) / eFTP — No Extra Test Required
+
+intervals.icu continuously fits a power-duration curve from all rides and derives an **eFTP** (estimated FTP) and Critical Power. CP is the asymptote of the power-duration relationship — arguably the most defensible threshold model — and updates whenever the athlete produces a hard 3–12 min effort in normal training. Use it as a **zero-cost cross-check**: if eFTP and the last field test agree within ~3%, zones are solid; if eFTP runs persistently above the set FTP, the field test (or its pacing) under-represented true threshold.
+
+A deliberate **CP test** — a fresh ~3–5 min max effort plus a ~12–20 min max effort, well-spaced or on separate days — yields a clean two-point CP and removes the single-effort pacing dependency of the 20-min test.
+
+### Choosing a Protocol
+
+| Use… | When |
+|---|---|
+| **20-minute test** | Athlete paces well off a known FTP; wants a single-session number; rides with a `show_avg` HUD to pace by average. |
+| **Ramp test** | Athlete has a **history of mis-pacing the 20-min test** (starting too hard or too soft); wants a pacing-independent number; is time-limited. The ramp removes the pacing variable — you simply ride to failure. |
+| **CP / eFTP (intervals.icu)** | Always available as a free cross-check. Prefer as the *primary* threshold source for athletes who train consistently with hard 3–12 min efforts, or whenever a field test's validity is in doubt. |
+
+**Decision rule:** if the athlete has mis-paced the 20-min test on 2+ occasions, switch them to the **ramp test** as the standard protocol, or adopt **intervals.icu eFTP/CP** as primary with the 20-min as occasional confirmation. Do not keep re-running a protocol whose dominant error source is a pacing skill the athlete has repeatedly shown they lack.
+
 ### Mid-Plan FTP Update
 
 When an FTP test occurs mid-plan (e.g., scheduled Week 4 test, or user does an ad-hoc test):
@@ -664,6 +690,7 @@ These adjust the block volume/intensity once the block type is picked.
    - TSB < -20: add recovery week before starting build
    - TSB -20 to +10: normal start
    - TSB > +10: can start at slightly elevated TSS
+5. **Block-history rotation**: check the last 2–3 completed blocks in `plans/block_history.md`. If the athlete has done **2+ consecutive FTP Builder (or otherwise sweet-spot-dominant) blocks**, do NOT auto-route `ftp_improvement` → another FTP Builder. After ~8–12 weeks of the same stimulus the higher-yield move is a **stimulus rotation** — a VO2max block (raise the aerobic ceiling) or a Polarized block, then return to FTP Builder to convert the raised ceiling. Present the rotation option to the athlete with the rationale. A stalled FTP across consecutive same-shaped blocks is a stimulus-monotony signal, not a reason to build a fourth identical block.
 
 ### Flexible Block Lengths
 
