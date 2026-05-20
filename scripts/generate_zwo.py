@@ -54,6 +54,14 @@ class WorkoutInterval:
             raise ValueError(f"duration must be > 0, got {self.duration}")
         if self.cadence is not None and (self.cadence_low is not None or self.cadence_high is not None):
             raise ValueError("Cannot set both cadence (fixed) and cadence_low/cadence_high (range) — use one or the other")
+        # D3-5: a text event at/past the interval's end never fires in Zwift.
+        for ev in self.text_events:
+            if ev.timeoffset >= self.duration:
+                warnings.warn(
+                    f"text event at timeoffset={ev.timeoffset}s is at or beyond the "
+                    f"interval duration ({self.duration}s) — Zwift will not fire it",
+                    stacklevel=2,
+                )
 
 
 @dataclass
@@ -126,6 +134,17 @@ class IntervalsT(WorkoutInterval):
     cadence_resting: Optional[int] = None
 
     def __post_init__(self):
+        # D3-1: Zwift's firing semantics for <textevent> inside <IntervalsT> are
+        # unspecified (block- vs rep-relative offset is undocumented; mid-rep cues
+        # at offsets > rep duration may never fire). Refuse the pattern outright —
+        # flatten to explicit SteadyState work+recovery pairs and cue those.
+        if self.text_events:
+            raise ValueError(
+                "IntervalsT cannot carry text_events — cue-firing semantics for "
+                "<textevent> inside <IntervalsT> are unspecified in Zwift. Flatten "
+                "the interval into explicit SteadyState work+recovery pairs and put "
+                "the cues on those. See references/zwo_format.md → IntervalsT."
+            )
         # Auto-calculate duration before parent validation
         calculated = self.repeat * (self.on_duration + self.off_duration)
         if self.duration != 0 and self.duration != calculated:
@@ -390,8 +409,10 @@ def build_parser():
     parser = argparse.ArgumentParser(description="Generate Zwift workout files")
     parser.add_argument("--json", "-j", required=True, help="JSON workout definition file")
     parser.add_argument("--output", "-o", required=True, help="Output .zwo file path")
-    parser.add_argument("--ftp", type=int, default=200,
-                        help="FTP for stats calculation (generic default; user provides actual FTP via --ftp, must be > 0)")
+    parser.add_argument("--ftp", type=int, default=None,
+                        help="FTP in watts for stats calculation (50-500). If omitted, "
+                             "defaults to 200 with a warning — always pass the athlete's "
+                             "real FTP or the TSS/intensity estimates will be wrong.")
     return parser
 
 
@@ -399,6 +420,12 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
     
+    if args.ftp is None:
+        print("WARNING: --ftp not supplied — using 200W for stats. TSS and intensity "
+              "estimates will be wrong unless 200W is the athlete's actual FTP. "
+              "Re-run with --ftp <actual> for accurate numbers.", file=sys.stderr)
+        args.ftp = 200
+
     if not (50 <= args.ftp <= 500):
         parser.error(f"--ftp must be between 50 and 500 watts (got {args.ftp})")
 

@@ -80,6 +80,8 @@ Repeated on/off intervals.
 - `OnPower`/`OffPower`: decimal of FTP
 - `CadenceResting`: cadence during off periods
 
+**Do not place `<textevent>` children inside `<IntervalsT>`.** Zwift's cue-firing semantics for textevents nested in a repeated interval are unspecified — block-relative vs rep-relative offset is undocumented, so mid-rep cues (offset > one rep's duration) may never fire. `generate_zwo.py` raises a `ValueError` on this pattern. If you need cues during a repeated set, **flatten the `IntervalsT` into explicit `<SteadyState>` work+recovery pairs** and place the cues on those — firing is well-defined there.
+
 ### FreeRide
 
 No ERG mode, rider controls effort.
@@ -134,8 +136,12 @@ Add motivational messages during intervals.
 </SteadyState>
 ```
 
-- `timeoffset`: seconds from interval start
+- `timeoffset`: seconds from interval start — must be **less than the interval's `Duration`**, or the cue never fires (`generate_zwo.py` warns on this)
 - `message`: text to display
+
+**ERG-mode caveat:** in ERG mode the trainer holds the commanded power regardless of any message — so a cue like "drop to 250 W" is not actionable (Zwift is already holding power). Name the *mechanism* instead: "tap Zwift intensity down ~5%". Power-change instructions only make literal sense inside `<FreeRide>` segments.
+
+**Placement:** put text events inside `<Warmup>`, `<SteadyState>`, `<Ramp>`, or `<Cooldown>` — never inside `<IntervalsT>` (see IntervalsT above; firing semantics are unspecified there).
 
 ## FTP Test Attribute
 

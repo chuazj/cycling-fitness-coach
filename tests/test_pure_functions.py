@@ -446,6 +446,44 @@ class TestWorkoutFromDict(unittest.TestCase):
         self.assertEqual(len(workout.intervals[0].text_events), 1)
         self.assertEqual(workout.intervals[0].text_events[0].message, "Go!")
 
+    def test_intervalst_rejects_text_events(self):
+        """D3-1: <textevent> inside <IntervalsT> has unspecified firing semantics."""
+        data = {
+            "name": "Bad VO2max",
+            "workout": [
+                {"type": "IntervalsT", "repeat": 8, "on_duration": 30,
+                 "off_duration": 15, "on_power": 1.20, "off_power": 0.45,
+                 "text_events": [{"timeoffset": 5, "message": "GO"}]},
+            ],
+        }
+        with self.assertRaises(ValueError):
+            workout_from_dict(data)
+
+    def test_steadystate_text_event_past_duration_warns(self):
+        """D3-5: a text event at/beyond the interval end never fires — warn."""
+        data = {
+            "name": "Late cue",
+            "workout": [
+                {"type": "SteadyState", "duration": 300, "power": 0.80,
+                 "text_events": [{"timeoffset": 400, "message": "too late"}]},
+            ],
+        }
+        with self.assertWarns(UserWarning):
+            workout_from_dict(data)
+
+    def test_steadystate_text_event_within_duration_ok(self):
+        """D3-5: an in-bounds text event must not warn."""
+        data = {
+            "name": "OK cue",
+            "workout": [
+                {"type": "SteadyState", "duration": 300, "power": 0.80,
+                 "text_events": [{"timeoffset": 60, "message": "fine"}]},
+            ],
+        }
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # any warning becomes an exception
+            workout_from_dict(data)  # must not raise
+
 
 class TestCreateZwoXml(unittest.TestCase):
     def test_contains_expected_elements(self):

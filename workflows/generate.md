@@ -18,6 +18,7 @@ When user requests a workout file ("build a workout", "create a ZWO", workout ge
 - **Warm-up**: 10-15 min progressive ramp (45-50% → 75% FTP), include 1-2min opener at FTP for threshold+ sessions
 - **Main set**: Intervals matched to workout type and athlete's current block progression
 - **Cool-down**: 5-10 min ramp down (60% → 35% FTP)
+- **FTP test sessions**: the test effort itself MUST be a `<FreeRide>` segment with `show_avg="1"` — never `<SteadyState>`. In ERG mode a SteadyState block holds the rider at the *current* FTP, so there is nothing to test; FreeRide hands power control back to the rider. Set `ftptest="1"` on the `<workout>` element. See `references/zwo_format.md` → FTP Test Attribute.
 - Reference `references/training_zones.md` for zone boundaries and cadence targets
 - Reference `references/periodization.md` for progression context if part of a training block
 
@@ -48,9 +49,10 @@ Write XML directly using the templates and tag spec in `references/zwo_format.md
 | Cooldown direction | `power_low` ≥ `power_high` (ramps down) | CLAUDE.md conventions |
 | Duration | All durations in seconds, > 0 | — |
 | Cadence | Match workout type targets | `references/training_zones.md` |
-| Text events | 3-5 per workout (interval starts, cadence, motivation, form) | Project CLAUDE.md |
+| Text events | 3-5 per workout; each `timeoffset` < its interval's duration; reword ERG-inert "drop to X W" cues as "tap intensity down ~N%" | Project CLAUDE.md |
+| IntervalsT cues | No `<textevent>` children inside `<IntervalsT>` — flatten to `<SteadyState>` pairs (`generate_zwo.py` raises ValueError) | `references/zwo_format.md` |
 | Encoding | UTF-8 (not Windows cp1252) | CLAUDE.md conventions |
-| FTP test | Set `ftptest="1"` on `<workout>` element + `show_avg="1"` on FreeRide | `references/zwo_format.md` |
+| FTP test | Test effort is a `<FreeRide>` (never `<SteadyState>` — ERG holds current FTP); `ftptest="1"` on `<workout>` + `show_avg="1"` on the FreeRide | `references/zwo_format.md` |
 | Tag reference | Consult h4l/zwift-workout-file-reference for attribute validation | CLAUDE.md conventions |
 
 **Step 5:** Save and report:
@@ -75,6 +77,8 @@ Write XML directly using the templates and tag spec in `references/zwo_format.md
 
 - **Power out of range**: `_validate_power()` raises ValueError for values outside 0.0-2.0. Fix the input value.
 - **Warmup/Cooldown direction wrong**: `__post_init__` validation catches this. Swap power_low/power_high.
+- **IntervalsT with text events**: `generate_zwo.py` raises `ValueError` — `<textevent>` firing inside `<IntervalsT>` is unspecified. Flatten the interval to explicit `<SteadyState>` work+recovery pairs and cue those.
+- **`--ftp` omitted**: the script warns and falls back to 200 W for the TSS estimate — re-run with the athlete's real FTP for accurate numbers.
 - **Missing cadence**: Optional but recommended — add `Cadence`, `CadenceLow`/`CadenceHigh`, or `CadenceResting` attributes.
 - **XML encoding issues**: Always use `encoding="utf-8"` when writing. Windows defaults to cp1252 which breaks special characters.
 - **Zwift not showing workout**: Restart Zwift after adding .zwo files. Check file is in correct Workouts subfolder.

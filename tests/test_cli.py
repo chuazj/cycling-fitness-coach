@@ -88,7 +88,7 @@ class TestGenerateZwoCli(unittest.TestCase):
         ns = self._parse(["--json", "w.json", "--output", "w.zwo"])
         self.assertEqual(ns.json, "w.json")
         self.assertEqual(ns.output, "w.zwo")
-        self.assertEqual(ns.ftp, 200)
+        self.assertIsNone(ns.ftp)  # D3-4: defaults to None; main() warns + falls back to 200
 
     def test_custom_ftp(self):
         ns = self._parse(["--json", "w.json", "-o", "w.zwo", "--ftp", "192"])
