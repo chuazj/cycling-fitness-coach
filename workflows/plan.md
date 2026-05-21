@@ -15,6 +15,7 @@ When user requests a training plan ("create a training plan", "start a macro pla
 **Step 2:** Gather/confirm athlete profile:
 - FTP (current, last test date)
 - Weight
+- **Menstrual status** (female athletes) — ask once, respectfully: natural cycle vs hormonal contraceptive, cycle regularity, any training-affecting symptoms. Default to standard periodization + symptom-based autoregulation, and screen the amenorrhea / RED-S red flag — see `references/menstrual_cycle_training.md`.
 - Available training days (default: Tue, Thu, Sat + 1 flex). After Step 3, check `training_day_pattern` from bootstrap output — if it matches, confirm; if it differs, present the detected pattern and ask the athlete to choose.
 - **Goal** — pick from the 5-goal taxonomy in `references/periodization.md` → Block Selection Logic. If unclear, ask the athlete: *"Are you targeting a specific event in the next 12 weeks? If yes, what kind (gravel/sportive, criterium, time trial)? If no, do you want to raise FTP or build aerobic base?"*
 

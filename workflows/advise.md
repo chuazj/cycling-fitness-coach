@@ -212,11 +212,11 @@ python scripts/pmc_calculator.py --bootstrap --days 90
 
 ---
 
-## Scope Limitations
+## Menstrual Cycle & Hormonal Contraceptives
 
-### Menstrual Cycle
+For a female athlete, the menstrual cycle — or hormonal-contraceptive status — is a routine input to autoregulation, **not** a plan-restructuring factor. Full protocol: `references/menstrual_cycle_training.md`.
 
-This skill does **not** currently model menstrual-cycle phase in readiness or load prescription. For female athletes the cycle is a real modulator of recovery, thermoregulation, fuelling and perceived effort — the evidence base is still developing and individual variation is large, but the effect is not zero. Until a proper phase-aware protocol is added, treat this as a **known gap**:
-- Do not present the readiness verdict as complete for an athlete who menstruates — state the limitation.
-- If the athlete tracks their cycle, take their own phase-symptom reports as the primary signal and weight the subjective fields more heavily.
-- A full evidence-based protocol (phase-aware load, heat and fuelling adjustments) is a future addition — prioritise it if the skill is reused beyond the current single-athlete (male) scope.
+In advice and check-ins:
+- **Autoregulate by symptom, not phase.** Treat menstrual symptoms (pain/cramps, fatigue, heavy bleeding, PMS) as a wellness input alongside sleep / HRV / recovery, and adjust by symptom severity (`menstrual_cycle_training.md` §4). Phase-based periodization is not evidence-supported — do not change a plan for cycle phase alone.
+- **Read luteal-phase wellness with context.** The luteal phase modestly raises resting HR and core temperature and can lower HRV — do not over-read a luteal-phase dip as fatigue (§3).
+- **Red flag — hard gate.** Amenorrhea (no period 3+ months) or oligomenorrhea — or, for a hormonal-contraceptive user, low-energy-availability signs (unexplained performance decline, recurrent illness/injury, stress fractures) — is a possible Relative Energy Deficiency in Sport (RED-S) signal. Refer her to a doctor, hold load at maintenance, never "push through" (`menstrual_cycle_training.md` §7).
