@@ -359,6 +359,105 @@ def workout_from_dict(data: dict) -> ZwiftWorkout:
     )
 
 
+def _interval_from_element(elem: Element) -> WorkoutInterval:
+    """Build a WorkoutInterval from a parsed .zwo XML element. Raises ValueError
+    for unknown element types or missing required attributes."""
+    tag = elem.tag
+
+    def _f(attr):
+        v = elem.get(attr)
+        if v is None:
+            raise ValueError(f"<{tag}> missing required attribute {attr}")
+        return float(v)
+
+    def _i(attr):
+        v = elem.get(attr)
+        if v is None:
+            raise ValueError(f"<{tag}> missing required attribute {attr}")
+        return int(v)
+
+    text_events = [
+        TextEvent(
+            timeoffset=int(te.get("timeoffset", "0")),
+            message=te.get("message", ""),
+            duration=int(te.get("duration", "10")),
+        )
+        for te in elem.findall("textevent")
+    ]
+    cadence = elem.get("Cadence")
+    cadence_low = elem.get("CadenceLow")
+    cadence_high = elem.get("CadenceHigh")
+    common = dict(
+        text_events=text_events,
+        cadence=int(cadence) if cadence is not None else None,
+        cadence_low=int(cadence_low) if cadence_low is not None else None,
+        cadence_high=int(cadence_high) if cadence_high is not None else None,
+    )
+
+    if tag == "Warmup":
+        return Warmup(duration=_i("Duration"), power_low=_f("PowerLow"),
+                      power_high=_f("PowerHigh"), **common)
+    if tag == "Cooldown":
+        return Cooldown(duration=_i("Duration"), power_low=_f("PowerLow"),
+                        power_high=_f("PowerHigh"), **common)
+    if tag == "Ramp":
+        return Ramp(duration=_i("Duration"), power_low=_f("PowerLow"),
+                    power_high=_f("PowerHigh"), **common)
+    if tag == "SteadyState":
+        return SteadyState(duration=_i("Duration"), power=_f("Power"), **common)
+    if tag == "IntervalsT":
+        cr = elem.get("CadenceResting")
+        return IntervalsT(
+            repeat=_i("Repeat"), on_duration=_i("OnDuration"),
+            off_duration=_i("OffDuration"), on_power=_f("OnPower"),
+            off_power=_f("OffPower"),
+            cadence_resting=int(cr) if cr is not None else None, **common)
+    if tag == "FreeRide":
+        return FreeRide(duration=_i("Duration"),
+                        flat_road=elem.get("FlatRoad") == "1",
+                        ftptest=elem.get("ftptest") == "1",
+                        show_avg=elem.get("show_avg") == "1", **common)
+    if tag == "MaxEffort":
+        return MaxEffort(duration=_i("Duration"), **common)
+    raise ValueError(f"Unknown interval element: <{tag}>")
+
+
+def workout_from_xml(xml_string: str) -> ZwiftWorkout:
+    """Parse a .zwo XML string into a ZwiftWorkout — the inverse of create_zwo_xml.
+
+    Strict: raises ValueError on malformed XML, a wrong root element, a missing
+    <workout>, unknown interval types, or invalid attribute values.
+    """
+    try:
+        root = ET.fromstring(xml_string)
+    except ET.ParseError as e:
+        raise ValueError(f"Malformed XML: {e}") from e
+    if root.tag != "workout_file":
+        raise ValueError(f"Root element is <{root.tag}>, expected <workout_file>")
+
+    def _text(tag, default=""):
+        el = root.find(tag)
+        return el.text if (el is not None and el.text is not None) else default
+
+    workout_elem = root.find("workout")
+    if workout_elem is None:
+        raise ValueError("No <workout> element found")
+
+    intervals = [_interval_from_element(e) for e in workout_elem]
+    category = _text("category", "")
+
+    return ZwiftWorkout(
+        name=_text("name", "Custom Workout"),
+        author=_text("author", "Cycling Fitness Coach"),
+        description=_text("description", ""),
+        sport_type=_text("sportType", "bike"),
+        tags=[t.get("name", "") for t in root.findall("tags/tag")],
+        category=category or None,
+        is_ftp_test=workout_elem.get("ftptest") == "1",
+        intervals=intervals,
+    )
+
+
 def synthesize_power_timeline(workout: ZwiftWorkout) -> list[float]:
     """Build a per-second FTP-fraction power array from the workout structure.
 

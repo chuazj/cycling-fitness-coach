@@ -41,6 +41,7 @@ from generate_zwo import (
     TextEvent,
     ZwiftWorkout,
     workout_from_dict,
+    workout_from_xml,
     create_zwo_xml,
     calculate_workout_stats,
     synthesize_power_timeline,
@@ -701,6 +702,51 @@ class TestErgDesignRule(unittest.TestCase):
         warns = check_erg_design(w)
         self.assertEqual(len(warns), 1)
         self.assertIn("short", warns[0])
+
+
+class TestWorkoutFromXml(unittest.TestCase):
+    def test_round_trip(self):
+        original = ZwiftWorkout(
+            name="RT Test", description="round trip",
+            tags=["FTP", "Test"],
+            intervals=[
+                Warmup(duration=300, power_low=0.4, power_high=0.75),
+                SteadyState(duration=600, power=0.88, cadence=90),
+                IntervalsT(repeat=3, on_duration=120, off_duration=60,
+                           on_power=1.1, off_power=0.5),
+                Cooldown(duration=300, power_low=0.6, power_high=0.35),
+            ],
+        )
+        xml = create_zwo_xml(original)
+        parsed = workout_from_xml(xml)
+        self.assertEqual(parsed.name, "RT Test")
+        self.assertEqual(parsed.tags, ["FTP", "Test"])
+        self.assertEqual(len(parsed.intervals), 4)
+        # Re-serializing the parsed model yields byte-identical XML.
+        self.assertEqual(create_zwo_xml(parsed), xml)
+
+    def test_freeride_round_trip(self):
+        original = ZwiftWorkout(
+            name="Test", is_ftp_test=True,
+            intervals=[FreeRide(duration=1200, flat_road=True, ftptest=True, show_avg=True)])
+        parsed = workout_from_xml(create_zwo_xml(original))
+        self.assertTrue(parsed.is_ftp_test)
+        self.assertEqual(len(parsed.intervals), 1)
+        self.assertTrue(parsed.intervals[0].show_avg)
+
+    def test_malformed_xml_raises(self):
+        with self.assertRaises(ValueError):
+            workout_from_xml("<workout_file><not-closed>")
+
+    def test_unknown_element_raises(self):
+        bad = ('<workout_file><name>x</name><workout>'
+               '<Bogus Duration="60"/></workout></workout_file>')
+        with self.assertRaises(ValueError):
+            workout_from_xml(bad)
+
+    def test_wrong_root_raises(self):
+        with self.assertRaises(ValueError):
+            workout_from_xml("<not_a_workout><workout/></not_a_workout>")
 
 
 # ===================================================================
