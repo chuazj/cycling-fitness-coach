@@ -40,6 +40,11 @@ def _validate_power(value, name="power"):
     if not (0.0 <= value <= 2.0):
         raise ValueError(f"{name}={value} out of range — must be 0.0 <= {name} <= 2.0 (fraction of FTP)")
 
+# Placeholder power for unstructured intervals — FreeRide/MaxEffort have no
+# prescribed target, so NP/TSS for them is a guess.
+FREERIDE_POWER_PLACEHOLDER = 0.6
+MAXEFFORT_POWER_PLACEHOLDER = 1.5
+
 @dataclass
 class WorkoutInterval:
     """Base class for workout intervals"""
@@ -346,6 +351,53 @@ def workout_from_dict(data: dict) -> ZwiftWorkout:
         is_ftp_test=data.get("is_ftp_test", False),
         intervals=intervals,
     )
+
+
+def synthesize_power_timeline(workout: ZwiftWorkout) -> list[float]:
+    """Build a per-second FTP-fraction power array from the workout structure.
+
+    One sample per second — the input for Normalised-Power-based TSS estimation.
+    SteadyState -> constant; Warmup/Cooldown/Ramp -> linear sweep; IntervalsT ->
+    expanded on/off square wave; FreeRide/MaxEffort -> placeholder power.
+    """
+    timeline: list[float] = []
+    for interval in workout.intervals:
+        if isinstance(interval, SteadyState):
+            timeline.extend([interval.power] * interval.duration)
+        elif isinstance(interval, (Warmup, Cooldown, Ramp)):
+            d = interval.duration
+            lo, hi = interval.power_low, interval.power_high
+            # Sample at the midpoint of each second so the mean is symmetric.
+            timeline.extend(lo + (hi - lo) * (t + 0.5) / d for t in range(d))
+        elif isinstance(interval, IntervalsT):
+            for _ in range(interval.repeat):
+                timeline.extend([interval.on_power] * interval.on_duration)
+                timeline.extend([interval.off_power] * interval.off_duration)
+        elif isinstance(interval, FreeRide):
+            timeline.extend([FREERIDE_POWER_PLACEHOLDER] * interval.duration)
+        elif isinstance(interval, MaxEffort):
+            timeline.extend([MAXEFFORT_POWER_PLACEHOLDER] * interval.duration)
+        else:
+            timeline.extend([0.7] * interval.duration)
+    return timeline
+
+
+def _compute_np(timeline: list[float]) -> Optional[float]:
+    """Normalised Power from a per-second power array (FTP fractions in, fraction out).
+
+    30s rolling average -> 4th power -> mean -> 4th root. Returns None if the
+    timeline is shorter than the 30s window. No intermediate rounding — the
+    NP -> IF -> TSS chain magnifies precision loss; round only at display.
+    """
+    if len(timeline) < 30:
+        return None
+    window_sum = sum(timeline[:30])
+    rolling_fourth = (window_sum / 30) ** 4
+    for i in range(1, len(timeline) - 29):
+        window_sum += timeline[i + 29] - timeline[i - 1]
+        rolling_fourth += (window_sum / 30) ** 4
+    n_windows = len(timeline) - 29
+    return (rolling_fourth / n_windows) ** 0.25
 
 
 def calculate_workout_stats(workout: ZwiftWorkout, ftp: int = 200) -> dict:

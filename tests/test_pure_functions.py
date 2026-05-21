@@ -43,6 +43,8 @@ from generate_zwo import (
     workout_from_dict,
     create_zwo_xml,
     calculate_workout_stats,
+    synthesize_power_timeline,
+    _compute_np,
 )
 from batch_generate_zwo import batch_generate
 from pmc_calculator import _ewa_constant, compute_pmc
@@ -571,6 +573,52 @@ class TestCalculateWorkoutStats(unittest.TestCase):
         stats = calculate_workout_stats(workout, ftp=200)
         self.assertTrue(stats["tss_estimated"])
         self.assertIn("MaxEffort", stats["tss_warning"])
+
+
+class TestSynthesizePowerTimeline(unittest.TestCase):
+    def test_steadystate_constant(self):
+        w = ZwiftWorkout(name="t", intervals=[SteadyState(duration=600, power=0.88)])
+        tl = synthesize_power_timeline(w)
+        self.assertEqual(len(tl), 600)
+        self.assertTrue(all(p == 0.88 for p in tl))
+
+    def test_warmup_linear_sweep(self):
+        w = ZwiftWorkout(name="t", intervals=[Warmup(duration=100, power_low=0.4, power_high=0.8)])
+        tl = synthesize_power_timeline(w)
+        self.assertEqual(len(tl), 100)
+        self.assertAlmostEqual(tl[0], 0.4 + 0.4 * 0.5 / 100, places=4)
+        self.assertAlmostEqual(tl[-1], 0.4 + 0.4 * 99.5 / 100, places=4)
+        self.assertAlmostEqual(sum(tl) / len(tl), 0.6, places=4)  # symmetric mean
+
+    def test_intervalst_square_wave(self):
+        w = ZwiftWorkout(name="t", intervals=[
+            IntervalsT(repeat=3, on_duration=60, off_duration=60, on_power=1.2, off_power=0.5)])
+        tl = synthesize_power_timeline(w)
+        self.assertEqual(len(tl), 360)
+        self.assertTrue(all(p == 1.2 for p in tl[:60]))
+        self.assertTrue(all(p == 0.5 for p in tl[60:120]))
+
+    def test_freeride_and_maxeffort_placeholders(self):
+        w = ZwiftWorkout(name="t", intervals=[
+            FreeRide(duration=300), MaxEffort(duration=30)])
+        tl = synthesize_power_timeline(w)
+        self.assertEqual(len(tl), 330)
+        self.assertTrue(all(p == 0.6 for p in tl[:300]))
+        self.assertTrue(all(p == 1.5 for p in tl[300:]))
+
+
+class TestComputeNpZwo(unittest.TestCase):
+    def test_constant_equals_value(self):
+        self.assertAlmostEqual(_compute_np([0.8] * 200), 0.8, places=6)
+
+    def test_short_timeline_returns_none(self):
+        self.assertIsNone(_compute_np([0.5] * 29))
+
+    def test_variable_exceeds_mean(self):
+        tl = [1.2] * 120 + [0.4] * 120  # mean = 0.8
+        np_val = _compute_np(tl)
+        self.assertGreater(np_val, 0.8)
+        self.assertLess(np_val, 1.2)
 
 
 # ===================================================================
