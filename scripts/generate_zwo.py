@@ -401,58 +401,64 @@ def _compute_np(timeline: list[float]) -> Optional[float]:
 
 
 def calculate_workout_stats(workout: ZwiftWorkout, ftp: int = 200) -> dict:
-    """Calculate workout statistics"""
-    total_duration = 0
-    total_work = 0  # kJ approximation
-    has_unstructured = False  # FreeRide / MaxEffort have no power target — TSS is a guess
+    """Calculate workout statistics using NP-based TSS estimation.
 
-    for interval in workout.intervals:
-        if isinstance(interval, IntervalsT):
-            avg_power = (interval.on_power * interval.on_duration +
-                        interval.off_power * interval.off_duration) / (interval.on_duration + interval.off_duration)
-        elif isinstance(interval, (Warmup, Cooldown, Ramp)):
-            avg_power = (interval.power_low + interval.power_high) / 2
-        elif isinstance(interval, SteadyState):
-            avg_power = interval.power
-        elif isinstance(interval, FreeRide):
-            avg_power = 0.6  # Estimate — actual depends on rider effort
-            has_unstructured = True
-        elif isinstance(interval, MaxEffort):
-            avg_power = 1.5  # Estimate — actual depends on rider effort
-            has_unstructured = True
-        else:
-            avg_power = 0.7
+    TSS is derived from Normalised Power computed over a synthesized per-second
+    power timeline, so interval variability is captured directly (no avg-power
+    under-report). For ftptest workouts the test effort is rider-controlled, so
+    TSS is reported as unmodeled rather than as a misleading placeholder number.
+    """
+    timeline = synthesize_power_timeline(workout)
+    total_duration = len(timeline)
+    total_work = sum(frac * ftp for frac in timeline) / 1000  # kJ
 
-        total_duration += interval.duration
-        total_work += avg_power * ftp * interval.duration / 1000  # kJ
+    has_unstructured = any(
+        isinstance(i, (FreeRide, MaxEffort)) for i in workout.intervals
+    )
 
-    # Estimate IF using average power (not NP — accurate for structured workouts with low variability)
-    avg_intensity = total_work * 1000 / (ftp * total_duration) if total_duration > 0 else 0
+    # FTP-test workouts: the main effort is a rider-controlled FreeRide — an
+    # NP estimate off the 0.6 placeholder would be badly wrong. Report unmodeled.
+    if workout.is_ftp_test:
+        return {
+            "total_duration_min": round(total_duration / 60, 1),
+            "estimated_kj": round(total_work),
+            "estimated_if": None,
+            "estimated_tss": None,
+            "tss_method": "unmodeled (FTP test — rider-controlled effort)",
+            "tss_estimated": True,
+            "tss_warning": ("FTP-test workout — TSS depends on rider execution "
+                            "and is not modeled."),
+        }
 
-    # Estimated TSS (uses avg-power-based IF; actual TSS may differ due to power variability)
-    tss = (total_duration * avg_intensity * avg_intensity) / 3600 * 100
+    np_frac = _compute_np(timeline)
+    if np_frac is not None:
+        tss_method = "np_modeled — assumes prescribed-power execution"
+    else:
+        # Workout shorter than the 30s NP window — fall back to mean power.
+        np_frac = (sum(timeline) / total_duration) if total_duration > 0 else 0.0
+        tss_method = "avg_power (<30s — NP window not reached)"
 
-    # Variable workouts (IntervalsT, over-unders) underreport TSS by ~5-10% vs NP-based actual
-    has_high_variability = any(isinstance(i, IntervalsT) for i in workout.intervals)
+    # NP is already in FTP-fraction units, so IF = NP / FTP = np_frac directly.
+    if_value = np_frac
+    tss = (total_duration * if_value * if_value) / 3600 * 100
 
-    # Unstructured intervals make TSS a wild guess — escalate the warning
-    warnings = []
-    if has_high_variability:
-        warnings.append("Variable workout detected — actual TSS will likely run 5-10% higher than "
-                        "estimated due to NP > avg power.")
+    tss_warning = None
     if has_unstructured:
-        warnings.append("FreeRide/MaxEffort intervals present — TSS uses placeholder power "
-                        "(0.6 FTP for FreeRide, 1.5 FTP for MaxEffort). Actual TSS depends on "
-                        "rider effort and may vary by ±50%.")
+        tss_warning = (
+            f"FreeRide/MaxEffort intervals present — TSS uses placeholder power "
+            f"({FREERIDE_POWER_PLACEHOLDER} FTP FreeRide, "
+            f"{MAXEFFORT_POWER_PLACEHOLDER} FTP MaxEffort). Actual TSS depends "
+            f"on rider effort and may vary by ±50%."
+        )
 
     return {
         "total_duration_min": round(total_duration / 60, 1),
         "estimated_kj": round(total_work),
-        "estimated_avg_intensity": round(avg_intensity, 2),
+        "estimated_if": round(if_value, 2),
         "estimated_tss": round(tss),
-        "tss_method": "avg_power (not NP — actual TSS may differ with high power variability)",
-        "tss_estimated": has_unstructured,  # True when FreeRide/MaxEffort make TSS speculative
-        "tss_warning": "; ".join(warnings) if warnings else None,
+        "tss_method": tss_method,
+        "tss_estimated": has_unstructured,
+        "tss_warning": tss_warning,
     }
 
 
@@ -504,8 +510,11 @@ def main():
     stats = calculate_workout_stats(workout, args.ftp)
     print(f"Created: {args.output}")
     print(f"   Duration: {stats['total_duration_min']} min")
-    print(f"   Est. TSS: {stats['estimated_tss']}")
-    print(f"   Est. Avg Intensity: {stats['estimated_avg_intensity']}")
+    tss = stats["estimated_tss"]
+    print(f"   Est. TSS: {tss if tss is not None else 'unmodeled (FTP test)'}")
+    if stats["estimated_if"] is not None:
+        print(f"   Est. IF: {stats['estimated_if']}")
+    print(f"   TSS method: {stats['tss_method']}")
 
 
 if __name__ == "__main__":

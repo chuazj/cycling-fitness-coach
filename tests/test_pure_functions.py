@@ -521,7 +521,7 @@ class TestCalculateWorkoutStats(unittest.TestCase):
         self.assertEqual(stats["total_duration_min"], 60.0)
         # TSS for 1hr at IF=0.88: 0.88^2 * 100 = 77.44
         self.assertAlmostEqual(stats["estimated_tss"], 77, delta=1)
-        self.assertAlmostEqual(stats["estimated_avg_intensity"], 0.88, places=2)
+        self.assertAlmostEqual(stats["estimated_if"], 0.88, places=2)
 
     def test_tss_method_key_exists(self):
         workout = ZwiftWorkout(
@@ -530,7 +530,7 @@ class TestCalculateWorkoutStats(unittest.TestCase):
         )
         stats = calculate_workout_stats(workout, ftp=200)
         self.assertIn("tss_method", stats)
-        self.assertIn("avg_power", stats["tss_method"])
+        self.assertIn("np_modeled", stats["tss_method"])
 
     def test_tss_estimated_false_for_structured_workout(self):
         """B4: A workout with only SteadyState/Warmup/Cooldown/IntervalsT has a
@@ -573,6 +573,35 @@ class TestCalculateWorkoutStats(unittest.TestCase):
         stats = calculate_workout_stats(workout, ftp=200)
         self.assertTrue(stats["tss_estimated"])
         self.assertIn("MaxEffort", stats["tss_warning"])
+
+    def test_ftp_test_workout_tss_unmodeled(self):
+        """ftptest workouts: the effort is rider-controlled — TSS is not modeled."""
+        workout = ZwiftWorkout(
+            name="FTP Test", is_ftp_test=True,
+            intervals=[
+                Warmup(duration=600, power_low=0.4, power_high=0.75),
+                FreeRide(duration=1200, show_avg=True),
+                Cooldown(duration=300, power_low=0.5, power_high=0.35),
+            ],
+        )
+        stats = calculate_workout_stats(workout, ftp=188)
+        self.assertIsNone(stats["estimated_tss"])
+        self.assertIsNone(stats["estimated_if"])
+        self.assertIn("unmodeled", stats["tss_method"])
+
+    def test_np_tss_for_intervals_exceeds_avg(self):
+        """IntervalsT workout: NP-based IF exceeds the naive avg-power figure."""
+        workout = ZwiftWorkout(
+            name="VO2", intervals=[
+                IntervalsT(repeat=6, on_duration=180, off_duration=180,
+                           on_power=1.15, off_power=0.50),
+            ],
+        )
+        stats = calculate_workout_stats(workout, ftp=200)
+        # avg power = (1.15*180 + 0.50*180)/360 = 0.825; NP weights the highs above that.
+        self.assertGreater(stats["estimated_if"], 0.825)
+        self.assertEqual(stats["tss_method"],
+                         "np_modeled — assumes prescribed-power execution")
 
 
 class TestSynthesizePowerTimeline(unittest.TestCase):

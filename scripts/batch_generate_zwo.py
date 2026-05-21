@@ -100,14 +100,14 @@ def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
                     f.write(xml_content)
 
             total_duration += stats["total_duration_min"]
-            total_tss += stats["estimated_tss"]
+            total_tss += stats["estimated_tss"] or 0  # None for ftptest workouts
 
             results.append({
                 "filename": filename,
                 "name": workout.name,
                 "duration_min": stats["total_duration_min"],
                 "estimated_tss": stats["estimated_tss"],
-                "estimated_if": stats["estimated_avg_intensity"],
+                "estimated_if": stats["estimated_if"],
                 "path": filepath,
             })
         except Exception as e:
@@ -180,7 +180,8 @@ def main():
     else:
         print(f"\nGenerated {result['workouts_generated']} workout files in {args.output_dir}", file=sys.stderr)
     for w in result["workouts"]:
-        print(f"  {w['filename']:40s} {w['duration_min']:>5.0f}min  TSS ~{w['estimated_tss']}", file=sys.stderr)
+        tss_disp = w["estimated_tss"] if w["estimated_tss"] is not None else "n/a"
+        print(f"  {w['filename']:40s} {w['duration_min']:>5.0f}min  TSS ~{tss_disp}", file=sys.stderr)
     print(f"  {'Total':40s} {result['total_duration_min']:>5.0f}min  TSS ~{result['total_estimated_tss']}", file=sys.stderr)
 
     if result.get("errors"):
