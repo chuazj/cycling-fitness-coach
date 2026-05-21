@@ -76,5 +76,72 @@ def predict_ftp_gain(model, start_ftp):
     }
 
 
+def load_ledger(path):
+    """Read the JSONL ledger -> list of record dicts. Missing file -> []."""
+    if not os.path.isfile(path):
+        return []
+    records = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                records.append(json.loads(line))
+    return records
+
+
+def save_ledger(path, records):
+    """Rewrite the JSONL ledger — one JSON object per line."""
+    with open(path, "w", encoding="utf-8") as f:
+        for rec in records:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+
+def next_id(records):
+    """Next sequential prediction id, e.g. 'P004'. Empty ledger -> 'P001'."""
+    nums = []
+    for rec in records:
+        rid = rec.get("id", "")
+        if isinstance(rid, str) and rid.startswith("P") and rid[1:].isdigit():
+            nums.append(int(rid[1:]))
+    return "P%03d" % ((max(nums) + 1) if nums else 1)
+
+
+CALIBRATION_HEADER = """\
+# Athlete Prediction Calibration
+
+Athlete-calibrated forecasting model for the W5 validation loop. The JSON block
+below is the operative model read by `scripts/prediction_tracker.py`. Regenerated
+by `--mode seed-baseline`; edited by the coach (propose-and-confirm) when the
+weekly review fires a `recalibration_needed` flag. Methodology + the generic
+default: `references/prediction_calibration.md`.
+"""
+
+
+def load_calibration(path):
+    """Read the model from athlete_calibration.md's fenced JSON block.
+
+    Missing file -> a deep copy of DEFAULT_MODEL (the generic scaffold).
+    """
+    if not os.path.isfile(path):
+        return json.loads(json.dumps(DEFAULT_MODEL))
+    with open(path, encoding="utf-8") as f:
+        content = f.read()
+    marker = content.find("```json")
+    if marker == -1:
+        raise ValueError(f"{path}: no ```json model block found")
+    start = content.index("\n", marker) + 1
+    end = content.find("```", start)
+    if end == -1:
+        raise ValueError(f"{path}: unterminated ```json block")
+    return json.loads(content[start:end])
+
+
+def write_calibration(path, model):
+    """Write athlete_calibration.md — prose header + a fenced JSON model block."""
+    block = "```json\n" + json.dumps(model, indent=2) + "\n```\n"
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(CALIBRATION_HEADER + "\n" + block)
+
+
 if __name__ == "__main__":
     main()
