@@ -2,6 +2,8 @@
 
 Reference for Claude-as-coach: block templates, TSS distribution, progressive overload, and adaptation decision trees for FTP improvement training.
 
+> **Citation currency** — physiology citations in this doc last verified **2026-05-20** (VO2max short-vs-long interval evidence, heat adaptation, durability, concurrent strength). Re-verify against current literature at every skill audit; interval-format and fuelling evidence move fastest, so treat anything older than ~12 months as provisional.
+
 ## Table of Contents
 
 - [Training Blocks](#training-blocks) — FTP Builder, VO2max, Endurance Base, Polarized block templates
@@ -61,7 +63,7 @@ The primary block for systematic FTP improvement. Progressive overload through i
 
 ### VO2max Block (3 weeks + 1 recovery)
 
-For athletes who need top-end power development after establishing a solid sweet spot base. Default uses short intervals (30/15s) as the primary VO2max format per Rønnestad 2015–2025 (greater time >90% VO2max, time-efficient); classic long intervals are included for sustained-effort capacity.
+For athletes who need top-end power development after establishing a solid sweet spot base. Default uses short intervals (30/15s) as the primary VO2max format — time-efficient, well-tolerated, and supported by Rønnestad's cycling work for performance gains; classic long intervals are included for sustained-effort capacity and remain at least equally effective for VO2max itself.
 
 | Week | Phase | Focus | TSS vs Baseline |
 |------|-------|-------|-----------------|
@@ -226,9 +228,9 @@ Recovery between classic VO2max intervals: equal to work duration (1:1 work:rest
 
 ### VO2max Progression — Short Intervals (PRIMARY)
 
-Short intervals (30s work bouts) accumulate significantly more time above 90% VO2max than classic long intervals due to rapid re-engagement of the aerobic system during brief recovery — VO2 remains elevated through the short rest, bypassing the 1-2 min ramp-up that "wastes" the start of each long interval.
+Short intervals (30s work bouts) keep VO2 elevated through the brief recovery — the rationale for using them as a time-efficient VO2max stimulus. Whether they accumulate *more* time above 90% VO2max than classic long intervals is **contested**: Rønnestad's cycling work supported it, but a 2025 running study found the opposite. The advantage, if any, is protocol- and modality-dependent — treat short intervals as a strong, efficient option, not a categorically superior one.
 
-**Evidence**: Rønnestad et al. (2015, *SJMSS*, [PMID 24382021](https://pubmed.ncbi.nlm.nih.gov/24382021/)) showed short intervals produced 8.7% vs 2.6% VO2max improvement compared to effort-matched long intervals in trained cyclists — the canonical figure underpinning the short-interval literature. The 2020 elite follow-up (PMID 31977120) found no VO2max difference at the elite ceiling but retained +3.7% peak power, +4.7% 20-min TT, and +2.0% at 4 mmol lactate. Rønnestad et al. (2025) confirmed 14% higher mean power output and longer time >90% VO2max with 30s vs 5min formats. A 2024 microcycle study showed 3.7% vs 0.7% improvement in mean power at VO2max test.
+**Evidence**: Rønnestad et al. (2015, *SJMSS*, [PMID 24382021](https://pubmed.ncbi.nlm.nih.gov/24382021/)) showed short intervals produced 8.7% vs 2.6% VO2max improvement compared to effort-matched long intervals in trained cyclists — the canonical figure underpinning the short-interval literature. It has **not cleanly replicated**: the 2020 elite follow-up ([PMID 31977120](https://pubmed.ncbi.nlm.nih.gov/31977120/)) found **no VO2max difference** at the elite ceiling, though short intervals kept a peak-power edge (+3.7% vs -0.3%). On the underlying "more time >90% VO2max" mechanism, Fleckenstein et al. (2025, *Front Sports Act Living*, [PMID 39835194](https://pubmed.ncbi.nlm.nih.gov/39835194/)) found 4×3min intervals accumulated *more* time >90% VO2max than 24×30s intervals (328s vs 201s) in trained runners — the opposite of the canonical claim. Two cycling meta-analyses (Norte et al. 2024; Yang et al. 2025) report no clear duration-related superiority. **Bottom line**: short intervals are an effective, time-efficient, well-tolerated VO2max format — not a categorically superior one; long intervals are at least equivalent and may accumulate more time >90% VO2max depending on the protocol.
 
 | Format | Interval Structure | Total Work Time | Rest | Power Target | Est. TSS (session) |
 |--------|-------------------|-----------------|------|-------------|---------------------|
@@ -253,7 +255,7 @@ The **30/15s format** (2:1 work:rest ratio) is the specific protocol used in Rø
 | SVO2-6 | 40/20s | 3×8 (3min set rest) | 16min |
 
 **When to use short vs. classic:**
-- **Short intervals (DEFAULT)**: Primary VO2max development format. Produces longer time >90% VO2max (Rønnestad 2015–2025) and at-least-equivalent adaptations with greater time-efficiency. Two cycling-focused meta-analyses (Norte et al. 2024, IUSCA; Yang et al. 2025, *BMC Sports Sci Med Rehabil*) found no clear duration-related superiority across HIIT/SIT methods, so frame short intervals as the more time-efficient default — not categorically superior. Use for all standard VO2max training.
+- **Short intervals (DEFAULT)**: Primary VO2max development format — at-least-equivalent adaptations to long intervals with greater time-efficiency and lower session RPE. Two cycling-focused meta-analyses (Norte et al. 2024, IUSCA; Yang et al. 2025, *BMC Sports Sci Med Rehabil*) found no clear duration-related superiority across HIIT/SIT methods, so frame short intervals as the more time-efficient default — not categorically superior, and not assumed to accumulate more time >90% VO2max. Use for all standard VO2max training.
 - **Classic intervals (COMPLEMENTARY)**: Race-specific for sustained climbing/TT efforts where the ability to hold high power for 4-5+ continuous minutes matters. Use when developing sustained-effort capacity, not raw VO2max.
 - **Mix both**: Alternate weekly (e.g., Tue = short, Thu = classic) for complementary stimulus — short intervals build the aerobic ceiling, classic intervals build the ability to use it in sustained efforts.
 
