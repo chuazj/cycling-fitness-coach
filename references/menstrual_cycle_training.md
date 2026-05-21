@@ -67,7 +67,7 @@ Training accommodation only — for medical management, refer to a doctor.
 
 ## 6. Hormonal contraceptives
 
-An athlete on a hormonal contraceptive (HC) — combined pill, progestogen-only pill, hormonal IUD, implant, injection, ring, patch — does **not** have a natural cycle; the contraceptive hormones override it.
+An athlete on a hormonal contraceptive (HC) — combined pill, progestogen-only pill, hormonal intrauterine device (IUD), implant, injection, ring, patch — does **not** have a natural cycle; the contraceptive hormones override it.
 
 - **Performance:** at the population level, hormonal contraceptives show **no consistent effect** on aerobic or anaerobic performance, or on strength/hypertrophy adaptations (Elliott-Sale et al. 2020 oral-contraceptive meta-analysis; 2023 HC strength meta-analysis). Individual variation exists — some report small VO2max differences of ~2–4%.
 - **Antiandrogenic progestins:** some pills use antiandrogenic progestins (e.g. cyproterone acetate, drospirenone, dienogest), which *may* slightly blunt strength/power gains. If an athlete on HC is in a strength-focused block and gains lag expectations, the progestin type is worth her raising with her doctor — but do not advise changing contraception for performance.
@@ -107,7 +107,7 @@ This applies **regardless of the athlete's body size or weight** — RED-S occur
 ## Sources
 
 - McNulty et al. (2020) — *The Effects of Menstrual Cycle Phase on Exercise Performance in Eumenorrheic Women: A Systematic Review and Meta-Analysis*, **Sports Medicine** 50:1813–1827. [PMC7497427](https://pmc.ncbi.nlm.nih.gov/articles/PMC7497427/)
-- Elliott-Sale et al. (2020) — *The Effects of Oral Contraceptives on Exercise Performance in Women: A Systematic Review and Meta-analysis*, **Sports Medicine**.
+- Elliott-Sale et al. (2020) — *The Effects of Oral Contraceptives on Exercise Performance in Women: A Systematic Review and Meta-analysis*, **Sports Medicine** 50:1785–1812. [PMC7497464](https://pmc.ncbi.nlm.nih.gov/articles/PMC7497464/)
 - Systematic review & meta-analysis (2023) — *Effect of Hormonal Contraceptive Use on Skeletal Muscle Hypertrophy, Power and Strength Adaptations to Resistance Exercise Training*. [PMID 37755666](https://pubmed.ncbi.nlm.nih.gov/37755666/)
 - *Strength & Conditioning Journal* (2025) — *Evidence for Periodizing Strength and/or Endurance Training According to Menstrual Cycle Phases*.
 - Mountjoy et al. (2023) — *2023 IOC consensus statement on Relative Energy Deficiency in Sport (REDs)*, **British Journal of Sports Medicine**.
