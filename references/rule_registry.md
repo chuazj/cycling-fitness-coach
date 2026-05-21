@@ -64,5 +64,15 @@ Catalogued for completeness. The 8 `wired` rows below are cheap one-line sharpen
 | Gut-training progression | `fueling.md` → Gut Training Protocol | athlete-facing | New athlete / pre-race fuelling strategy | `plan.md` Step 9 has a fuel reference link only | partial |
 | ERG-mode limitations education | `workout_analysis.md` → ERG Mode: Strengths & Limitations | coach-internal | Recommending sim/free-ride variety | Flex-day ERG-variety rule exists; the *why* is not surfaced | partial |
 
+## Post-W4 rules (wired on creation)
+
+Standing rules added after the W4 audit and wired into a workflow in the same change, per the maintenance convention. Same columns as above.
+
+| Rule | Source § | Class | Trigger | Surface point | Status |
+|---|---|---|---|---|---|
+| RPE-at-IF recalibration trigger | `references/prediction_calibration.md` → Recalibration triggers | coach-internal | Weekly review; abs mean signed delta ≥ 1.0 over the last 5 reconciled RPE predictions in one slot | `plan.md` Weekly Review → Forecast Accuracy block | wired |
+| FTP-gain recalibration trigger | `references/prediction_calibration.md` → Recalibration triggers | coach-internal | Weekly review; 2 consecutive completed blocks with actual gain outside the predicted range | `plan.md` Weekly Review → Forecast Accuracy block | wired |
+
 ---
 *Created by W4, 2026-05-21. Out of scope: the ERG long-rep design rule — owned by roadmap W6; it will be added here when W6 wires it.*
+*W5 (2026-05-21) appended the Post-W4 rules section — the 2 recalibration triggers.*
