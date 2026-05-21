@@ -91,9 +91,12 @@ def load_env(env_path=None):
     """Load .env file from script dir or project root."""
     if env_path is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
+        # script_dir is scripts/intervals_icu/; walk up to also check
+        # scripts/ and the skill root (where .env actually lives).
         candidates = [
             os.path.join(script_dir, ".env"),
             os.path.join(os.path.dirname(script_dir), ".env"),
+            os.path.join(os.path.dirname(os.path.dirname(script_dir)), ".env"),
         ]
     else:
         candidates = [env_path]
