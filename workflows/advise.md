@@ -67,7 +67,7 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 | ... | ...     | ...      | ...          | {one-line cue from fueling.md → Quick-Reference} |
 **Key Focus**: [Target adaptation and why this matters now]
 **Watch For**: [Fatigue signals that would trigger plan adjustment]
-**Fueling**: see `references/fueling.md` → Quick-Reference for per-session cues; full detail in the rest of that doc.
+**Fueling**: see `references/fueling.md` → Quick-Reference for per-session cues; full detail in the rest of that doc. For any Threshold or VO2max session, keep the pre-ride meal low-fiber within ~2h — fiber raises gut-distress risk at high intensity (`references/fueling.md` → Pre-Ride Nutrition → Key Rules).
 ```
 
 ---
@@ -220,3 +220,11 @@ In advice and check-ins:
 - **Autoregulate by symptom, not phase.** Treat menstrual symptoms (pain/cramps, fatigue, heavy bleeding, PMS) as a wellness input alongside sleep / HRV / recovery, and adjust by symptom severity (`menstrual_cycle_training.md` §4). Phase-based periodization is not evidence-supported — do not change a plan for cycle phase alone.
 - **Read luteal-phase wellness with context.** The luteal phase modestly raises resting HR and core temperature and can lower HRV — do not over-read a luteal-phase dip as fatigue (§3).
 - **Red flag — hard gate.** Amenorrhea (no period 3+ months) or oligomenorrhea — or, for a hormonal-contraceptive user, low-energy-availability signs (unexplained performance decline, recurrent illness/injury, stress fractures) — is a possible Relative Energy Deficiency in Sport (RED-S) signal. Refer her to a doctor, hold load at maintenance, never "push through" (`menstrual_cycle_training.md` §7).
+
+**Symptom-severity autoregulation tiers** (`menstrual_cycle_training.md` §4) — adjust the session by symptom severity, not by cycle phase:
+
+| Symptom severity | Action |
+|---|---|
+| None / mild | Train as planned |
+| Moderate — cramps or fatigue affecting focus | Drop intensity one tier (Threshold → Sweet Spot, SS → Z2); trim duration if needed |
+| Severe — heavy bleeding or significant pain | Swap to easy Z1-Z2, or rest |
