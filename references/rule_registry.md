@@ -44,7 +44,7 @@ Catalogued for completeness. The 8 `wired` rows below are cheap one-line sharpen
 
 | Rule | Source § | Class | Trigger | Surface point | Status |
 |---|---|---|---|---|---|
-| Estimated-power analysis caveat | `workout_analysis.md` → Power Data Confidence | athlete-facing | Activity has no power meter (estimated power) | `analyze.md` Analysis Checklist — sharpened | wired |
+| Estimated-power analysis caveat | `workout_analysis.md` → Power Data Confidence | coach-internal | Activity has no power meter (estimated power) | `analyze.md` Analysis Checklist — sharpened | wired |
 | Ramp-test FTP individual variation | `periodization.md` → FTP Test Protocols → Ramp Test | athlete-facing | Interpreting a ramp-test FTP estimate | `analyze.md` Step 6 — sharpened | wired |
 | Post-FTP-test protocol (2–3 days easy) | `workout_analysis.md` → FTP Test Post-Test Workflow | athlete-facing | An FTP test was detected and propagated | `analyze.md` Step 6 change summary — sharpened | wired |
 | Polarized minimum-volume gate | `periodization.md` → Polarized Block intro | coach-internal | Athlete <6 h/week considering a Polarized block | `plan.md` Step 5 Checks applied — sharpened | wired |
