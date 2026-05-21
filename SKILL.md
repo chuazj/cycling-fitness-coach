@@ -94,6 +94,7 @@ Read these on demand based on the task:
 | `references/menstrual_cycle_training.md` | Coaching a female athlete — menstrual cycle and hormonal contraceptives. Evidence stance (cycle phase is a weak periodization basis), individualized symptom-based autoregulation, symptom management, hormonal-contraceptive notes, and the amenorrhea / RED-S red-flag gate. |
 | `references/plan_state_schema.md` | Reading or updating `plans/active_plan.md`. Has section definitions, column types, valid values, update operation rules. |
 | `references/obsidian_templates.md` | Writing notes to Obsidian vault. Has frontmatter templates and CLI commands. |
+| `references/rule_registry.md` | Adding or auditing a standing coaching rule. Catalogues every orphan-prone reference-doc rule and the workflow that surfaces it; defines the "new rule → registry row + surface point" maintenance convention. |
 
 **Scripts and assets:**
 - `scripts/intervals_icu_api.py` — intervals.icu API client with metrics computation. Modes: `--activity` (single ride), `--latest`, `--list-recent N`, `--weekly-summary [N]` (training summary), `--wellness [N]` (RHR/HRV/sleep + Whoop Recovery/respiration/SpO2 readiness summary with Yellow/Red flag detection), `--readiness-check` (pre-ride GREEN/YELLOW-HIGH/YELLOW-LOW/RED verdict + session-type ceiling — used by Mid-Week Check-In)
