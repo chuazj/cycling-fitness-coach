@@ -755,5 +755,411 @@ class TestWeeklySummaryHelpers(unittest.TestCase):
         self.assertNotIn("low", fetched)
 
 
+from intervals_icu.readiness import (
+    _recovery_band, _sleep_status, _synthesize_verdict,
+    _render_sleep_hrv, _render_vitals, _render_tsb_subjective, _render_verdict_flags,
+)
+
+
+def _minimal_result(**overrides):
+    """Build a minimal but realistic result dict matching readiness_check's shape."""
+    base = {
+        "date": "2026-05-21",
+        "data_age_days": 0,
+        "verdict": "GREEN — all session types clear.",
+        "ceiling": "No restrictions",
+        "sleep": {"hours": 7.5, "score": 85, "status": "green", "note": None},
+        "hrv": {
+            "today": 65.0, "baseline": 62.0, "cv_pct": 8.5,
+            "cv_trend": {"rising": False, "prior_cv_pct": 8.0,
+                         "recent_cv_pct": 8.5, "delta_pp": 0.5},
+            "band_mean_7d": 63.0, "band_sd_7d": 4.0, "sample_size": 10,
+        },
+        "resting_hr": {"today": 48, "baseline": 47.0, "sample_size": 10},
+        "respiration": {"today": 14.2, "baseline": 14.0, "sample_size": 10},
+        "spo2": {"today": 97, "baseline": 98.0, "sample_size": 10},
+        "recovery": {
+            "score": 75, "band": "green",
+            "slope_3day": {"delta": -3, "alarm": False,
+                           "three_days_ago": 78, "today": 75},
+        },
+        "tsb": {"ctl": 32.0, "atl": 33.0, "tsb": -1.0},
+        "subjective": {"fatigue": 2, "soreness": 2, "stress": 2, "mood": 3,
+                       "stale_warning": False, "stale_note": None},
+        "flags": [],
+        "progression_signal": None,
+    }
+    base.update(overrides)
+    return base
+
+
+class TestReadinessHelpers(unittest.TestCase):
+
+    # ------------------------------------------------------------------
+    # _recovery_band
+    # ------------------------------------------------------------------
+
+    def test_recovery_band_thresholds(self):
+        self.assertEqual(_recovery_band(80), "green")
+        self.assertEqual(_recovery_band(67), "green")
+        self.assertEqual(_recovery_band(66), "yellow-high")
+        self.assertEqual(_recovery_band(60), "yellow-high")
+        self.assertEqual(_recovery_band(50), "yellow-high")
+        self.assertEqual(_recovery_band(49), "yellow-low")
+        self.assertEqual(_recovery_band(40), "yellow-low")
+        self.assertEqual(_recovery_band(34), "yellow-low")
+        self.assertEqual(_recovery_band(33), "red")
+        self.assertEqual(_recovery_band(20), "red")
+        self.assertEqual(_recovery_band(0), "red")
+
+    def test_recovery_band_none_returns_none(self):
+        self.assertIsNone(_recovery_band(None))
+
+    # ------------------------------------------------------------------
+    # _sleep_status
+    # ------------------------------------------------------------------
+
+    def test_sleep_status_green(self):
+        status, note = _sleep_status({"sleep_hours": 8.0})
+        self.assertEqual(status, "green")
+        self.assertIsNone(note)
+
+    def test_sleep_status_exactly_seven_hours(self):
+        # ≥7h = green by default
+        status, note = _sleep_status({"sleep_hours": 7.0})
+        self.assertEqual(status, "green")
+        self.assertIsNone(note)
+
+    def test_sleep_status_red_under_six(self):
+        status, note = _sleep_status({"sleep_hours": 5.0})
+        self.assertEqual(status, "red")
+
+    def test_sleep_status_missing_when_none(self):
+        status, note = _sleep_status({"sleep_hours": None})
+        self.assertEqual(status, "missing")
+
+    def test_sleep_status_missing_when_key_absent(self):
+        status, note = _sleep_status({})
+        self.assertEqual(status, "missing")
+
+    def test_sleep_status_score_tiebreaker_keeps_yellow(self):
+        # borderline 6-7h with score ≥85 → yellow (not red)
+        status, note = _sleep_status({"sleep_hours": 6.5, "sleep_score": 88})
+        self.assertEqual(status, "yellow")
+        self.assertIsNotNone(note)
+        self.assertIn("keeps yellow", note)
+
+    def test_sleep_status_score_tiebreaker_downgrades_to_red(self):
+        # borderline 6-7h with score <70 → red
+        status, note = _sleep_status({"sleep_hours": 6.5, "sleep_score": 60})
+        self.assertEqual(status, "red")
+        self.assertIsNotNone(note)
+        self.assertIn("downgrades to red", note)
+
+    def test_sleep_status_borderline_no_score(self):
+        # borderline 6-7h without score → plain yellow (no note)
+        status, note = _sleep_status({"sleep_hours": 6.5})
+        self.assertEqual(status, "yellow")
+        self.assertIsNone(note)
+
+    def test_sleep_status_borderline_score_in_middle(self):
+        # borderline 6-7h, score between 70 and 85 → plain yellow (no note)
+        status, note = _sleep_status({"sleep_hours": 6.5, "sleep_score": 77})
+        self.assertEqual(status, "yellow")
+        self.assertIsNone(note)
+
+    # ------------------------------------------------------------------
+    # _synthesize_verdict
+    # ------------------------------------------------------------------
+
+    def test_synthesize_verdict_green(self):
+        vb, verdict, ceiling = _synthesize_verdict("green", "green", [])
+        self.assertEqual(vb, "GREEN")
+        self.assertIn("GREEN", verdict)
+        self.assertEqual(ceiling, "No restrictions")
+
+    def test_synthesize_verdict_red_from_sleep(self):
+        vb, _verdict, _ceiling = _synthesize_verdict("red", "green", [])
+        self.assertEqual(vb, "RED")
+
+    def test_synthesize_verdict_red_from_band(self):
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "red", [])
+        self.assertEqual(vb, "RED")
+
+    def test_synthesize_verdict_red_from_non_recovery_flag(self):
+        flags = [{"signal": "HRV", "severity": "red", "rule": "HRV below band 2d"}]
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "green", flags)
+        self.assertEqual(vb, "RED")
+
+    def test_synthesize_verdict_recovery_flag_excluded_from_gating(self):
+        # A yellow "recovery" signal flag must NOT downgrade verdict beyond band
+        flags = [{"signal": "recovery", "severity": "yellow",
+                  "rule": "Recovery 34-66"}]
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-high", flags)
+        # band is yellow-high; recovery flag excluded → stays YELLOW-HIGH
+        self.assertEqual(vb, "YELLOW-HIGH")
+
+    def test_synthesize_verdict_yellow_low_from_band(self):
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-low", [])
+        self.assertEqual(vb, "YELLOW-LOW")
+
+    def test_synthesize_verdict_yellow_low_from_sleep(self):
+        vb, _verdict, _ceiling = _synthesize_verdict("yellow", "green", [])
+        self.assertEqual(vb, "YELLOW-LOW")
+
+    def test_synthesize_verdict_yellow_low_from_yellow_flag(self):
+        flags = [{"signal": "RHR", "severity": "yellow", "rule": "RHR +6bpm"}]
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "green", flags)
+        self.assertEqual(vb, "YELLOW-LOW")
+
+    def test_synthesize_verdict_yellow_high_from_band(self):
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-high", [])
+        self.assertEqual(vb, "YELLOW-HIGH")
+
+    def test_synthesize_verdict_insufficient_data(self):
+        # band=None and sleep_status=green → INSUFFICIENT-DATA
+        vb, _verdict, _ceiling = _synthesize_verdict("green", None, [])
+        self.assertEqual(vb, "INSUFFICIENT-DATA")
+
+    def test_synthesize_verdict_red_dominates_yellow_band(self):
+        # red flag + yellow-high band → RED wins
+        flags = [{"signal": "HRV", "severity": "red", "rule": "HRV 2-day below band"}]
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-high", flags)
+        self.assertEqual(vb, "RED")
+
+    # ------------------------------------------------------------------
+    # _render_sleep_hrv
+    # ------------------------------------------------------------------
+
+    def test_render_sleep_hrv_returns_list_of_str(self):
+        result = _minimal_result()
+        lines = _render_sleep_hrv(result)
+        self.assertIsInstance(lines, list)
+        self.assertTrue(all(isinstance(ln, str) for ln in lines))
+
+    def test_render_sleep_hrv_contains_date_and_sleep(self):
+        result = _minimal_result()
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertIn("2026-05-21", text)
+        self.assertIn("Sleep:", text)
+
+    def test_render_sleep_hrv_shows_age_warning_when_stale(self):
+        result = _minimal_result(data_age_days=2)
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertIn("2 day(s) old", text)
+
+    def test_render_sleep_hrv_no_age_warning_when_today(self):
+        result = _minimal_result(data_age_days=0)
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertNotIn("day(s) old", text)
+
+    def test_render_sleep_hrv_shows_hrv_baseline(self):
+        result = _minimal_result()
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertIn("HRV:", text)
+        self.assertIn("baseline", text)
+
+    def test_render_sleep_hrv_cv_trend_line_when_rising(self):
+        result = _minimal_result()
+        result["hrv"]["cv_trend"] = {
+            "rising": True, "prior_cv_pct": 8.0,
+            "recent_cv_pct": 11.5, "delta_pp": 3.5,
+        }
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertIn("CV trend", text)
+        self.assertIn("widening variability", text)
+
+    def test_render_sleep_hrv_no_cv_trend_line_when_stable(self):
+        result = _minimal_result()
+        result["hrv"]["cv_trend"] = {"rising": False}
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertNotIn("CV trend", text)
+
+    # ------------------------------------------------------------------
+    # _render_vitals
+    # ------------------------------------------------------------------
+
+    def test_render_vitals_returns_list_of_str(self):
+        result = _minimal_result()
+        lines = _render_vitals(result)
+        self.assertIsInstance(lines, list)
+        self.assertTrue(all(isinstance(ln, str) for ln in lines))
+
+    def test_render_vitals_contains_recovery_line(self):
+        result = _minimal_result()
+        lines = _render_vitals(result)
+        text = "\n".join(lines)
+        self.assertIn("Recovery:", text)
+
+    def test_render_vitals_contains_rhr_and_resp(self):
+        result = _minimal_result()
+        lines = _render_vitals(result)
+        text = "\n".join(lines)
+        self.assertIn("RHR:", text)
+        self.assertIn("Resp rate:", text)
+
+    def test_render_vitals_slope_line_when_large_delta(self):
+        result = _minimal_result()
+        result["recovery"]["slope_3day"] = {
+            "delta": -12, "alarm": True, "three_days_ago": 80, "today": 68,
+        }
+        lines = _render_vitals(result)
+        text = "\n".join(lines)
+        self.assertIn("3-day slope", text)
+        self.assertIn("trend alarm", text)
+
+    def test_render_vitals_no_slope_line_when_small_delta(self):
+        # delta < 5 → slope line suppressed
+        result = _minimal_result()
+        result["recovery"]["slope_3day"] = {
+            "delta": -3, "alarm": False, "three_days_ago": 75, "today": 72,
+        }
+        lines = _render_vitals(result)
+        text = "\n".join(lines)
+        self.assertNotIn("3-day slope", text)
+
+    def test_render_vitals_spo2_fail_tag_below_90(self):
+        result = _minimal_result()
+        result["spo2"] = {"today": 88, "baseline": 98.0, "sample_size": 10}
+        lines = _render_vitals(result)
+        text = "\n".join(lines)
+        self.assertIn("[FAIL]", text)
+
+    def test_render_vitals_spo2_warn_when_below_baseline(self):
+        # today 95, baseline 98 → -3pp ≤ -2.0pp with mature baseline → WARN
+        result = _minimal_result()
+        result["spo2"] = {"today": 95, "baseline": 98.0, "sample_size": 10}
+        lines = _render_vitals(result)
+        text = "\n".join(lines)
+        self.assertIn("[WARN]", text)
+
+    # ------------------------------------------------------------------
+    # _render_tsb_subjective
+    # ------------------------------------------------------------------
+
+    def test_render_tsb_subjective_returns_list_of_str(self):
+        result = _minimal_result()
+        lines = _render_tsb_subjective(result)
+        self.assertIsInstance(lines, list)
+        self.assertTrue(all(isinstance(ln, str) for ln in lines))
+
+    def test_render_tsb_subjective_contains_tsb(self):
+        result = _minimal_result()
+        lines = _render_tsb_subjective(result)
+        text = "\n".join(lines)
+        self.assertIn("TSB:", text)
+
+    def test_render_tsb_subjective_contains_subjective(self):
+        result = _minimal_result()
+        lines = _render_tsb_subjective(result)
+        text = "\n".join(lines)
+        self.assertIn("Subjective:", text)
+        self.assertIn("fatigue=2", text)
+
+    def test_render_tsb_subjective_stale_warning_line(self):
+        result = _minimal_result()
+        result["subjective"] = {
+            "fatigue": 1, "soreness": 1, "stress": 1, "mood": 1,
+            "stale_warning": True,
+            "stale_note": "All values = 1 (best/default) — verify athlete is updating these manually",
+        }
+        lines = _render_tsb_subjective(result)
+        text = "\n".join(lines)
+        self.assertIn("All values = 1", text)
+
+    def test_render_tsb_subjective_tsb_state_fresh(self):
+        result = _minimal_result()
+        result["tsb"]["tsb"] = 10.0
+        lines = _render_tsb_subjective(result)
+        text = "\n".join(lines)
+        self.assertIn("fresh", text)
+
+    def test_render_tsb_subjective_tsb_state_productive(self):
+        result = _minimal_result()
+        result["tsb"]["tsb"] = -15.0
+        lines = _render_tsb_subjective(result)
+        text = "\n".join(lines)
+        self.assertIn("productive", text)
+
+    def test_render_tsb_subjective_empty_when_no_tsb(self):
+        result = _minimal_result()
+        result["tsb"] = {"ctl": None, "atl": None, "tsb": None}
+        result["subjective"] = {"fatigue": None, "soreness": None,
+                                "stress": None, "mood": None,
+                                "stale_warning": False, "stale_note": None}
+        lines = _render_tsb_subjective(result)
+        self.assertEqual(lines, [])
+
+    # ------------------------------------------------------------------
+    # _render_verdict_flags
+    # ------------------------------------------------------------------
+
+    def test_render_verdict_flags_returns_list_of_str(self):
+        result = _minimal_result()
+        lines = _render_verdict_flags(result)
+        self.assertIsInstance(lines, list)
+        self.assertTrue(all(isinstance(ln, str) for ln in lines))
+
+    def test_render_verdict_flags_contains_verdict_and_ceiling(self):
+        result = _minimal_result()
+        lines = _render_verdict_flags(result)
+        text = "\n".join(lines)
+        self.assertIn("VERDICT:", text)
+        self.assertIn("CEILING:", text)
+        self.assertIn("GREEN — all session types clear.", text)
+
+    def test_render_verdict_flags_yellow_flag_shown(self):
+        result = _minimal_result(flags=[
+            {"signal": "RHR", "severity": "yellow", "rule": "RHR elevated +6bpm"}
+        ])
+        lines = _render_verdict_flags(result)
+        text = "\n".join(lines)
+        self.assertIn("Active flags:", text)
+        self.assertIn("[YELLOW]", text)
+        self.assertIn("RHR elevated +6bpm", text)
+
+    def test_render_verdict_flags_red_flag_shown(self):
+        result = _minimal_result(flags=[
+            {"signal": "HRV", "severity": "red", "rule": "HRV 2-day below band"}
+        ])
+        lines = _render_verdict_flags(result)
+        text = "\n".join(lines)
+        self.assertIn("[RED]", text)
+
+    def test_render_verdict_flags_no_active_flags_section_when_none(self):
+        result = _minimal_result(flags=[])
+        lines = _render_verdict_flags(result)
+        text = "\n".join(lines)
+        self.assertNotIn("Active flags:", text)
+
+    def test_render_verdict_flags_progression_signal_shown(self):
+        result = _minimal_result(progression_signal={
+            "rule": "HRV above band 3d + CTL rising → +5-10% TSS green-light",
+            "ctl_today": 34.0,
+        })
+        lines = _render_verdict_flags(result)
+        text = "\n".join(lines)
+        self.assertIn("Progression signal:", text)
+        self.assertIn("[GREEN-LIGHT]", text)
+
+    def test_render_verdict_flags_no_progression_when_none(self):
+        result = _minimal_result(progression_signal=None)
+        lines = _render_verdict_flags(result)
+        text = "\n".join(lines)
+        self.assertNotIn("Progression signal:", text)
+
+    def test_render_verdict_flags_separator_lines_present(self):
+        result = _minimal_result()
+        lines = _render_verdict_flags(result)
+        separator = "─" * 70
+        self.assertIn(separator, lines)
+
+
 if __name__ == "__main__":
     unittest.main()
