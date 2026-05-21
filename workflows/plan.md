@@ -65,6 +65,14 @@ If zone confidence is not `validated`, insert a field test session into Week 1 (
 - Select interval progressions appropriate for athlete's level
 - Calculate per-session target TSS
 
+**Checks applied — block design** (registry: `references/rule_registry.md`):
+
+- [ ] **Stimulus rotation** — check the last 2-3 blocks in `plans/block_history.md`. 2+ consecutive FTP Builder (or sweet-spot-dominant) blocks → do NOT auto-route to another; present a VO2max or Polarized rotation option with rationale (`references/periodization.md` → Block Selection Logic §5).
+- [ ] **Polarized volume gate** — a Polarized block needs ≥6 h/week; below that the Z2 sessions are too short to adapt — use an FTP Builder block instead (`references/periodization.md` → Polarized Block).
+- [ ] **Tropical / indoor athlete** — athlete trains primarily indoors in a hot-humid climate → proactively offer a Heat Adaptation overlay, and surface the offer in the Step 9 plan summary (`references/periodization.md` → Block Selection Logic §6).
+- [ ] **ERG variety** — at least one Flex-day session this block is scheduled as sim-mode or free-ride, not ERG (`references/periodization.md` → FTP Builder block notes).
+- [ ] **Progression cap** — no interval type advances more than one progression level versus the prior week; no level-skipping (`references/periodization.md` → Progressive Overload Tables).
+
 **Step 6:** Write `plans/active_plan.md` following `references/plan_state_schema.md`:
 - All sections: Athlete Profile, Plan Overview, Block Structure, Current Week Schedule, PMC Snapshot, PMC History, Weekly Review Log, Peak Power Trends, Adaptation Log
 
@@ -92,6 +100,8 @@ python scripts/batch_generate_zwo.py --input {week_json} --output-dir "<ZWIFT_WO
 |------|-------|-------|------------|
 | ...  | ...   | ...   | ...        |
 
+**Realistic gain:** an intermediate rider gains ~2-4% FTP per 4-week FTP Builder block. Targets above that are multi-block goals (budget 2-3 blocks) — read the eventual block result against this rate, not against the stretch target. See `references/periodization.md` → FTP Builder → Block-level coaching notes.
+
 ### Week 1 Schedule
 | Day | Session | Key Interval | Target TSS | Fuel |
 |-----|---------|--------------|------------|------|
@@ -100,6 +110,8 @@ python scripts/batch_generate_zwo.py --input {week_json} --output-dir "<ZWIFT_WO
 **Workout files**: Generated in the user's Zwift custom workouts folder (e.g. `%LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\week1\` on Windows) — see `references/setup.md` → Zwift Workout Directory
 **Peak Power Baseline**: 5s: {X}W | 1min: {X}W | 5min: {X}W | 20min: {X}W
 **Fueling reference**: see `references/fueling.md` → Quick-Reference for per-session cues; full pre/during/post detail in the rest of that doc.
+{If the athlete trains primarily indoors in a hot-humid climate:}
+**Heat Adaptation overlay available**: air-conditioned indoor training loses the free tropical-climate stimulus; a Heat Adaptation overlay recovers part of it, and the plasma-volume gain transfers partially to cool-condition performance. Offered as a standing option — see `references/periodization.md` → Heat Adaptation.
 ```
 
 ---
@@ -141,6 +153,14 @@ Returns per-session-type 2-week-vs-prior-2-week RPE deltas at constant IF. Detec
 **Step 4:** Apply adaptation decision trees from `references/periodization.md`:
 - Check all IF/THEN rules: load adaptation, fatigue management, performance indicators, HR indicators, session execution
 - List all triggered rules and proposed actions
+
+**Checks applied — weekly adaptation** (registry: `references/rule_registry.md`):
+
+- [ ] **Aerobic base-squeeze** — if Z1-Z2 fell below ~55% of weekly time, the aerobic base is being squeezed; flag it and protect easy-day volume next week (`references/periodization.md` → FTP Builder block notes).
+- [ ] **5-min peak continuity** — 5-min peak up >5% week-over-week → VO2max is responding well; maintain or progress the VO2max work (`references/periodization.md` → Adaptation Decision Trees → Performance Indicators).
+- [ ] **FOR / NFOR / OTS tier** — if elevated RPE has NOT resolved after a completed 5-day FOR de-load, escalate the tier: NFOR → a full easy week (or two) at ~40-50% volume; symptoms persisting beyond ~3 weeks of genuine rest → suspected OTS, stop structured training and advise a medical review (`references/periodization.md` → RPE Trend Escalation).
+- [ ] **3+ missed sessions** — 3 or more sessions skipped this week → treat as involuntary rest: shift the remaining block forward by one week, do NOT compress. If post-week ACWR <0.8, ease back at 50% volume for 3 days before resuming (`references/periodization.md` → Training Load Adaptation).
+- [ ] **ACWR safe zone** — when ACWR lands 0.8-1.3, state "safe zone, no load intervention needed" explicitly so the athlete isn't left guessing (`references/periodization.md` → Workload Ratio).
 
 **Step 5:** Present review summary:
 ```
