@@ -39,6 +39,8 @@ plans/block_history.md
 plans/archived_*.md
 plans/*_regen.json
 plans/*_original.md
+plans/prediction_ledger.jsonl
+plans/athlete_calibration.md
 
 # Script outputs containing athlete data (HRV, RHR, RPE, FTP, weight, training history)
 # Anchored to repo root so test fixtures with the same name are unaffected.
