@@ -1179,10 +1179,6 @@ def wellness_summary(client, days=14):
                           "value": v,
                           "rule": f"Subjective {label} elevated ({v}/4 — yellow flag, watch for compounding)"})
 
-    overall = "red" if any(f["severity"] == "red" for f in flags) \
-        else "yellow" if any(f["severity"] == "yellow" for f in flags) \
-        else "green"
-
     # Age of the most recent wellness record. 0 = logged today, 1 = yesterday, etc.
     # If the athlete missed logging for a day or two, `latest` is *not* today's
     # reading — coaching templates should surface the age when > 0 so the
@@ -1281,9 +1277,9 @@ def wellness_summary(client, days=14):
         1 for d in daily if any(d.get(f) is not None for f in WHOOP_EXCLUSIVE_FIELDS)
     )
 
-    # Re-derive overall_status after the slope flag may have been appended above.
-    # (The earlier assignment above doesn't see post-hoc flags — recomputing is
-    # cheaper than reordering the code and keeps the per-flag logic local.)
+    # Compute overall_status once all flags (including the recovery-slope flag
+    # appended above) have been collected. Evaluated here so every flag path
+    # is visible before the severity reduction.
     overall = "red" if any(f["severity"] == "red" for f in flags) \
         else "yellow" if any(f["severity"] == "yellow" for f in flags) \
         else "green"
