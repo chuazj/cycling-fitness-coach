@@ -85,6 +85,13 @@ class TestWellnessHelpers(unittest.TestCase):
         maturity, _ = _baseline_maturity(sizes)
         self.assertEqual(maturity, "insufficient")
 
+    def test_baseline_maturity_consolidating(self):
+        # min size 10 → 7 <= 10 < 14 → consolidating tier
+        sizes = {"resting_hr": 10, "hrv": 10, "sleep_hours": 10,
+                 "readiness": 10, "respiration": 10, "spo2": 10}
+        maturity, _ = _baseline_maturity(sizes)
+        self.assertEqual(maturity, "consolidating")
+
     def test_hrv_baseline_avg_and_keys(self):
         frag = _hrv_baseline([60, 62, 58, 61, 59, 63, 60])
         self.assertEqual(frag["hrv_avg"], 60.4)
@@ -111,16 +118,39 @@ class TestWellnessHelpers(unittest.TestCase):
         sizes = {"resting_hr": 4}
         self.assertEqual(_flag_rhr(latest, baseline, sizes), [])
 
-    def test_flag_hrv_band_below_band(self):
-        # latest HRV well below the 7-day band lower edge
-        latest = {"hrv": 40}
-        daily = [_daily_record("2026-05-19", hrv=41),
-                 _daily_record("2026-05-20", hrv=40)]
+    def test_flag_rhr_yellow(self):
+        # delta = 54 - 48 = 6 bpm → 5-9 bpm band → yellow
+        latest = {"resting_hr": 54}
+        baseline = {"resting_hr_avg": 48}
+        sizes = {"resting_hr": 7}
+        flags = _flag_rhr(latest, baseline, sizes)
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(flags[0]["severity"], "yellow")
+
+    def test_flag_hrv_band_single_day_yellow(self):
+        # band lower edge = 60.0 - 0.5*4.0 = 58.0. Today below, yesterday above
+        # the band → today-only branch → yellow.
+        latest = {"hrv": 50}
+        daily = [_daily_record("2026-05-19", hrv=62),  # yesterday: above band
+                 _daily_record("2026-05-20", hrv=50)]  # today: below band
         baseline = {"hrv_7d_mean": 60.0, "hrv_7d_sd": 4.0}
         sizes = {"hrv": 7}
         flags = _flag_hrv_band(latest, daily, baseline, sizes)
         self.assertEqual(len(flags), 1)
-        self.assertIn(flags[0]["severity"], ("yellow", "red"))
+        self.assertEqual(flags[0]["severity"], "yellow")
+        self.assertEqual(flags[0]["signal"], "HRV")
+
+    def test_flag_hrv_band_two_day_red(self):
+        # band lower edge = 58.0. Both today and yesterday below band →
+        # 2-consecutive-day escalation → red (only the red fires).
+        latest = {"hrv": 50}
+        daily = [_daily_record("2026-05-19", hrv=51),  # yesterday: below band
+                 _daily_record("2026-05-20", hrv=50)]  # today: below band
+        baseline = {"hrv_7d_mean": 60.0, "hrv_7d_sd": 4.0}
+        sizes = {"hrv": 7}
+        flags = _flag_hrv_band(latest, daily, baseline, sizes)
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(flags[0]["severity"], "red")
         self.assertEqual(flags[0]["signal"], "HRV")
 
     def test_flag_hrv_cv_trend_rising(self):
@@ -139,6 +169,15 @@ class TestWellnessHelpers(unittest.TestCase):
         self.assertEqual(len(flags), 1)
         self.assertEqual(flags[0]["severity"], "red")
 
+    def test_flag_respiration_yellow(self):
+        # delta = 15.5 - 14.0 = 1.5/min → between +1 and +2 → yellow
+        latest = {"respiration": 15.5}
+        baseline = {"respiration_avg": 14.0}
+        sizes = {"respiration": 7}
+        flags = _flag_respiration(latest, baseline, sizes)
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(flags[0]["severity"], "yellow")
+
     def test_flag_spo2_red_floor(self):
         latest = {"spo2": 88}
         baseline = {}  # immature baseline — red floor still fires
@@ -146,6 +185,16 @@ class TestWellnessHelpers(unittest.TestCase):
         flags = _flag_spo2(latest, baseline, sizes)
         self.assertEqual(len(flags), 1)
         self.assertEqual(flags[0]["severity"], "red")
+
+    def test_flag_spo2_baseline_relative_yellow(self):
+        # spo2 95, baseline 98 → -3.0pp (≤ -2.0pp) with a mature baseline,
+        # and ≥90% so the red floor stays silent → baseline-relative yellow.
+        latest = {"spo2": 95}
+        baseline = {"spo2_avg": 98}
+        sizes = {"spo2": 7}
+        flags = _flag_spo2(latest, baseline, sizes)
+        self.assertEqual(len(flags), 1)
+        self.assertEqual(flags[0]["severity"], "yellow")
 
     def test_flag_absolute_sleep_yellow(self):
         latest = {"sleep_hours": 5.0}
@@ -211,11 +260,44 @@ class TestWellnessHelpers(unittest.TestCase):
         sizes = {"hrv": 1}
         self.assertIsNone(_progression_signal(daily, wellness, baseline, sizes))
 
+    def test_progression_signal_fires(self):
+        # upper band = 60.0 + 0.5*4.0 = 62.0. Last 3 daily HRV all above band,
+        # CTL rising (wellness[-1].ctl 34 > wellness[-8].ctl 30) → fires.
+        daily = [_daily_record("2026-05-18", hrv=65),
+                 _daily_record("2026-05-19", hrv=66),
+                 _daily_record("2026-05-20", hrv=67)]
+        wellness = [
+            {"id": "2026-05-13", "ctl": 30.0},  # wellness[-8]
+            {"id": "2026-05-14", "ctl": 30.5},
+            {"id": "2026-05-15", "ctl": 31.0},
+            {"id": "2026-05-16", "ctl": 31.5},
+            {"id": "2026-05-17", "ctl": 32.0},
+            {"id": "2026-05-18", "ctl": 32.5},
+            {"id": "2026-05-19", "ctl": 33.0},
+            {"id": "2026-05-20", "ctl": 34.0},  # wellness[-1]
+        ]
+        baseline = {"hrv_7d_mean": 60.0, "hrv_7d_sd": 4.0}
+        sizes = {"hrv": 7}
+        sig = _progression_signal(daily, wellness, baseline, sizes)
+        self.assertIsNotNone(sig)
+        self.assertIn("ctl_today", sig)
+
     def test_baseline_note_stable_is_none(self):
         self.assertIsNone(_baseline_note("stable", [14, 14, 14]))
 
     def test_baseline_note_insufficient_is_string(self):
         note = _baseline_note("insufficient", [])
+        self.assertIsInstance(note, str)
+        self.assertTrue(len(note) > 0)
+        self.assertIn("No historical baseline", note)
+
+    def test_baseline_note_preliminary(self):
+        note = _baseline_note("preliminary", [3, 5, 4])
+        self.assertIsInstance(note, str)
+        self.assertTrue(len(note) > 0)
+
+    def test_baseline_note_consolidating(self):
+        note = _baseline_note("consolidating", [10, 12, 11])
         self.assertIsInstance(note, str)
         self.assertTrue(len(note) > 0)
 
