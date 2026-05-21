@@ -73,6 +73,12 @@ If zone confidence is not `validated`, insert a field test session into Week 1 (
 - [ ] **ERG variety** — at least one Flex-day session this block is scheduled as sim-mode or free-ride, not ERG (`references/periodization.md` → FTP Builder block notes).
 - [ ] **Progression cap** — no interval type advances more than one progression level versus the prior week; no level-skipping (`references/periodization.md` → Progressive Overload Tables).
 
+**Log RPE forecasts (W5 validation loop):** for each hard session (Sweet Spot / Threshold / Over-Unders / VO2max) in the Week 1 schedule, log an RPE-at-IF prediction:
+```bash
+python scripts/prediction_tracker.py --mode predict --type rpe_at_if --if {target IF} --slot morning --session-date {YYYY-MM-DD} --session-type {type}
+```
+The predicted value is **internal** — it is reconciled later against the athlete's actual RPE; do not show it to the athlete pre-ride (it would prime the rating). See `references/prediction_calibration.md`.
+
 **Step 6:** Write `plans/active_plan.md` following `references/plan_state_schema.md`:
 - All sections: Athlete Profile, Plan Overview, Block Structure, Current Week Schedule, PMC Snapshot, PMC History, Weekly Review Log, Peak Power Trends, Adaptation Log
 
@@ -114,6 +120,11 @@ python scripts/batch_generate_zwo.py --input {week_json} --output-dir "<ZWIFT_WO
 **Heat Adaptation overlay available**: air-conditioned indoor training loses the free tropical-climate stimulus; a Heat Adaptation overlay recovers part of it, and the plasma-volume gain transfers partially to cool-condition performance. Offered as a standing option — see `references/periodization.md` → Heat Adaptation.
 ```
 
+**Log the FTP-gain forecast (W5 validation loop):** after the athlete approves the plan, record the block's predicted FTP gain so it can be reconciled against the end-of-block FTP test:
+```bash
+python scripts/prediction_tracker.py --mode predict --type ftp_gain --start-ftp {current FTP} --block-label "{plan type}, {N}wk" --block-end {plan end date}
+```
+
 ---
 
 ## Weekly Review & Adaptation
@@ -149,6 +160,12 @@ python scripts/rpe_trend.py --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-c
 Returns per-session-type 2-week-vs-prior-2-week RPE deltas at constant IF. Detects functional overreaching earlier than PMC/TSB (which is RPE-blind). If `overall_flag: rising_rpe_at_constant_if`, escalate per `references/periodization.md` → RPE Trend Escalation. Skip silently if no Obsidian reviews exist yet (script returns `error` field).
 
 **Anchor note:** the windows are anchored on the **last review's date**, not on today — so the comparison is "last 2 weeks of training vs prior 2 weeks of training", not "last 2 calendar weeks". If the athlete has been off the bike, the trend reflects fatigue patterns in actual training history, not the rest period itself. Surface this to the athlete if their last review is older than 7 days.
+
+**Step 3d (recommended):** Reconcile open predictions (W5 validation loop):
+```bash
+python scripts/prediction_tracker.py --mode reconcile --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-coach/workout-reviews" -o prediction_report.json
+```
+Matches this week's completed workout reviews to their logged RPE-at-IF predictions, fills in the deltas, and returns per-model `rpe_trigger` / `ftp_trigger` status. Skip silently if `plans/prediction_ledger.jsonl` does not exist yet (no predictions logged). Feeds the Forecast Accuracy block in Step 5.
 
 **Step 4:** Apply adaptation decision trees from `references/periodization.md`:
 - Check all IF/THEN rules: load adaptation, fatigue management, performance indicators, HR indicators, session execution
@@ -210,6 +227,14 @@ Recovery score (when present) is the single best summary signal; treat the indiv
 
 If `rising_rpe_at_constant_if` fires for any session type, this is a **functional overreaching signal** that PMC/TSB cannot detect (TSS is RPE-blind). Escalate per `references/periodization.md` → RPE Trend Escalation: prescribe 5 days of Z1-only riding (active recovery), then reassess.
 
+### Forecast Accuracy (from prediction_tracker.py --reconcile, if predictions exist)
+{Render from the Step 3d `prediction_report.json`. Omit this whole section if the ledger does not exist.}
+- **RPE-at-IF:** per slot — {slot}: mean delta {rpe_trigger.<slot>.mean_delta} over n={n} ({status}). `insufficient_data` until 5 reconciled predictions in a slot.
+- **FTP-gain:** {ftp_trigger.status} (n={n}).
+- **Reconciled this run:** {reconciled_this_run} · **Still open:** {open_remaining}
+
+If `rpe_trigger` or `ftp_trigger` reports `recalibration_needed`, surface the recalibration as a **propose-and-confirm** item in Adaptation Recommendations: state the model artifact to edit (`rpe_attribution` names it — base table vs `post_3pm` correction; or the FTP-gain rate), show the supporting deltas, and wait for athlete confirmation before editing `plans/athlete_calibration.md`. See `references/prediction_calibration.md`.
+
 ### Peak Powers This Week
 | Duration | Previous Best | This Week | Delta |
 |----------|-------------|-----------|-------|
@@ -260,4 +285,5 @@ This is **default-on** for the Weekly Review workflow — write happens immediat
 **Step 8:** After approval, apply changes:
 - Generate next week's ZWO files via `batch_generate_zwo.py`
 - Update `plans/active_plan.md`: advance week, new schedule, PMC history, peak powers, review log, adaptation log
+- **Log RPE forecasts (W5):** for each hard session in the new week's schedule, log an RPE-at-IF prediction via `prediction_tracker.py --mode predict --type rpe_at_if` (same call as Create Plan → Step 5).
 - (If the Obsidian write was deferred or skipped in Step 6 due to user opt-out, do not retroactively write here — respect the opt-out.)
