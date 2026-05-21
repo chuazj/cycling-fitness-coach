@@ -143,5 +143,30 @@ def write_calibration(path, model):
         f.write(CALIBRATION_HEADER + "\n" + block)
 
 
+def seed_baseline(reviews):
+    """Fit the IF->RPE base table from existing workout reviews.
+
+    For each IF bucket in DEFAULT_MODEL['if_rpe_base'], take the mean RPE of all
+    reviews whose IF falls in that bucket (lower-inclusive, upper-exclusive) and
+    round to the nearest integer. Buckets with no review data keep the
+    DEFAULT_MODEL value. `corrections` and `ftp_gain_pct` are carried over from
+    DEFAULT_MODEL unchanged — the existing reviews lack the time-of-day and
+    per-block data needed to fit them (see the design spec, Section F).
+
+    `reviews` is the list returned by rpe_trend.collect_reviews() — each item
+    has 'if' and 'rpe' float keys.
+    """
+    model = json.loads(json.dumps(DEFAULT_MODEL))  # deep copy
+    base = model["if_rpe_base"]
+    lower = 0.0
+    for row in base:
+        bound = row[0]
+        bucket = [r["rpe"] for r in reviews if lower <= r["if"] < bound]
+        if bucket:
+            row[1] = round(sum(bucket) / len(bucket))
+        lower = bound
+    return model
+
+
 if __name__ == "__main__":
     main()

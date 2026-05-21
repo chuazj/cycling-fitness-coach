@@ -18,6 +18,7 @@ from prediction_tracker import (
     next_id,
     load_calibration,
     write_calibration,
+    seed_baseline,
 )
 
 
@@ -82,6 +83,31 @@ class TestCalibrationIO(unittest.TestCase):
             text = open(path, encoding="utf-8").read()
             self.assertIn("# Athlete Prediction Calibration", text)
             self.assertIn("```json", text)
+
+
+class TestSeedBaseline(unittest.TestCase):
+    def _review(self, if_val, rpe):
+        return {"date": "2026-04-01", "session_type": "Threshold", "if": if_val, "rpe": rpe}
+
+    def test_fits_bucket_mean(self):
+        # Two reviews in the 0.75-0.85 bucket: RPE 6 and 8 -> mean 7
+        reviews = [self._review(0.80, 6), self._review(0.82, 8)]
+        model = seed_baseline(reviews)
+        self.assertEqual(predict_rpe(model, 0.80, "morning"), 7)
+
+    def test_empty_bucket_keeps_default(self):
+        # No reviews at all -> every bucket keeps the DEFAULT_MODEL value
+        model = seed_baseline([])
+        self.assertEqual(model["if_rpe_base"], DEFAULT_MODEL["if_rpe_base"])
+
+    def test_does_not_mutate_default_model(self):
+        seed_baseline([self._review(0.80, 6), self._review(0.82, 8)])
+        self.assertEqual(DEFAULT_MODEL["if_rpe_base"][2], [0.85, 6])
+
+    def test_corrections_carried_over(self):
+        model = seed_baseline([self._review(0.80, 7)])
+        self.assertEqual(model["corrections"], DEFAULT_MODEL["corrections"])
+        self.assertEqual(model["ftp_gain_pct"], DEFAULT_MODEL["ftp_gain_pct"])
 
 
 if __name__ == "__main__":
