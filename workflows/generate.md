@@ -21,6 +21,7 @@ When user requests a workout file ("build a workout", "create a ZWO", workout ge
 - **FTP test sessions**: the test effort itself MUST be a `<FreeRide>` segment with `show_avg="1"` — never `<SteadyState>`. In ERG mode a SteadyState block holds the rider at the *current* FTP, so there is nothing to test; FreeRide hands power control back to the rider. Set `ftptest="1"` on the `<workout>` element. See `references/zwo_format.md` → FTP Test Attribute.
 - Reference `references/training_zones.md` for zone boundaries and cadence targets
 - Reference `references/periodization.md` for progression context if part of a training block
+- **Flex-day workouts**: if generating a Flex or recovery session, check whether the block's ERG-variety slot is still open — a sim-mode or free-ride workout (no ERG) fills it and builds self-pacing skill. At least one per block (`references/periodization.md` → FTP Builder block notes; registry: `references/rule_registry.md`).
 
 **Step 3:** Generate the .zwo file using one of:
 
@@ -54,6 +55,7 @@ Write XML directly using the templates and tag spec in `references/zwo_format.md
 | Encoding | UTF-8 (not Windows cp1252) | CLAUDE.md conventions |
 | FTP test | Test effort is a `<FreeRide>` (never `<SteadyState>` — ERG holds current FTP); `ftptest="1"` on `<workout>` + `show_avg="1"` on the FreeRide | `references/zwo_format.md` |
 | Tag reference | Consult h4l/zwift-workout-file-reference for attribute validation | CLAUDE.md conventions |
+| Recovery intervals | Between VO2max reps ≈ work duration @ 40-50% FTP; between SS/Threshold reps ~5min @ 50-55% FTP | `references/periodization.md` → Warmup/Cooldown Standards |
 
 **Step 5:** Save and report:
 - Save to the user's Zwift custom workouts folder — see `references/setup.md` → Zwift Workout Directory for the platform-specific path (`%LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\` on Windows, `~/Documents/Zwift/Workouts/<athlete_id>/` on macOS/Linux). Confirm the path with the user before writing.
