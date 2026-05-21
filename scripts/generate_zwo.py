@@ -45,6 +45,12 @@ def _validate_power(value, name="power"):
 FREERIDE_POWER_PLACEHOLDER = 0.6
 MAXEFFORT_POWER_PLACEHOLDER = 1.5
 
+# ERG-mode design thresholds. A Wahoo KICKR settles a power step in ~3-5s, so a
+# short high-intensity rep loses its opening seconds. See project CLAUDE.md.
+ERG_MICRO_MAX = 30        # seconds — at/below this a high-intensity rep is a "micro" rep
+ERG_SHORT_MAX = 120       # seconds — at/below this (above micro) it is a "short" rep
+ERG_INTENSITY_MIN = 1.05  # FTP fraction — only reps at/above this intensity matter
+
 @dataclass
 class WorkoutInterval:
     """Base class for workout intervals"""
@@ -462,6 +468,51 @@ def calculate_workout_stats(workout: ZwiftWorkout, ftp: int = 200) -> dict:
     }
 
 
+def erg_rep_severity(duration_s: int, power_frac: float) -> Optional[str]:
+    """Classify an ERG work rep's design risk.
+
+    Returns "micro" (<=30s), "short" (31-120s), or None. Only high-intensity
+    reps (power >= 1.05 FTP) are flagged — a short Z2 block is unaffected by
+    ERG settling lag.
+    """
+    if power_frac < ERG_INTENSITY_MIN:
+        return None
+    if duration_s <= ERG_MICRO_MAX:
+        return "micro"
+    if duration_s <= ERG_SHORT_MAX:
+        return "short"
+    return None
+
+
+def check_erg_design(workout: ZwiftWorkout) -> list[str]:
+    """Return ERG-design warning strings for short high-intensity reps.
+
+    Checks IntervalsT on-reps and SteadyState blocks. Used to surface the ERG
+    long-rep design rule on generator output.
+    """
+    out: list[str] = []
+    for interval in workout.intervals:
+        if isinstance(interval, IntervalsT):
+            dur, pw = interval.on_duration, interval.on_power
+        elif isinstance(interval, SteadyState):
+            dur, pw = interval.duration, interval.power
+        else:
+            continue
+        sev = erg_rep_severity(dur, pw)
+        if sev == "micro":
+            out.append(
+                f"ERG micro-interval: {dur}s rep at {pw:.2f} FTP — the trainer "
+                f"cannot track a step this short. Design >=2-3min reps, or label "
+                f"the file for resistance/non-ERG riding."
+            )
+        elif sev == "short":
+            out.append(
+                f"ERG short rep: {dur}s rep at {pw:.2f} FTP — the first ~3-5s are "
+                f"lost to ERG settling. >=2-3min reps recommended for VO2max work."
+            )
+    return out
+
+
 def build_parser():
     """Build the CLI argument parser. Exposed for tests and reuse."""
     parser = argparse.ArgumentParser(description="Generate Zwift workout files")
@@ -515,6 +566,8 @@ def main():
     if stats["estimated_if"] is not None:
         print(f"   Est. IF: {stats['estimated_if']}")
     print(f"   TSS method: {stats['tss_method']}")
+    for erg_warning in check_erg_design(workout):
+        print(f"   ERG-design warning: {erg_warning}", file=sys.stderr)
 
 
 if __name__ == "__main__":

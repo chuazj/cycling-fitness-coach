@@ -45,6 +45,8 @@ from generate_zwo import (
     calculate_workout_stats,
     synthesize_power_timeline,
     _compute_np,
+    erg_rep_severity,
+    check_erg_design,
 )
 from batch_generate_zwo import batch_generate
 from pmc_calculator import _ewa_constant, compute_pmc
@@ -648,6 +650,40 @@ class TestComputeNpZwo(unittest.TestCase):
         np_val = _compute_np(tl)
         self.assertGreater(np_val, 0.8)
         self.assertLess(np_val, 1.2)
+
+
+class TestErgDesignRule(unittest.TestCase):
+    def test_severity_micro(self):
+        self.assertEqual(erg_rep_severity(30, 1.15), "micro")
+        self.assertEqual(erg_rep_severity(20, 1.20), "micro")
+
+    def test_severity_short(self):
+        self.assertEqual(erg_rep_severity(31, 1.15), "short")
+        self.assertEqual(erg_rep_severity(120, 1.15), "short")
+
+    def test_severity_none_long_rep(self):
+        self.assertIsNone(erg_rep_severity(121, 1.15))
+        self.assertIsNone(erg_rep_severity(300, 1.20))
+
+    def test_severity_none_low_intensity(self):
+        # A short block below 1.05 FTP does not care about ERG settling lag.
+        self.assertIsNone(erg_rep_severity(30, 1.04))
+        self.assertIsNone(erg_rep_severity(10, 0.60))
+
+    def test_check_erg_design_flags_micro_intervalst(self):
+        w = ZwiftWorkout(name="t", intervals=[
+            IntervalsT(repeat=8, on_duration=30, off_duration=30,
+                       on_power=1.20, off_power=0.50)])
+        warns = check_erg_design(w)
+        self.assertEqual(len(warns), 1)
+        self.assertIn("micro", warns[0])
+
+    def test_check_erg_design_silent_for_long_reps(self):
+        w = ZwiftWorkout(name="t", intervals=[
+            IntervalsT(repeat=4, on_duration=240, off_duration=120,
+                       on_power=1.10, off_power=0.50),
+            SteadyState(duration=600, power=0.90)])
+        self.assertEqual(check_erg_design(w), [])
 
 
 # ===================================================================
