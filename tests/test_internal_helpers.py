@@ -19,6 +19,7 @@ from intervals_icu.wellness import (
 )
 from intervals_icu.activity import (
     _compute_power_metrics, _compute_stream_metrics, _build_lap_list,
+    _build_activity_block,
 )
 
 
@@ -465,6 +466,34 @@ class TestActivityHelpers(unittest.TestCase):
         self.assertEqual(m["peak_powers"], power_curve)
         self.assertIsNone(m["cardiac_drift"])  # has_hr_stream=False
         self.assertEqual(warnings, [])
+
+    # ------------------------------------------------------------------
+    # _build_activity_block
+    # ------------------------------------------------------------------
+
+    def test_build_activity_block_fields(self):
+        a = {"id": 99, "name": "Test", "type": "Ride",
+             "start_date_local": "2026-01-01T06:00:00", "distance": 30000,
+             "elapsed_time": 3700, "total_elevation_gain": 120,
+             "max_heartrate": 175, "average_cadence": 88, "icu_joules": 1800000}
+        block = _build_activity_block(a, moving_time=3600, avg_w=175, max_watts=310,
+                                      avg_hr=155, has_power=True, trainer=True,
+                                      is_indoor=True, activity_id=99)
+        self.assertEqual(block["distance_km"], 30.0)
+        self.assertEqual(block["kilojoules"], 1800.0)
+        self.assertEqual(block["power_data_quality"], "measured")
+        self.assertEqual(block["context"], "indoor")
+
+    def test_build_activity_block_none_guards(self):
+        # No icu_joules key → kilojoules None; has_power=False → estimated;
+        # is_indoor=False → outdoor
+        a = {"id": 7, "name": "Outdoor Ride", "type": "Ride"}
+        block = _build_activity_block(a, moving_time=2400, avg_w=None, max_watts=None,
+                                      avg_hr=None, has_power=False, trainer=False,
+                                      is_indoor=False, activity_id=7)
+        self.assertIsNone(block["kilojoules"])
+        self.assertEqual(block["power_data_quality"], "estimated")
+        self.assertEqual(block["context"], "outdoor")
 
 
 if __name__ == "__main__":
