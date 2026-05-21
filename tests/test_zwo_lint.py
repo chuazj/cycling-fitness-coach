@@ -77,5 +77,49 @@ class TestLintCliParser(unittest.TestCase):
         self.assertEqual(ns.output, "r.json")
 
 
+class TestLintErrors(unittest.TestCase):
+    def _codes(self, xml):
+        return {f["code"] for f in lint_xml(xml)}
+
+    def test_e2_wrong_root(self):
+        self.assertIn("E2", self._codes(
+            "<not_workout><workout/></not_workout>"))
+
+    def test_e3_no_workout(self):
+        self.assertIn("E3", self._codes(
+            "<workout_file><name>x</name></workout_file>"))
+
+    def test_e4_unknown_interval(self):
+        self.assertIn("E4", self._codes(
+            '<workout_file><workout><Bogus Duration="60"/></workout></workout_file>'))
+
+    def test_e5_power_out_of_range(self):
+        self.assertIn("E5", self._codes(
+            '<workout_file><workout>'
+            '<SteadyState Duration="60" Power="2.5"/></workout></workout_file>'))
+
+    def test_e6_warmup_wrong_direction(self):
+        self.assertIn("E6", self._codes(
+            '<workout_file><workout>'
+            '<Warmup Duration="300" PowerLow="0.8" PowerHigh="0.4"/>'
+            '</workout></workout_file>'))
+
+    def test_e7_zero_duration(self):
+        self.assertIn("E7", self._codes(
+            '<workout_file><workout>'
+            '<SteadyState Duration="0" Power="0.75"/></workout></workout_file>'))
+
+    def test_e8_textevent_in_intervalst(self):
+        self.assertIn("E8", self._codes(
+            '<workout_file><workout>'
+            '<IntervalsT Repeat="3" OnDuration="60" OffDuration="60" '
+            'OnPower="1.1" OffPower="0.5">'
+            '<textevent timeoffset="10" message="go"/></IntervalsT>'
+            '</workout></workout_file>'))
+
+    def test_clean_file_no_errors(self):
+        self.assertEqual(self._codes(VALID_ZWO), set())
+
+
 if __name__ == "__main__":
     unittest.main()

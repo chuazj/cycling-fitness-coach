@@ -36,6 +36,86 @@ def _finding(severity: str, code: str, message: str, location: str = "") -> dict
             "location": location}
 
 
+POWER_ATTRS = ("Power", "PowerLow", "PowerHigh", "OnPower", "OffPower")
+
+
+def _fattr(elem, attr):
+    """float attribute or None (None also if unparseable)."""
+    v = elem.get(attr)
+    if v is None:
+        return None
+    try:
+        return float(v)
+    except ValueError:
+        return None
+
+
+def _iattr(elem, attr):
+    """int attribute or None (None also if unparseable)."""
+    v = elem.get(attr)
+    if v is None:
+        return None
+    try:
+        return int(v)
+    except ValueError:
+        return None
+
+
+def _check_interval(elem, loc: str, findings: list) -> None:
+    """Run per-interval structural error checks (E5-E8) on one element."""
+    tag = elem.tag
+
+    # E5 — power attributes in 0.0-2.0
+    for attr in POWER_ATTRS:
+        v = elem.get(attr)
+        if v is None:
+            continue
+        fv = _fattr(elem, attr)
+        if fv is None:
+            findings.append(_finding("error", "E5",
+                f"{attr}='{v}' is not a number", loc))
+        elif not (0.0 <= fv <= 2.0):
+            findings.append(_finding("error", "E5",
+                f"{attr}={fv} is outside 0.0-2.0 (FTP fraction)", loc))
+
+    # E6 — ramp direction
+    if tag == "Warmup":
+        lo, hi = _fattr(elem, "PowerLow"), _fattr(elem, "PowerHigh")
+        if lo is not None and hi is not None and lo > hi:
+            findings.append(_finding("error", "E6",
+                f"Warmup PowerLow ({lo}) > PowerHigh ({hi}) — must ramp up", loc))
+    elif tag == "Cooldown":
+        lo, hi = _fattr(elem, "PowerLow"), _fattr(elem, "PowerHigh")
+        if lo is not None and hi is not None and lo < hi:
+            findings.append(_finding("error", "E6",
+                f"Cooldown PowerLow ({lo}) < PowerHigh ({hi}) — must ramp down", loc))
+
+    # E7 — durations present and > 0
+    if tag == "IntervalsT":
+        for da in ("OnDuration", "OffDuration"):
+            dv = _iattr(elem, da)
+            if dv is None:
+                findings.append(_finding("error", "E7",
+                    f"<IntervalsT> missing {da}", loc))
+            elif dv <= 0:
+                findings.append(_finding("error", "E7",
+                    f"{da}={dv} must be > 0", loc))
+    else:
+        dv = _iattr(elem, "Duration")
+        if dv is None:
+            findings.append(_finding("error", "E7",
+                f"<{tag}> missing Duration", loc))
+        elif dv <= 0:
+            findings.append(_finding("error", "E7",
+                f"Duration={dv} must be > 0", loc))
+
+    # E8 — textevent inside IntervalsT
+    if tag == "IntervalsT" and elem.findall("textevent"):
+        findings.append(_finding("error", "E8",
+            "<textevent> child inside <IntervalsT> — firing semantics are "
+            "unspecified; flatten to <SteadyState> work+recovery pairs", loc))
+
+
 def lint_xml(xml_string: str) -> list:
     """Run all structural lint checks on a .zwo XML string. Returns a findings list."""
     findings: list = []
@@ -44,7 +124,29 @@ def lint_xml(xml_string: str) -> list:
     except ET.ParseError as e:
         findings.append(_finding("error", "E1", f"XML is not well-formed: {e}"))
         return findings  # nothing else can be checked
-    # E2-E8 / W1-W6 added in later tasks.
+
+    # E2 — root element
+    if root.tag != "workout_file":
+        findings.append(_finding("error", "E2",
+            f"Root element is <{root.tag}>, expected <workout_file>"))
+
+    # E3 — <workout> present
+    workout_elem = root.find("workout")
+    if workout_elem is None:
+        findings.append(_finding("error", "E3", "No <workout> element found"))
+        return findings  # cannot check intervals
+
+    for idx, elem in enumerate(workout_elem):
+        if elem.tag == "textevent":
+            continue  # textevents are checked via their parent interval
+        loc = f"{elem.tag}[{idx}]"
+        # E4 — known interval type
+        if elem.tag not in KNOWN_INTERVALS:
+            findings.append(_finding("error", "E4",
+                f"Unknown interval element <{elem.tag}>", loc))
+            continue
+        _check_interval(elem, loc, findings)
+
     return findings
 
 
@@ -108,14 +210,15 @@ def build_parser():
 
 
 def main():
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
 
     if args.ftp is None:
         print("WARNING: --ftp not supplied — using 200W for modeled stats.",
               file=sys.stderr)
         args.ftp = 200
     if not (50 <= args.ftp <= 500):
-        build_parser().error(f"--ftp must be between 50 and 500 watts (got {args.ftp})")
+        parser.error(f"--ftp must be between 50 and 500 watts (got {args.ftp})")
 
     try:
         result = lint_file(args.file, ftp=args.ftp)
