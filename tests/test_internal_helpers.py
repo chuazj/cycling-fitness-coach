@@ -23,6 +23,10 @@ from intervals_icu.activity import (
     _build_activity_block, _aggregate_week, _ftp_update_suggestion,
     _fetch_week_peaks,
 )
+from intervals_icu.readiness import (
+    _recovery_band, _sleep_status, _synthesize_verdict,
+    _render_sleep_hrv, _render_vitals, _render_tsb_subjective, _render_verdict_flags,
+)
 
 
 def _daily_record(date, **overrides):
@@ -755,12 +759,6 @@ class TestWeeklySummaryHelpers(unittest.TestCase):
         self.assertNotIn("low", fetched)
 
 
-from intervals_icu.readiness import (
-    _recovery_band, _sleep_status, _synthesize_verdict,
-    _render_sleep_hrv, _render_vitals, _render_tsb_subjective, _render_verdict_flags,
-)
-
-
 def _minimal_result(**overrides):
     """Build a minimal but realistic result dict matching readiness_check's shape."""
     base = {
@@ -1159,6 +1157,61 @@ class TestReadinessHelpers(unittest.TestCase):
         lines = _render_verdict_flags(result)
         separator = "─" * 70
         self.assertIn(separator, lines)
+
+    # ------------------------------------------------------------------
+    # Branch-gap coverage (code-review follow-up)
+    # ------------------------------------------------------------------
+
+    def test_render_vitals_slope_trending_up(self):
+        # positive delta ≥5, not an alarm → "trending up" label
+        result = _minimal_result()
+        result["recovery"]["slope_3day"] = {
+            "delta": 8, "alarm": False, "three_days_ago": 65, "today": 73,
+        }
+        lines = _render_vitals(result)
+        text = "\n".join(lines)
+        self.assertIn("3-day slope", text)
+        self.assertIn("trending up", text)
+
+    def test_render_sleep_hrv_hrv_absent(self):
+        # hrv today is None → the entire HRV line is skipped
+        result = _minimal_result()
+        result["hrv"]["today"] = None
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertNotIn("HRV:", text)
+
+    def test_render_sleep_hrv_hrv_no_baseline(self):
+        # hrv present but sample_size 0 → "(no baseline yet)" branch
+        result = _minimal_result()
+        result["hrv"]["today"] = 65.0
+        result["hrv"]["sample_size"] = 0
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertIn("HRV:", text)
+        self.assertIn("(no baseline yet)", text)
+
+    def test_render_tsb_subjective_tsb_neutral(self):
+        # -10 <= tsb < 5 → "neutral"
+        result = _minimal_result()
+        result["tsb"]["tsb"] = -1.0
+        lines = _render_tsb_subjective(result)
+        text = "\n".join(lines)
+        self.assertIn("neutral", text)
+
+    def test_render_tsb_subjective_tsb_overreached(self):
+        # tsb < -30 → "overreached"
+        result = _minimal_result()
+        result["tsb"]["tsb"] = -35.0
+        lines = _render_tsb_subjective(result)
+        text = "\n".join(lines)
+        self.assertIn("overreached", text)
+
+    def test_synthesize_verdict_missing_sleep(self):
+        # "missing" sleep is neither red nor yellow → falls through to the
+        # band-driven branch; green band → GREEN verdict.
+        vb, _verdict, _ceiling = _synthesize_verdict("missing", "green", [])
+        self.assertEqual(vb, "GREEN")
 
 
 if __name__ == "__main__":
