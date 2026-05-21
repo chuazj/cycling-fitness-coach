@@ -685,6 +685,23 @@ class TestErgDesignRule(unittest.TestCase):
             SteadyState(duration=600, power=0.90)])
         self.assertEqual(check_erg_design(w), [])
 
+    def test_check_erg_design_flags_micro_steadystate(self):
+        # Locks the SteadyState field-mapping (duration/power) in check_erg_design.
+        w = ZwiftWorkout(name="t", intervals=[
+            SteadyState(duration=30, power=1.15)])
+        warns = check_erg_design(w)
+        self.assertEqual(len(warns), 1)
+        self.assertIn("micro", warns[0])
+
+    def test_check_erg_design_flags_short_rep(self):
+        # Exercises the "short" (31-120s) message branch of check_erg_design.
+        w = ZwiftWorkout(name="t", intervals=[
+            IntervalsT(repeat=5, on_duration=90, off_duration=90,
+                       on_power=1.15, off_power=0.50)])
+        warns = check_erg_design(w)
+        self.assertEqual(len(warns), 1)
+        self.assertIn("short", warns[0])
+
 
 # ===================================================================
 # pmc_calculator.py
