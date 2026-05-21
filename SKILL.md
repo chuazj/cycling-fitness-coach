@@ -95,6 +95,7 @@ Read these on demand based on the task:
 | `references/plan_state_schema.md` | Reading or updating `plans/active_plan.md`. Has section definitions, column types, valid values, update operation rules. |
 | `references/obsidian_templates.md` | Writing notes to Obsidian vault. Has frontmatter templates and CLI commands. |
 | `references/rule_registry.md` | Adding or auditing a standing coaching rule. Catalogues every orphan-prone reference-doc rule and the workflow that surfaces it; defines the "new rule → registry row + surface point" maintenance convention. |
+| `references/prediction_calibration.md` | The W5 predict→measure→calibrate loop — the two forecasting models, the prediction ledger, and the recalibration triggers. Read when logging or reconciling a forecast, or when a recalibration flag fires. |
 
 **Scripts and assets:**
 - `scripts/intervals_icu_api.py` — intervals.icu API client with metrics computation. Modes: `--activity` (single ride), `--latest`, `--list-recent N`, `--weekly-summary [N]` (training summary), `--wellness [N]` (RHR/HRV/sleep + Whoop Recovery/respiration/SpO2 readiness summary with Yellow/Red flag detection), `--readiness-check` (pre-ride GREEN/YELLOW-HIGH/YELLOW-LOW/RED verdict + session-type ceiling — used by Mid-Week Check-In)
@@ -103,6 +104,7 @@ Read these on demand based on the task:
 - `scripts/batch_generate_zwo.py` — Batch ZWO generation from JSON array (full week of workouts)
 - `scripts/sparkline.py` — Pure-Python ASCII sparkline helper (no extra deps). Used by Weekly Review to render Peak Power Trends visually in `plans/active_plan.md`.
 - `scripts/rpe_trend.py` — RPE trend aggregator. Scans Obsidian workout-review frontmatter; computes 2-wk-vs-prior-2-wk RPE-at-IF deltas; flags functional-overreaching pattern (rising RPE at constant IF). Pure Python, no extra deps.
+- `scripts/prediction_tracker.py` — W5 validation loop. Logs forecasts (RPE-at-IF, FTP-gain) to `plans/prediction_ledger.jsonl`, reconciles them against actuals, and flags recalibration. Modes: `--mode seed-baseline` / `--mode predict` / `--mode reconcile`. Pure Python, no extra deps.
 - `assets/template_sweetspot.zwo` — Example workout template
 - `plans/active_plan.md` — Active training plan state (created by Create Plan workflow; gitignored — local-only)
 - `plans/block_history.md` — Athlete-specific archive of completed training blocks (created on first block rollover; gitignored — local-only)
