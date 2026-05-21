@@ -19,6 +19,7 @@ from prediction_tracker import (
     load_calibration,
     write_calibration,
     seed_baseline,
+    reconcile,
 )
 
 
@@ -108,6 +109,74 @@ class TestSeedBaseline(unittest.TestCase):
         model = seed_baseline([self._review(0.80, 7)])
         self.assertEqual(model["corrections"], DEFAULT_MODEL["corrections"])
         self.assertEqual(model["ftp_gain_pct"], DEFAULT_MODEL["ftp_gain_pct"])
+
+
+class TestReconcile(unittest.TestCase):
+    def _open_rpe(self, when, predicted, stype="Threshold", slot="morning"):
+        return {"id": "P001", "type": "rpe_at_if", "made": "2026-05-01",
+                "reconcile_when": when,
+                "inputs": {"if": 0.84, "slot": slot, "session_type": stype},
+                "predicted": predicted, "status": "open",
+                "actual": None, "reconciled": None, "delta": None}
+
+    def _review(self, date, rpe, stype="Threshold"):
+        return {"date": date, "session_type": stype, "if": 0.84, "rpe": float(rpe)}
+
+    def test_rpe_exact_date_match(self):
+        recs = [self._open_rpe("2026-05-10", 6)]
+        recs, just = reconcile(recs, [self._review("2026-05-10", 8)])
+        self.assertEqual(len(just), 1)
+        self.assertEqual(recs[0]["status"], "reconciled")
+        self.assertEqual(recs[0]["actual"], 8.0)
+        self.assertEqual(recs[0]["delta"], 2.0)
+
+    def test_rpe_within_two_days(self):
+        recs = [self._open_rpe("2026-05-10", 6)]
+        recs, just = reconcile(recs, [self._review("2026-05-12", 7)])
+        self.assertEqual(recs[0]["status"], "reconciled")
+
+    def test_rpe_no_match_stays_open(self):
+        recs = [self._open_rpe("2026-05-10", 6)]
+        recs, just = reconcile(recs, [self._review("2026-05-20", 7)])
+        self.assertEqual(just, [])
+        self.assertEqual(recs[0]["status"], "open")
+
+    def test_rpe_session_type_must_match(self):
+        recs = [self._open_rpe("2026-05-10", 6, stype="VO2max")]
+        recs, just = reconcile(recs, [self._review("2026-05-10", 8, stype="Threshold")])
+        self.assertEqual(recs[0]["status"], "open")
+
+    def test_ftp_gain_inside_range(self):
+        rec = {"id": "P002", "type": "ftp_gain", "made": "2026-05-01",
+               "reconcile_when": "2026-05-28",
+               "inputs": {"start_ftp": 188, "block": "FTP Builder, 4wk"},
+               "predicted": {"pct_low": 2.0, "pct_high": 4.0,
+                             "watts_low": 192, "watts_high": 196},
+               "status": "open", "actual": None, "reconciled": None, "delta": None}
+        recs, just = reconcile([rec], [], new_ftp=194, ftp_test_date="2026-05-28")
+        self.assertEqual(recs[0]["status"], "reconciled")
+        self.assertEqual(recs[0]["delta"], "inside")
+        self.assertEqual(recs[0]["actual"], {"ftp": 194, "pct": 3.2})
+
+    def test_ftp_gain_outside_range(self):
+        rec = {"id": "P003", "type": "ftp_gain", "made": "2026-05-01",
+               "reconcile_when": "2026-05-28",
+               "inputs": {"start_ftp": 188, "block": "FTP Builder, 4wk"},
+               "predicted": {"pct_low": 2.0, "pct_high": 4.0,
+                             "watts_low": 192, "watts_high": 196},
+               "status": "open", "actual": None, "reconciled": None, "delta": None}
+        recs, just = reconcile([rec], [], new_ftp=190, ftp_test_date="2026-05-28")
+        self.assertTrue(recs[0]["delta"].startswith("outside"))
+
+    def test_ftp_gain_not_reconciled_without_new_ftp(self):
+        rec = {"id": "P004", "type": "ftp_gain", "made": "2026-05-01",
+               "reconcile_when": "2026-05-28",
+               "inputs": {"start_ftp": 188, "block": "x"},
+               "predicted": {"pct_low": 2.0, "pct_high": 4.0,
+                             "watts_low": 192, "watts_high": 196},
+               "status": "open", "actual": None, "reconciled": None, "delta": None}
+        recs, just = reconcile([rec], [])
+        self.assertEqual(recs[0]["status"], "open")
 
 
 if __name__ == "__main__":

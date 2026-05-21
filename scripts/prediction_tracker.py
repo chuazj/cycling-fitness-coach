@@ -168,5 +168,71 @@ def seed_baseline(reviews):
     return model
 
 
+def _slot_of(record):
+    """The slot a prediction was made for; defaults to 'morning'."""
+    return record.get("inputs", {}).get("slot", "morning")
+
+
+def reconcile(records, reviews, new_ftp=None, ftp_test_date=None):
+    """Fill in actuals for open predictions. Mutates and returns `records`,
+    plus the list of records reconciled in this run.
+
+    rpe_at_if: matched to a workout review whose session type matches and whose
+        date is within +/-2 days of the prediction's reconcile_when; nearest
+        date wins; each review is consumed at most once.
+    ftp_gain: reconciled only when new_ftp + ftp_test_date are supplied (the
+        coach passes them from analyze.md Step 6's confirmed FTP test) and the
+        test date is on or after the prediction's `made` date.
+    """
+    today = datetime.now().strftime("%Y-%m-%d")
+    just = []
+    used_reviews = set()
+
+    for rec in records:
+        if rec.get("status") != "open":
+            continue
+
+        if rec["type"] == "rpe_at_if":
+            target = datetime.strptime(rec["reconcile_when"], "%Y-%m-%d")
+            want_type = (rec["inputs"].get("session_type") or "").lower()
+            best = None  # (gap_days, index, review)
+            for idx, rv in enumerate(reviews):
+                if idx in used_reviews:
+                    continue
+                if want_type and want_type not in (rv["session_type"] or "").lower():
+                    continue
+                gap = abs((datetime.strptime(rv["date"], "%Y-%m-%d") - target).days)
+                if gap <= 2 and (best is None or gap < best[0]):
+                    best = (gap, idx, rv)
+            if best is not None:
+                _, idx, rv = best
+                used_reviews.add(idx)
+                rec["actual"] = rv["rpe"]
+                rec["delta"] = round(rv["rpe"] - rec["predicted"], 2)
+                rec["status"] = "reconciled"
+                rec["reconciled"] = today
+                just.append(rec)
+
+        elif rec["type"] == "ftp_gain" and new_ftp is not None:
+            if ftp_test_date and ftp_test_date < rec["made"]:
+                continue
+            start = rec["inputs"]["start_ftp"]
+            actual_pct = round((new_ftp - start) / start * 100, 1)
+            p = rec["predicted"]
+            if actual_pct < p["pct_low"]:
+                delta = "outside (%.1fpp below range)" % (p["pct_low"] - actual_pct)
+            elif actual_pct > p["pct_high"]:
+                delta = "outside (%.1fpp above range)" % (actual_pct - p["pct_high"])
+            else:
+                delta = "inside"
+            rec["actual"] = {"ftp": new_ftp, "pct": actual_pct}
+            rec["delta"] = delta
+            rec["status"] = "reconciled"
+            rec["reconciled"] = ftp_test_date or today
+            just.append(rec)
+
+    return records, just
+
+
 if __name__ == "__main__":
     main()
