@@ -302,5 +302,107 @@ def check_ftp_trigger(records):
     }
 
 
+def build_parser():
+    """Build the CLI argument parser. Exposed for tests and reuse."""
+    p = argparse.ArgumentParser(
+        description="Prediction tracker — log, reconcile, and calibrate forecasts")
+    p.add_argument("--mode", required=True,
+                   choices=["seed-baseline", "predict", "reconcile"])
+    p.add_argument("--ledger-path", default="plans/prediction_ledger.jsonl")
+    p.add_argument("--calibration-path", default="plans/athlete_calibration.md")
+    p.add_argument("--vault-path",
+                   help="Obsidian workout-reviews dir (seed-baseline, reconcile)")
+    # predict
+    p.add_argument("--type", choices=["rpe_at_if", "ftp_gain"])
+    p.add_argument("--if", dest="if_value", type=float)
+    p.add_argument("--slot", choices=["morning", "post_3pm"], default="morning")
+    p.add_argument("--session-date")
+    p.add_argument("--session-type")
+    p.add_argument("--start-ftp", type=int)
+    p.add_argument("--block-label")
+    p.add_argument("--block-end")
+    # reconcile
+    p.add_argument("--new-ftp", type=int)
+    p.add_argument("--ftp-test-date")
+    p.add_argument("-o", "--output")
+    return p
+
+
+def run_predict(args):
+    """--mode predict: look up the model, append an open ledger record."""
+    model = load_calibration(args.calibration_path)
+    records = load_ledger(args.ledger_path)
+    rec = {"id": next_id(records), "type": args.type,
+           "made": datetime.now().strftime("%Y-%m-%d"),
+           "status": "open", "actual": None, "reconciled": None, "delta": None}
+    if args.type == "rpe_at_if":
+        rec["predicted"] = predict_rpe(model, args.if_value, args.slot)
+        rec["reconcile_when"] = args.session_date
+        rec["inputs"] = {"if": args.if_value, "slot": args.slot,
+                         "session_type": args.session_type}
+    else:  # ftp_gain
+        rec["predicted"] = predict_ftp_gain(model, args.start_ftp)
+        rec["reconcile_when"] = args.block_end
+        rec["inputs"] = {"start_ftp": args.start_ftp, "block": args.block_label}
+    records.append(rec)
+    save_ledger(args.ledger_path, records)
+    return {"mode": "predict", "logged": rec}
+
+
+def run_seed(args):
+    """--mode seed-baseline: fit the athlete model from Obsidian reviews."""
+    reviews, err = collect_reviews(args.vault_path)
+    if err:
+        return {"mode": "seed-baseline", "error": err}
+    model = seed_baseline(reviews)
+    write_calibration(args.calibration_path, model)
+    return {"mode": "seed-baseline", "reviews_used": len(reviews),
+            "written": args.calibration_path, "model": model}
+
+
+def run_reconcile(args):
+    """--mode reconcile: match open predictions to actuals, emit a report."""
+    records = load_ledger(args.ledger_path)
+    reviews, err = collect_reviews(args.vault_path) if args.vault_path else ([], None)
+    records, just = reconcile(records, reviews,
+                              new_ftp=args.new_ftp, ftp_test_date=args.ftp_test_date)
+    save_ledger(args.ledger_path, records)
+    rpe_flags = check_rpe_trigger(records)
+    return {
+        "mode": "reconcile",
+        "reconciled_this_run": len(just),
+        "review_load_error": err,
+        "open_remaining": sum(1 for r in records if r["status"] == "open"),
+        "rpe_trigger": rpe_flags,
+        "rpe_attribution": attribute_rpe(rpe_flags),
+        "ftp_trigger": check_ftp_trigger(records),
+        "just_reconciled": just,
+    }
+
+
+def main():
+    args = build_parser().parse_args()
+    if args.mode == "predict":
+        if not args.type:
+            print("ERROR: --type is required for --mode predict", file=sys.stderr)
+            sys.exit(1)
+        result = run_predict(args)
+    elif args.mode == "seed-baseline":
+        if not args.vault_path:
+            print("ERROR: --vault-path is required for --mode seed-baseline",
+                  file=sys.stderr)
+            sys.exit(1)
+        result = run_seed(args)
+    else:  # reconcile
+        result = run_reconcile(args)
+    out = json.dumps(result, indent=2, ensure_ascii=False)
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(out)
+        print(f"Output written to {args.output}", file=sys.stderr)
+    else:
+        print(out)
+
+
 if __name__ == "__main__":
     main()

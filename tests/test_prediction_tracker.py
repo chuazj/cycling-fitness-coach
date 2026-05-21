@@ -23,6 +23,8 @@ from prediction_tracker import (
     check_rpe_trigger,
     attribute_rpe,
     check_ftp_trigger,
+    build_parser,
+    run_predict,
 )
 
 
@@ -229,6 +231,47 @@ class TestTriggers(unittest.TestCase):
                 {"type": "ftp_gain", "status": "reconciled", "reconciled": "2026-05-01",
                  "delta": "outside (0.5pp above range)"}]
         self.assertEqual(check_ftp_trigger(recs)["status"], "ok")
+
+
+class TestCLI(unittest.TestCase):
+    def test_parser_predict_args(self):
+        args = build_parser().parse_args(
+            ["--mode", "predict", "--type", "rpe_at_if", "--if", "0.84",
+             "--slot", "post_3pm", "--session-date", "2026-06-02",
+             "--session-type", "Threshold"])
+        self.assertEqual(args.mode, "predict")
+        self.assertEqual(args.if_value, 0.84)
+        self.assertEqual(args.slot, "post_3pm")
+
+    def test_parser_rejects_unknown_mode(self):
+        with self.assertRaises(SystemExit):
+            build_parser().parse_args(["--mode", "bogus"])
+
+    def test_run_predict_appends_record(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            cal = os.path.join(d, "cal.md")  # missing -> DEFAULT_MODEL
+            args = build_parser().parse_args(
+                ["--mode", "predict", "--type", "rpe_at_if", "--if", "0.84",
+                 "--slot", "morning", "--session-date", "2026-06-02",
+                 "--session-type", "Threshold",
+                 "--ledger-path", ledger, "--calibration-path", cal])
+            result = run_predict(args)
+            self.assertEqual(result["logged"]["id"], "P001")
+            self.assertEqual(result["logged"]["predicted"], 6)
+            self.assertEqual(result["logged"]["status"], "open")
+            self.assertEqual(len(load_ledger(ledger)), 1)
+
+    def test_run_predict_second_record_increments_id(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            cal = os.path.join(d, "cal.md")
+            base = ["--mode", "predict", "--type", "ftp_gain", "--start-ftp", "188",
+                    "--block-label", "FTP Builder, 4wk", "--block-end", "2026-06-28",
+                    "--ledger-path", ledger, "--calibration-path", cal]
+            run_predict(build_parser().parse_args(base))
+            result = run_predict(build_parser().parse_args(base))
+            self.assertEqual(result["logged"]["id"], "P002")
 
 
 if __name__ == "__main__":
