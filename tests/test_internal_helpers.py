@@ -19,7 +19,7 @@ from intervals_icu.wellness import (
 )
 from intervals_icu.activity import (
     _compute_power_metrics, _compute_stream_metrics, _build_lap_list,
-    _build_activity_block,
+    _build_activity_block, _aggregate_week, _ftp_update_suggestion,
 )
 
 
@@ -494,6 +494,169 @@ class TestActivityHelpers(unittest.TestCase):
         self.assertIsNone(block["kilojoules"])
         self.assertEqual(block["power_data_quality"], "estimated")
         self.assertEqual(block["context"], "outdoor")
+
+
+class TestWeeklySummaryHelpers(unittest.TestCase):
+
+    # ------------------------------------------------------------------
+    # _ftp_update_suggestion
+    # ------------------------------------------------------------------
+
+    def test_ftp_update_suggested_when_peak_exceeds_threshold(self):
+        # 20min peak 220W → suggested round(220*0.95)=209W; vs ftp 188 that is >103%
+        frag = _ftp_update_suggestion(220.0, 188)
+        self.assertTrue(frag["ftp_update_suggested"])
+        self.assertEqual(frag["suggested_ftp"], 209)
+
+    def test_ftp_update_not_suggested_within_threshold(self):
+        frag = _ftp_update_suggestion(195.0, 188)   # suggested ~185, within 103%
+        self.assertFalse(frag["ftp_update_suggested"])
+
+    def test_ftp_update_none_peak(self):
+        self.assertFalse(_ftp_update_suggestion(None, 188)["ftp_update_suggested"])
+
+    def test_ftp_update_max_20min_peak_included_when_not_suggested(self):
+        # peak present but below threshold → max_20min_peak still in fragment
+        frag = _ftp_update_suggestion(195.0, 188)
+        self.assertIn("max_20min_peak", frag)
+        self.assertEqual(frag["max_20min_peak"], 195.0)
+
+    def test_ftp_update_max_20min_peak_absent_when_peak_is_none(self):
+        # peak=None → max_20min_peak key should NOT appear in fragment
+        frag = _ftp_update_suggestion(None, 188)
+        self.assertNotIn("max_20min_peak", frag)
+
+    def test_ftp_update_fragment_includes_change_pct_when_suggested(self):
+        frag = _ftp_update_suggestion(220.0, 188)
+        self.assertIn("ftp_change_pct", frag)
+        expected_change_pct = round((209 - 188) / 188 * 100, 1)
+        self.assertEqual(frag["ftp_change_pct"], expected_change_pct)
+
+    # ------------------------------------------------------------------
+    # _aggregate_week
+    # ------------------------------------------------------------------
+
+    def _make_activity(self, type_="Ride", moving_time=3600, tss=80.0,
+                       kj_joules=None, if_pct=None, date="2026-05-20"):
+        """Build a minimal activity dict for _aggregate_week tests."""
+        a = {
+            "type": type_,
+            "moving_time": moving_time,
+            "icu_training_load": tss,
+            "start_date_local": "{}T06:00:00".format(date),
+        }
+        if kj_joules is not None:
+            a["icu_joules"] = kj_joules
+        if if_pct is not None:
+            a["icu_intensity"] = if_pct
+        return a
+
+    def test_aggregate_week_excludes_run(self):
+        # 2 cycling activities + 1 run → activity_count == 2; total_tss = sum of cycling only
+        activities = [
+            self._make_activity(type_="Ride", tss=80.0),
+            self._make_activity(type_="VirtualRide", tss=60.0),
+            self._make_activity(type_="Run", tss=50.0),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(result["activity_count"], 2)
+        self.assertAlmostEqual(result["total_tss"], 140.0)
+
+    def test_aggregate_week_excludes_zero_moving_time(self):
+        # activity with moving_time == 0 should be excluded
+        activities = [
+            self._make_activity(type_="Ride", tss=80.0, moving_time=3600),
+            self._make_activity(type_="Ride", tss=50.0, moving_time=0),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(result["activity_count"], 1)
+        self.assertAlmostEqual(result["total_tss"], 80.0)
+
+    def test_aggregate_week_empty_activities(self):
+        result = _aggregate_week([])
+        self.assertEqual(result["activity_count"], 0)
+        self.assertEqual(result["total_tss"], 0.0)
+        self.assertEqual(result["total_kj"], 0.0)
+        self.assertEqual(result["total_moving_time"], 0)
+
+    def test_aggregate_week_kj_conversion(self):
+        # icu_joules = 1_800_000 J → total_kj = 1800.0 kJ
+        activities = [
+            self._make_activity(type_="Ride", tss=80.0, kj_joules=1_800_000),
+        ]
+        result = _aggregate_week(activities)
+        self.assertAlmostEqual(result["total_kj"], 1800.0)
+
+    def test_aggregate_week_zone_bucketing_z1(self):
+        # icu_intensity=45 → computed_if=0.45 < 0.55 → Z1
+        activities = [
+            self._make_activity(type_="Ride", if_pct=45, moving_time=3600),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(result["zone_duration"]["Z1"], 3600)
+        self.assertEqual(result["zone_duration"]["Z2"], 0)
+
+    def test_aggregate_week_zone_bucketing_z2(self):
+        # icu_intensity=65 → computed_if=0.65 in [0.55, 0.75) → Z2
+        activities = [
+            self._make_activity(type_="Ride", if_pct=65, moving_time=1800),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(result["zone_duration"]["Z2"], 1800)
+        self.assertEqual(result["zone_duration"]["Z1"], 0)
+
+    def test_aggregate_week_zone_bucketing_z3(self):
+        # icu_intensity=82 → computed_if=0.82 in [0.75, 0.90) → Z3
+        activities = [
+            self._make_activity(type_="Ride", if_pct=82, moving_time=2400),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(result["zone_duration"]["Z3"], 2400)
+
+    def test_aggregate_week_zone_bucketing_z4(self):
+        # icu_intensity=98 → computed_if=0.98 in [0.90, 1.05) → Z4
+        activities = [
+            self._make_activity(type_="Ride", if_pct=98, moving_time=2700),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(result["zone_duration"]["Z4"], 2700)
+
+    def test_aggregate_week_zone_bucketing_z5plus(self):
+        # icu_intensity=110 → computed_if=1.10 >= 1.05 → Z5+
+        activities = [
+            self._make_activity(type_="Ride", if_pct=110, moving_time=600),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(result["zone_duration"]["Z5+"], 600)
+
+    def test_aggregate_week_if_out_of_range_excluded_from_zones(self):
+        # icu_intensity=25 → computed_if=0.25 < 0.3 → excluded from if_duration_pairs + zone_duration
+        activities = [
+            self._make_activity(type_="Ride", if_pct=25, moving_time=3600),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(result["if_duration_pairs"], [])
+        self.assertEqual(sum(result["zone_duration"].values()), 0)
+
+    def test_aggregate_week_training_dates_deduped(self):
+        # Two activities on the same date → only one unique training date
+        activities = [
+            self._make_activity(type_="Ride", date="2026-05-20"),
+            self._make_activity(type_="VirtualRide", date="2026-05-20"),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(len(result["training_dates"]), 1)
+
+    def test_aggregate_week_if_duration_pairs_built(self):
+        # Valid IF on a cycling activity → if_duration_pairs has one entry
+        activities = [
+            self._make_activity(type_="Ride", if_pct=85, moving_time=3600),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(len(result["if_duration_pairs"]), 1)
+        computed_if, duration = result["if_duration_pairs"][0]
+        self.assertAlmostEqual(computed_if, 0.85)
+        self.assertEqual(duration, 3600)
 
 
 if __name__ == "__main__":
