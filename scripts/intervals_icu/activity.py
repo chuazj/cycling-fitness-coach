@@ -11,10 +11,15 @@ from .metrics import (
 
 
 # ---------------------------------------------------------------------------
-# Main analysis
+# Single-responsibility helpers (module-private)
 # ---------------------------------------------------------------------------
 
-def analyze(client, activity_id, ftp=200, weight=70.0):
+def _fetch_activity_data(client, activity_id):
+    """Fetch the activity record plus intervals, streams, and power curve concurrently.
+
+    Returns:
+        (a, intervals_data, streams, power_curve, fetch_warnings, fetch_errors)
+    """
     a = client.get_activity(activity_id)
     fetch_warnings = []
     fetch_errors = {}  # component -> error message; empty when all fetches succeeded
@@ -54,28 +59,15 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
             fetch_warnings.append(f"power_curve_fetch_failed: {e}")
             fetch_errors["power_curve"] = str(e)
 
-    watts = streams.get("watts", streams.get("power", []))
-    hr = streams.get("heartrate", streams.get("heart_rate", []))
+    return a, intervals_data, streams, power_curve, fetch_warnings, fetch_errors
 
-    # --- Stream availability ---
-    has_power_stream = bool(watts and len(watts) >= 30)
-    has_hr_stream = bool(hr and len(hr) >= 30)
 
-    # --- Data completeness ---
-    missing_components = []
-    for warn in fetch_warnings:
-        if "intervals_fetch_failed" in warn:
-            missing_components.append("intervals")
-        if "streams_fetch_failed" in warn:
-            missing_components.append("streams")
-        if "power_curve_fetch_failed" in warn:
-            missing_components.append("power_curve")
-    if not has_power_stream and "streams" not in missing_components:
-        if watts is not None and len(watts) <= 30:
-            fetch_warnings.append("streams_too_short: Power stream available but too short for zone/drift analysis")
-    data_completeness = "complete" if not missing_components else f"partial (missing: {', '.join(missing_components)})"
+def _compute_power_metrics(a, watts, ftp, weight, moving_time, fetch_warnings):
+    """Compute NP / IF / TSS / VI / EF / power-to-weight from activity fields and streams.
 
-    # --- Metrics ---
+    Mutates fetch_warnings in place for out-of-range IF cases.
+    Returns a dict with only the keys it actually sets.
+    """
     m = {}
 
     # NP: prefer intervals.icu pre-computed, fall back to stream computation
@@ -85,7 +77,6 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
     m["normalized_power"] = np_val
 
     avg_w = a.get("icu_average_watts")
-    moving_time = a.get("moving_time") or 0
 
     # IF: prefer pre-computed (icu_intensity is always a percentage, e.g. 89.13 = 0.8913 IF)
     if_val = a.get("icu_intensity")
@@ -127,6 +118,18 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
     if avg_w is not None and weight:
         m["power_to_weight"] = round(avg_w / weight, 2)
 
+    return m
+
+
+def _compute_stream_metrics(a, watts, hr, power_curve, has_power_stream, has_hr_stream, ftp,
+                             fetch_warnings):
+    """Compute peak_powers / zone_seconds / zone_percent / cardiac_drift from streams.
+
+    Mutates fetch_warnings in place for power-curve fallback cases.
+    Returns a dict with only the keys it actually sets.
+    """
+    m = {}
+
     # Peak Powers: prefer power curve API, fall back to stream computation
     if power_curve:
         m["peak_powers"] = power_curve
@@ -152,7 +155,14 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
     else:
         m["cardiac_drift"] = None
 
-    # --- Intervals/laps ---
+    return m
+
+
+def _build_lap_list(intervals_data):
+    """Build the lap/interval list from raw intervals API data.
+
+    Returns a list of dicts, one per valid interval entry.
+    """
     lap_list = []
     for idx, iv in enumerate(intervals_data):
         if not isinstance(iv, dict):
@@ -172,7 +182,80 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
             "max_watts": iv.get("max_watts"),
             "intensity": iv.get("intensity"),
         })
+    return lap_list
 
+
+def _build_activity_block(a, moving_time, avg_w, max_watts, avg_hr, has_power, trainer,
+                           is_indoor, activity_id):
+    """Build the ``"activity"`` sub-dict of the analyze return value.
+
+    Returns that dict.
+    """
+    return {
+        "id": a.get("id", activity_id),
+        "name": a.get("name", ""),
+        "sport_type": a.get("type", ""),
+        "start_date_local": a.get("start_date_local", ""),
+        "distance_km": round((a.get("distance") or 0) / 1000, 2),
+        "moving_time": moving_time,
+        "moving_time_fmt": fmt_time(moving_time),
+        "elapsed_time": a.get("elapsed_time") or 0,
+        "elevation_gain": a.get("total_elevation_gain") or 0,
+        "average_watts": avg_w,
+        "max_watts": max_watts,
+        "average_heartrate": avg_hr,
+        "max_heartrate": a.get("max_heartrate"),
+        "average_cadence": a.get("average_cadence"),
+        "kilojoules": round(a.get("icu_joules") / 1000, 1) if a.get("icu_joules") is not None else None,
+        "has_power": has_power,
+        "trainer": trainer,
+        "power_data_quality": "measured" if has_power else "estimated",
+        "context": "indoor" if is_indoor else "outdoor",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Main analysis (thin orchestrator)
+# ---------------------------------------------------------------------------
+
+def analyze(client, activity_id, ftp=200, weight=70.0):
+    # Fetch all data; collect fetch_warnings and fetch_errors
+    a, intervals_data, streams, power_curve, fetch_warnings, fetch_errors = \
+        _fetch_activity_data(client, activity_id)
+
+    watts = streams.get("watts", streams.get("power", []))
+    hr = streams.get("heartrate", streams.get("heart_rate", []))
+
+    # --- Stream availability ---
+    has_power_stream = bool(watts and len(watts) >= 30)
+    has_hr_stream = bool(hr and len(hr) >= 30)
+
+    # --- Data completeness ---
+    missing_components = []
+    for warn in fetch_warnings:
+        if "intervals_fetch_failed" in warn:
+            missing_components.append("intervals")
+        if "streams_fetch_failed" in warn:
+            missing_components.append("streams")
+        if "power_curve_fetch_failed" in warn:
+            missing_components.append("power_curve")
+    if not has_power_stream and "streams" not in missing_components:
+        if watts is not None and len(watts) <= 30:
+            fetch_warnings.append("streams_too_short: Power stream available but too short for zone/drift analysis")
+    data_completeness = "complete" if not missing_components else f"partial (missing: {', '.join(missing_components)})"
+
+    avg_w = a.get("icu_average_watts")
+    moving_time = a.get("moving_time") or 0
+    avg_hr = a.get("average_heartrate")
+
+    # --- Metrics ---
+    m = {}
+    m.update(_compute_power_metrics(a, watts, ftp, weight, moving_time, fetch_warnings))
+    m.update(_compute_stream_metrics(a, watts, hr, power_curve, has_power_stream, has_hr_stream,
+                                     ftp, fetch_warnings))
+
+    # --- Intervals/laps ---
+    lap_list = _build_lap_list(intervals_data)
     m["interval_consistency"] = interval_stats(lap_list)
 
     # FTP test detection
@@ -203,27 +286,8 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
         max_watts = a.get("p_max")
 
     return {
-        "activity": {
-            "id": a.get("id", activity_id),
-            "name": a.get("name", ""),
-            "sport_type": a.get("type", ""),
-            "start_date_local": a.get("start_date_local", ""),
-            "distance_km": round((a.get("distance") or 0) / 1000, 2),
-            "moving_time": moving_time,
-            "moving_time_fmt": fmt_time(moving_time),
-            "elapsed_time": a.get("elapsed_time") or 0,
-            "elevation_gain": a.get("total_elevation_gain") or 0,
-            "average_watts": avg_w,
-            "max_watts": max_watts,
-            "average_heartrate": avg_hr,
-            "max_heartrate": a.get("max_heartrate"),
-            "average_cadence": a.get("average_cadence"),
-            "kilojoules": round(a.get("icu_joules") / 1000, 1) if a.get("icu_joules") is not None else None,
-            "has_power": has_power,
-            "trainer": trainer,
-            "power_data_quality": "measured" if has_power else "estimated",
-            "context": "indoor" if is_indoor else "outdoor",
-        },
+        "activity": _build_activity_block(a, moving_time, avg_w, max_watts, avg_hr,
+                                          has_power, trainer, is_indoor, activity_id),
         "data_completeness": data_completeness,
         "data_warnings": data_warnings,
         "fetch_errors": fetch_errors,  # {} when all 3 concurrent fetches succeeded
