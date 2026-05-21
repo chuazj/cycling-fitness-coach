@@ -139,6 +139,12 @@ When the analysis script detects an FTP test, propagate the new FTP into the act
    Post-test: 2-3 days easy riding before resuming structured work at the new FTP
    ```
 
+4. **Reconcile the FTP-gain forecast (W5 validation loop):** if a `ftp_gain` prediction is open for the block that just ended, reconcile it against this test result —
+   ```bash
+   python scripts/prediction_tracker.py --mode reconcile --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-coach/workout-reviews" --new-ftp {confirmed FTP} --ftp-test-date {test date}
+   ```
+   If the report's `ftp_trigger` is `recalibration_needed`, raise it at the next weekly review as a propose-and-confirm update to the athlete's FTP-gain rate (`references/prediction_calibration.md`). Skip silently if `plans/prediction_ledger.jsonl` does not exist.
+
 **IMPORTANT:** Do NOT skip confirmation. The athlete may want to round up/down based on training context, or keep the current FTP if the test was compromised.
 
 **Step 7:** Adapt Forward — per-activity cascade check (propose-and-confirm):
