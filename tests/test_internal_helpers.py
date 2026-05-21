@@ -7,6 +7,7 @@ import os
 import sys
 import unittest
 from datetime import datetime
+from unittest.mock import MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
@@ -20,6 +21,7 @@ from intervals_icu.wellness import (
 from intervals_icu.activity import (
     _compute_power_metrics, _compute_stream_metrics, _build_lap_list,
     _build_activity_block, _aggregate_week, _ftp_update_suggestion,
+    _fetch_week_peaks,
 )
 
 
@@ -657,6 +659,100 @@ class TestWeeklySummaryHelpers(unittest.TestCase):
         computed_if, duration = result["if_duration_pairs"][0]
         self.assertAlmostEqual(computed_if, 0.85)
         self.assertEqual(duration, 3600)
+
+    def test_aggregate_week_excludes_negative_moving_time(self):
+        # guard is `moving_time <= 0` → negative moving_time also excluded
+        activities = [
+            self._make_activity(type_="Ride", tss=80.0, moving_time=3600),
+            self._make_activity(type_="Ride", tss=50.0, moving_time=-1),
+        ]
+        result = _aggregate_week(activities)
+        self.assertEqual(result["activity_count"], 1)
+        self.assertAlmostEqual(result["total_tss"], 80.0)
+
+    # ------------------------------------------------------------------
+    # _fetch_week_peaks
+    # ------------------------------------------------------------------
+
+    def _curve(self, **dur_watts):
+        """Build a raw power-curve payload in parse_power_curve's expected form.
+
+        Keys are duration labels ('5s', '1min', '5min', '20min'); values are watts.
+        """
+        secs_map = {"5s": 5, "1min": 60, "5min": 300, "20min": 1200}
+        secs = [secs_map[k] for k in dur_watts]
+        watts = [dur_watts[k] for k in dur_watts]
+        return {"secs": secs, "watts": watts}
+
+    def _peak_activity(self, aid, tss, type_="Ride"):
+        """Minimal activity dict with icu_training_load set for top-3 selection."""
+        return {"id": aid, "type": type_, "moving_time": 3600,
+                "icu_training_load": tss, "start_date_local": "2026-05-20T06:00:00"}
+
+    def test_fetch_week_peaks_empty_when_no_training_load(self):
+        # No activity has icu_training_load → tss_sorted empty → no fetches
+        activities = [
+            {"id": "a1", "type": "Ride", "moving_time": 3600,
+             "start_date_local": "2026-05-20T06:00:00"},  # no icu_training_load
+        ]
+        client = MagicMock()
+        week_peaks, errors, max_20min = _fetch_week_peaks(client, activities)
+        self.assertEqual(week_peaks, {})
+        self.assertIsNone(max_20min)
+        self.assertEqual(errors, {})
+        client.get_power_curve.assert_not_called()
+
+    def test_fetch_week_peaks_records_fetch_error(self):
+        # get_power_curve raises → activity id captured in power_curve_errors,
+        # call returns normally (does not crash)
+        activities = [self._peak_activity("ride1", tss=80.0)]
+        client = MagicMock()
+        client.get_power_curve.side_effect = Exception("HTTP 503 from intervals.icu")
+        week_peaks, errors, max_20min = _fetch_week_peaks(client, activities)
+        self.assertIn("ride1", errors)
+        self.assertEqual(week_peaks, {})
+        self.assertIsNone(max_20min)
+
+    def test_fetch_week_peaks_takes_max_across_curves(self):
+        # 2 cycling activities, curves give 20min watts 200 and 220 → max wins
+        activities = [
+            self._peak_activity("ride1", tss=80.0),
+            self._peak_activity("ride2", tss=60.0),
+        ]
+        curves = {
+            "ride1": self._curve(**{"20min": 200}),
+            "ride2": self._curve(**{"20min": 220}),
+        }
+        client = MagicMock()
+        client.get_power_curve.side_effect = lambda aid: curves[aid]
+        week_peaks, errors, max_20min = _fetch_week_peaks(client, activities)
+        self.assertEqual(week_peaks["20min"], 220)
+        self.assertEqual(max_20min, 220)
+        self.assertEqual(errors, {})
+
+    def test_fetch_week_peaks_only_fetches_top_3_by_tss(self):
+        # 4 cycling activities → only top-3 by TSS fetched; lowest-TSS curve ignored
+        activities = [
+            self._peak_activity("low", tss=10.0),    # lowest — excluded
+            self._peak_activity("mid1", tss=50.0),
+            self._peak_activity("mid2", tss=70.0),
+            self._peak_activity("high", tss=100.0),
+        ]
+        curves = {
+            "low": self._curve(**{"20min": 999}),    # distinct — must NOT appear
+            "mid1": self._curve(**{"20min": 200}),
+            "mid2": self._curve(**{"20min": 210}),
+            "high": self._curve(**{"20min": 220}),
+        }
+        client = MagicMock()
+        client.get_power_curve.side_effect = lambda aid: curves[aid]
+        week_peaks, errors, max_20min = _fetch_week_peaks(client, activities)
+        self.assertEqual(client.get_power_curve.call_count, 3)
+        # lowest-TSS distinct curve value (999) must not leak into week_peaks
+        self.assertEqual(week_peaks["20min"], 220)
+        self.assertEqual(max_20min, 220)
+        fetched = {c.args[0] for c in client.get_power_curve.call_args_list}
+        self.assertNotIn("low", fetched)
 
 
 if __name__ == "__main__":
