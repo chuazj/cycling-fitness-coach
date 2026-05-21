@@ -4,68 +4,31 @@ from datetime import datetime
 from .wellness import wellness_summary
 
 
-def readiness_check(client, lookback_days=14):
-    """Point-in-time pre-ride readiness verdict.
+# ---------------------------------------------------------------------------
+# Module-private helpers — readiness_check decomposition
+# ---------------------------------------------------------------------------
 
-    Aggregates today's WHOOP-synced wellness against a 14-day baseline and emits a
-    single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict with a session-type ceiling.
-    Intended as a one-shot replacement for manual sleep/recovery/TSB gate-checking.
+def _recovery_band(today_recovery):
+    """Map a raw recovery score to a band string, or None when score is None."""
+    if today_recovery is None:
+        return None
+    if today_recovery >= 67:
+        return "green"
+    elif today_recovery >= 50:
+        return "yellow-high"
+    elif today_recovery >= 34:
+        return "yellow-low"
+    else:
+        return "red"
 
-    Signals combined (worst-of-severity wins):
-      - Sleep hours (≥7h pass, 6-7h tiebroken by WHOOP sleep score, <6h fail)
-      - WHOOP recovery (green ≥67, yellow-high 50-66, yellow-low 34-49, red <34)
-      - HRV vs 7-day rolling band (μ ± 0.5σ, Plews/Buchheit): today below = yellow,
-        2 consecutive days below = red de-load trigger (escalation, not duplicate)
-      - HRV CV-trend (14-day split-window): last-7d CV ≥ prior-7d CV + 2.0pp = yellow
-        informational flag, early autonomic-strain signal
-      - RHR vs 14-day baseline (≥5bpm = yellow, ≥10bpm = red)
-      - Respiration vs 14-day baseline (+1.0/min = yellow, +2.0/min = red illness gate)
-      - SpO2 vs 14-day baseline (≥2pp below = yellow) + absolute <90% red floor;
-        relative yellow needs a mature baseline (≥7 days), red floor always fires
-      - 3-day recovery slope (drop ≥10pt over 3 days = yellow trend flag)
-      - Progression signal (HRV ≥3 days above μ+0.5σ AND CTL rising → +5-10% TSS;
-        informational, surfaced separately from gating flags)
-      - TSB context (informational, not gating)
-      - Subjective wellness staleness check (all = 1 across 3+ fields = noisy data warning)
 
-    Returns dict with `verdict`, `ceiling`, per-signal breakdown, and `verdict_text`
-    (human-readable rendering for stdout).
+def _sleep_status(latest):
+    """Evaluate sleep hours with the 6–7h score tiebreaker.
+
+    Returns (status, note) where status is one of:
+      "green" / "yellow" / "red" / "missing"
+    and note is a descriptive string or None.
     """
-    summary = wellness_summary(client, days=lookback_days)
-    if summary.get("error"):
-        return {"error": summary["error"], "lookback_days": lookback_days}
-
-    latest = summary.get("latest") or {}
-    baseline = summary.get("baseline") or {}
-    sample_sizes = summary.get("baseline_sample_sizes") or {}
-    flags = list(summary.get("flags") or [])
-    today_recovery = latest.get("readiness")
-
-    today_str = datetime.now().strftime("%Y-%m-%d")
-
-    # Training load + 3-day slope are now sourced from wellness_summary (R6).
-    # No extra API call needed; no recomputation here.
-    tl = summary.get("training_load") or {}
-    ctl, atl, tsb = tl.get("ctl"), tl.get("atl"), tl.get("tsb")
-
-    # Pass the full slope dict through so format_readiness_check can render
-    # positive trends ("Recovery improving") too — not just alarms. The dict
-    # carries `alarm: bool` so downstream rendering can style accordingly.
-    slope_alarm = summary.get("recovery_slope_3day")
-
-    # Subdivide recovery band
-    band = None
-    if today_recovery is not None:
-        if today_recovery >= 67:
-            band = "green"
-        elif today_recovery >= 50:
-            band = "yellow-high"
-        elif today_recovery >= 34:
-            band = "yellow-low"
-        else:
-            band = "red"
-
-    # Sleep with score tiebreaker (borderline 6-7h)
     sleep_h = latest.get("sleep_hours")
     sleep_score = latest.get("sleep_score")
     sleep_status = "green"
@@ -84,12 +47,19 @@ def readiness_check(client, lookback_days=14):
         else:
             sleep_status = "yellow"
     # ≥7h = green by default
+    return sleep_status, sleep_note
 
-    # Verdict: worst-of(sleep, recovery band, slope, RHR/HRV flags).
-    # Exclude the legacy "recovery" flag from the yellow/red check — the new `band`
-    # variable supersedes it (band has finer granularity: yellow-high vs yellow-low).
-    # Otherwise the 34-66 flag from wellness_summary would force every yellow-high
-    # day into yellow-low.
+
+def _synthesize_verdict(sleep_status, band, flags):
+    """Derive the worst-of verdict from sleep status, recovery band, and flags.
+
+    The legacy "recovery" signal flag is excluded from the yellow/red gating
+    check — the `band` variable supersedes it with finer granularity
+    (yellow-high vs yellow-low).
+
+    Returns (verdict_band, verdict, ceiling).
+    """
+    # Exclude the legacy "recovery" flag from the yellow/red check.
     gating_flags = [f for f in flags if f.get("signal") != "recovery"]
     has_red_flag = any(f["severity"] == "red" for f in gating_flags)
     has_yellow_flag = any(f["severity"] == "yellow" for f in gating_flags)
@@ -115,55 +85,15 @@ def readiness_check(client, lookback_days=14):
         verdict = "INSUFFICIENT DATA — log a wellness entry or wait for WHOOP sync."
         ceiling = "—"
 
-    # Subjective stale-data + subjective values: lifted from wellness_summary (R6).
-    subj_keys = ["fatigue", "soreness", "stress", "mood"]
-    subj_vals = {k: latest.get(k) for k in subj_keys}
-    subj_stale = bool(summary.get("subjective_stale_warning"))
-
-    age_days = summary.get("latest_date_age_days")
-
-    result = {
-        "date": today_str,
-        "lookback_days": lookback_days,
-        "verdict_band": verdict_band,
-        "verdict": verdict,
-        "ceiling": ceiling,
-        "data_age_days": age_days,
-        "baseline_maturity": summary.get("baseline_maturity"),
-        "baseline_note": summary.get("baseline_note"),
-        "sleep": {"hours": sleep_h, "score": sleep_score, "status": sleep_status, "note": sleep_note},
-        "recovery": {"score": today_recovery, "band": band, "slope_3day": slope_alarm},
-        "hrv": {"today": latest.get("hrv"), "baseline": baseline.get("hrv_avg"),
-                "cv_pct": baseline.get("hrv_cv_pct"),
-                "cv_trend": baseline.get("hrv_cv_trend"),
-                "band_mean_7d": baseline.get("hrv_7d_mean"),
-                "band_sd_7d": baseline.get("hrv_7d_sd"),
-                "sample_size": sample_sizes.get("hrv", 0)},
-        "resting_hr": {"today": latest.get("resting_hr"), "baseline": baseline.get("resting_hr_avg"),
-                       "sample_size": sample_sizes.get("resting_hr", 0)},
-        "respiration": {"today": latest.get("respiration"),
-                        "baseline": baseline.get("respiration_avg"),
-                        "sample_size": sample_sizes.get("respiration", 0)},
-        "spo2": {"today": latest.get("spo2"),
-                 "baseline": baseline.get("spo2_avg"),
-                 "sample_size": sample_sizes.get("spo2", 0)},
-        "tsb": {"ctl": ctl, "atl": atl, "tsb": tsb},
-        "progression_signal": summary.get("progression_signal"),
-        "subjective": {**subj_vals, "stale_warning": subj_stale,
-                       "stale_note": ("All values = 1 (best/default) — verify athlete is updating these manually"
-                                      if subj_stale else None)},
-        "flags": flags,
-        "overall_status": summary.get("overall_status"),
-    }
-    result["verdict_text"] = format_readiness_check(result)
-    return result
+    return verdict_band, verdict, ceiling
 
 
-def format_readiness_check(result):
-    """Render readiness_check result as human-readable text for stdout."""
-    if result.get("error"):
-        return f"ERROR: {result['error']}"
+# ---------------------------------------------------------------------------
+# Module-private helpers — format_readiness_check decomposition
+# ---------------------------------------------------------------------------
 
+def _render_sleep_hrv(result):
+    """Return lines for the date header, sleep block, and HRV block (+ CV-trend sub-line)."""
     lines = [f"Date: {result['date']}"]
     age = result.get("data_age_days")
     if age is not None and age > 0:
@@ -203,6 +133,13 @@ def format_readiness_check(result):
                              f"— widening variability")
         else:
             lines.append(f"HRV:          {hrv_disp}ms{'':<3} | (no baseline yet)")
+
+    return lines
+
+
+def _render_vitals(result):
+    """Return lines for RHR, respiration, SpO2, and recovery (+ 3-day slope sub-line)."""
+    lines = []
 
     r = result["resting_hr"]
     if r["today"] is not None:
@@ -257,6 +194,13 @@ def format_readiness_check(result):
             label = "⚠ trend alarm" if sl.get("alarm") else "trending up" if sl["delta"] > 0 else "trending down"
             lines.append(f"  └─ 3-day slope: {sl['three_days_ago']} → {sl['today']} ({sl['delta']:+}pt) {label}")
 
+    return lines
+
+
+def _render_tsb_subjective(result):
+    """Return lines for the TSB line and the subjective wellness line."""
+    lines = []
+
     t = result["tsb"]
     if t["tsb"] is not None:
         state = ("fresh" if t["tsb"] >= 5 else "neutral" if t["tsb"] >= -10 else
@@ -270,10 +214,15 @@ def format_readiness_check(result):
         if sj.get("stale_warning"):
             lines.append(f"  └─ ⚠ {sj['stale_note']}")
 
-    lines += ["", "─" * 70,
-              f"VERDICT:  {result['verdict']}",
-              f"CEILING:  {result['ceiling']}",
-              "─" * 70]
+    return lines
+
+
+def _render_verdict_flags(result):
+    """Return lines for the verdict block, active-flags list, and progression-signal block."""
+    lines = ["", "─" * 70,
+             f"VERDICT:  {result['verdict']}",
+             f"CEILING:  {result['ceiling']}",
+             "─" * 70]
 
     yellow_red_flags = [f for f in (result.get("flags") or []) if f["severity"] in ("yellow", "red")]
     if yellow_red_flags:
@@ -288,4 +237,122 @@ def format_readiness_check(result):
         lines.append("Progression signal:")
         lines.append(f"  [GREEN-LIGHT] {prog['rule']}")
 
+    return lines
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+def readiness_check(client, lookback_days=14):
+    """Point-in-time pre-ride readiness verdict.
+
+    Aggregates today's WHOOP-synced wellness against a 14-day baseline and emits a
+    single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict with a session-type ceiling.
+    Intended as a one-shot replacement for manual sleep/recovery/TSB gate-checking.
+
+    Signals combined (worst-of-severity wins):
+      - Sleep hours (≥7h pass, 6-7h tiebroken by WHOOP sleep score, <6h fail)
+      - WHOOP recovery (green ≥67, yellow-high 50-66, yellow-low 34-49, red <34)
+      - HRV vs 7-day rolling band (μ ± 0.5σ, Plews/Buchheit): today below = yellow,
+        2 consecutive days below = red de-load trigger (escalation, not duplicate)
+      - HRV CV-trend (14-day split-window): last-7d CV ≥ prior-7d CV + 2.0pp = yellow
+        informational flag, early autonomic-strain signal
+      - RHR vs 14-day baseline (≥5bpm = yellow, ≥10bpm = red)
+      - Respiration vs 14-day baseline (+1.0/min = yellow, +2.0/min = red illness gate)
+      - SpO2 vs 14-day baseline (≥2pp below = yellow) + absolute <90% red floor;
+        relative yellow needs a mature baseline (≥7 days), red floor always fires
+      - 3-day recovery slope (drop ≥10pt over 3 days = yellow trend flag)
+      - Progression signal (HRV ≥3 days above μ+0.5σ AND CTL rising → +5-10% TSS;
+        informational, surfaced separately from gating flags)
+      - TSB context (informational, not gating)
+      - Subjective wellness staleness check (all = 1 across 3+ fields = noisy data warning)
+
+    Returns dict with `verdict`, `ceiling`, per-signal breakdown, and `verdict_text`
+    (human-readable rendering for stdout).
+    """
+    summary = wellness_summary(client, days=lookback_days)
+    if summary.get("error"):
+        return {"error": summary["error"], "lookback_days": lookback_days}
+
+    latest = summary.get("latest") or {}
+    baseline = summary.get("baseline") or {}
+    sample_sizes = summary.get("baseline_sample_sizes") or {}
+    flags = list(summary.get("flags") or [])
+    today_recovery = latest.get("readiness")
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    # Training load + 3-day slope are now sourced from wellness_summary (R6).
+    # No extra API call needed; no recomputation here.
+    tl = summary.get("training_load") or {}
+    ctl, atl, tsb = tl.get("ctl"), tl.get("atl"), tl.get("tsb")
+
+    # Pass the full slope dict through so format_readiness_check can render
+    # positive trends ("Recovery improving") too — not just alarms. The dict
+    # carries `alarm: bool` so downstream rendering can style accordingly.
+    slope_alarm = summary.get("recovery_slope_3day")
+
+    band = _recovery_band(today_recovery)
+    sleep_status, sleep_note = _sleep_status(latest)
+    verdict_band, verdict, ceiling = _synthesize_verdict(sleep_status, band, flags)
+
+    # Subjective stale-data + subjective values: lifted from wellness_summary (R6).
+    subj_keys = ["fatigue", "soreness", "stress", "mood"]
+    subj_vals = {k: latest.get(k) for k in subj_keys}
+    subj_stale = bool(summary.get("subjective_stale_warning"))
+
+    age_days = summary.get("latest_date_age_days")
+
+    sleep_h = latest.get("sleep_hours")
+    sleep_score = latest.get("sleep_score")
+
+    result = {
+        "date": today_str,
+        "lookback_days": lookback_days,
+        "verdict_band": verdict_band,
+        "verdict": verdict,
+        "ceiling": ceiling,
+        "data_age_days": age_days,
+        "baseline_maturity": summary.get("baseline_maturity"),
+        "baseline_note": summary.get("baseline_note"),
+        "sleep": {"hours": sleep_h, "score": sleep_score, "status": sleep_status, "note": sleep_note},
+        "recovery": {"score": today_recovery, "band": band, "slope_3day": slope_alarm},
+        "hrv": {"today": latest.get("hrv"), "baseline": baseline.get("hrv_avg"),
+                "cv_pct": baseline.get("hrv_cv_pct"),
+                "cv_trend": baseline.get("hrv_cv_trend"),
+                "band_mean_7d": baseline.get("hrv_7d_mean"),
+                "band_sd_7d": baseline.get("hrv_7d_sd"),
+                "sample_size": sample_sizes.get("hrv", 0)},
+        "resting_hr": {"today": latest.get("resting_hr"), "baseline": baseline.get("resting_hr_avg"),
+                       "sample_size": sample_sizes.get("resting_hr", 0)},
+        "respiration": {"today": latest.get("respiration"),
+                        "baseline": baseline.get("respiration_avg"),
+                        "sample_size": sample_sizes.get("respiration", 0)},
+        "spo2": {"today": latest.get("spo2"),
+                 "baseline": baseline.get("spo2_avg"),
+                 "sample_size": sample_sizes.get("spo2", 0)},
+        "tsb": {"ctl": ctl, "atl": atl, "tsb": tsb},
+        "progression_signal": summary.get("progression_signal"),
+        "subjective": {**subj_vals, "stale_warning": subj_stale,
+                       "stale_note": ("All values = 1 (best/default) — verify athlete is updating these manually"
+                                      if subj_stale else None)},
+        "flags": flags,
+        "overall_status": summary.get("overall_status"),
+    }
+    result["verdict_text"] = format_readiness_check(result)
+    return result
+
+
+def format_readiness_check(result):
+    """Render readiness_check result as human-readable text for stdout."""
+    if result.get("error"):
+        return f"ERROR: {result['error']}"
+
+    lines = (
+        _render_sleep_hrv(result)
+        + _render_vitals(result)
+        + _render_tsb_subjective(result)
+        + _render_verdict_flags(result)
+    )
     return "\n".join(lines)
