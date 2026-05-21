@@ -62,7 +62,7 @@ def predict_rpe(model, if_value, slot):
             break
     if slot == "post_3pm":
         rpe += model["corrections"].get("post_3pm", 0)
-    return rpe
+    return min(rpe, 10)  # RPE is a 1-10 scale; corrections must not push it off-scale
 
 
 def predict_ftp_gain(model, start_ftp):
@@ -385,6 +385,12 @@ def main():
     if args.mode == "predict":
         if not args.type:
             print("ERROR: --type is required for --mode predict", file=sys.stderr)
+            sys.exit(1)
+        if args.type == "rpe_at_if" and args.if_value is None:
+            print("ERROR: --if is required for --type rpe_at_if", file=sys.stderr)
+            sys.exit(1)
+        if args.type == "ftp_gain" and args.start_ftp is None:
+            print("ERROR: --start-ftp is required for --type ftp_gain", file=sys.stderr)
             sys.exit(1)
         result = run_predict(args)
     elif args.mode == "seed-baseline":

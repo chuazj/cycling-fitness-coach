@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
@@ -25,6 +26,7 @@ from prediction_tracker import (
     check_ftp_trigger,
     build_parser,
     run_predict,
+    main,
 )
 
 
@@ -40,6 +42,10 @@ class TestPredict(unittest.TestCase):
     def test_rpe_boundary_is_upper_exclusive(self):
         # 0.65 falls into the 0.65-0.75 bucket, not the <0.65 bucket
         self.assertEqual(predict_rpe(DEFAULT_MODEL, 0.65, "morning"), 5)
+
+    def test_rpe_capped_at_10(self):
+        # base 9 (IF >= 0.92) + post_3pm correction 2 = 11 -> must cap at 10
+        self.assertEqual(predict_rpe(DEFAULT_MODEL, 0.95, "post_3pm"), 10)
 
     def test_ftp_gain_range(self):
         result = predict_ftp_gain(DEFAULT_MODEL, 188)
@@ -272,6 +278,13 @@ class TestCLI(unittest.TestCase):
             run_predict(build_parser().parse_args(base))
             result = run_predict(build_parser().parse_args(base))
             self.assertEqual(result["logged"]["id"], "P002")
+
+    def test_predict_rpe_without_if_exits(self):
+        argv = ["prog", "--mode", "predict", "--type", "rpe_at_if",
+                "--session-date", "2026-06-02", "--session-type", "Threshold"]
+        with patch.object(sys, "argv", argv):
+            with self.assertRaises(SystemExit):
+                main()
 
 
 if __name__ == "__main__":
