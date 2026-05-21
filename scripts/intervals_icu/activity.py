@@ -300,28 +300,18 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
 
 
 # ---------------------------------------------------------------------------
-# Weekly summary with auto-FTP detection (FE-1 + FE-3)
+# Weekly summary helpers (module-private)
 # ---------------------------------------------------------------------------
 
-def weekly_summary(client, days=7, ftp=200, weight=70.0):
-    """Aggregate the last N days of activities into a weekly training summary.
+def _aggregate_week(activities):
+    """Accumulate per-activity totals across all cycling activities in the list.
 
-    Args:
-        client: IntervalsIcuClient instance
-        days: number of days to look back (default 7)
-        ftp: functional threshold power in watts
-        weight: body weight in kg
+    Skips non-cycling activities and activities with moving_time <= 0.
 
     Returns:
-        dict with aggregated metrics, zone distribution, and optional FTP update suggestion
+        dict with keys: total_tss, total_kj, total_moving_time, activity_count,
+        training_dates, if_duration_pairs, zone_duration
     """
-    newest = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    oldest = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
-    activities = client.list_activities(oldest=oldest, newest=newest)
-    if not activities:
-        return {"error": "No activities found in the last {} days".format(days),
-                "activity_count": 0}
-
     # Aggregate metrics
     total_tss = 0.0
     total_kj = 0.0
@@ -334,9 +324,6 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
 
     # For IF-based zone distribution (weighted by duration)
     zone_duration = {"Z1": 0, "Z2": 0, "Z3": 0, "Z4": 0, "Z5+": 0}
-
-    # Track max 20-min peak power for FTP detection (FE-3)
-    max_20min_peak = None
 
     for a in activities:
         # Skip non-cycling activities (e.g., logged runs) — weekly summary is for cycling load
@@ -383,6 +370,30 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
                 else:
                     zone_duration["Z5+"] += moving_time
 
+    return {
+        "total_tss": total_tss,
+        "total_kj": total_kj,
+        "total_moving_time": total_moving_time,
+        "activity_count": activity_count,
+        "training_dates": training_dates,
+        "if_duration_pairs": if_duration_pairs,
+        "zone_duration": zone_duration,
+    }
+
+
+def _fetch_week_peaks(client, activities):
+    """Fetch power curves from the top-3 TSS cycling activities and accumulate peak powers.
+
+    FE-3: Reduces N API calls to 3 by limiting to top-3 TSS activities.
+    Captures per-activity fetch errors in power_curve_errors so the caller
+    can distinguish "no peaks because no top-3 activities" from fetch failures.
+
+    Returns:
+        (week_peaks, power_curve_errors, max_20min_peak)
+        week_peaks: dict[duration -> peak_watts] for profile_durations
+        power_curve_errors: dict[aid -> error_msg]; {} when all fetches succeeded
+        max_20min_peak: float or None
+    """
     # FE-3: Fetch power curves only from top-3 TSS activities (reduces N API calls to 3).
     # Pull all key durations in one fetch per activity, then take the max across the
     # top-3 for each duration — gives a usable "best 7 days" power profile for free.
@@ -412,6 +423,7 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
             return {}
 
     week_peaks = {}
+    max_20min_peak = None
     if tss_sorted:
         with ThreadPoolExecutor(max_workers=3) as executor:
             curves = list(executor.map(_fetch_curve, tss_sorted))
@@ -423,6 +435,68 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
                 if dur not in week_peaks or v > week_peaks[dur]:
                     week_peaks[dur] = v
         max_20min_peak = week_peaks.get("20min")
+
+    return week_peaks, power_curve_errors, max_20min_peak
+
+
+def _ftp_update_suggestion(max_20min_peak, ftp):
+    """Compute FTP-update suggestion fragment from the week's 20-min peak power.
+
+    Returns a dict fragment to be merged into the weekly_summary result:
+    - None peak: {"ftp_update_suggested": False}
+    - Peak present, threshold not crossed: {"max_20min_peak": ..., "ftp_update_suggested": False}
+    - Peak present, threshold crossed: {"max_20min_peak": ..., "ftp_update_suggested": True,
+                                         "suggested_ftp": ..., "ftp_change_pct": ...}
+    """
+    # FE-3: Auto-FTP detection
+    if max_20min_peak is not None:
+        frag = {"max_20min_peak": round(max_20min_peak, 1)}
+        suggested_ftp = round(max_20min_peak * 0.95)
+        if suggested_ftp > ftp * 1.03:
+            change_pct = round((suggested_ftp - ftp) / ftp * 100, 1)
+            frag["ftp_update_suggested"] = True
+            frag["suggested_ftp"] = suggested_ftp
+            frag["ftp_change_pct"] = change_pct
+        else:
+            frag["ftp_update_suggested"] = False
+        return frag
+    else:
+        return {"ftp_update_suggested": False}
+
+
+# ---------------------------------------------------------------------------
+# Weekly summary with auto-FTP detection (FE-1 + FE-3)
+# ---------------------------------------------------------------------------
+
+def weekly_summary(client, days=7, ftp=200, weight=70.0):
+    """Aggregate the last N days of activities into a weekly training summary.
+
+    Args:
+        client: IntervalsIcuClient instance
+        days: number of days to look back (default 7)
+        ftp: functional threshold power in watts
+        weight: body weight in kg
+
+    Returns:
+        dict with aggregated metrics, zone distribution, and optional FTP update suggestion
+    """
+    newest = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    oldest = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
+    activities = client.list_activities(oldest=oldest, newest=newest)
+    if not activities:
+        return {"error": "No activities found in the last {} days".format(days),
+                "activity_count": 0}
+
+    agg = _aggregate_week(activities)
+    total_tss = agg["total_tss"]
+    total_kj = agg["total_kj"]
+    total_moving_time = agg["total_moving_time"]
+    activity_count = agg["activity_count"]
+    training_dates = agg["training_dates"]
+    if_duration_pairs = agg["if_duration_pairs"]
+    zone_duration = agg["zone_duration"]
+
+    week_peaks, power_curve_errors, max_20min_peak = _fetch_week_peaks(client, activities)
 
     # Compute duration-weighted average IF
     avg_if = None
@@ -457,19 +531,8 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
         "power_curve_errors": power_curve_errors,  # {aid: msg}; {} when all fetches succeeded
     }
 
-    # FE-3: Auto-FTP detection
-    if max_20min_peak is not None:
-        result["max_20min_peak"] = round(max_20min_peak, 1)
-        suggested_ftp = round(max_20min_peak * 0.95)
-        if suggested_ftp > ftp * 1.03:
-            change_pct = round((suggested_ftp - ftp) / ftp * 100, 1)
-            result["ftp_update_suggested"] = True
-            result["suggested_ftp"] = suggested_ftp
-            result["ftp_change_pct"] = change_pct
-        else:
-            result["ftp_update_suggested"] = False
-    else:
-        result["ftp_update_suggested"] = False
+    # FE-3: Auto-FTP detection — merge suggestion fragment
+    result.update(_ftp_update_suggestion(max_20min_peak, ftp))
 
     # Power profile across the week (best of top-3 sessions per duration)
     if week_peaks:
