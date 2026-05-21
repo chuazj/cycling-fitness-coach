@@ -20,6 +20,9 @@ from prediction_tracker import (
     write_calibration,
     seed_baseline,
     reconcile,
+    check_rpe_trigger,
+    attribute_rpe,
+    check_ftp_trigger,
 )
 
 
@@ -177,6 +180,55 @@ class TestReconcile(unittest.TestCase):
                "status": "open", "actual": None, "reconciled": None, "delta": None}
         recs, just = reconcile([rec], [])
         self.assertEqual(recs[0]["status"], "open")
+
+
+class TestTriggers(unittest.TestCase):
+    def _rpe(self, delta, slot, day):
+        return {"type": "rpe_at_if", "status": "reconciled", "delta": delta,
+                "reconciled": "2026-05-%02d" % day,
+                "inputs": {"slot": slot}}
+
+    def test_rpe_trigger_fires_on_sustained_bias(self):
+        recs = [self._rpe(2, "morning", d) for d in range(1, 6)]
+        flags = check_rpe_trigger(recs)
+        self.assertEqual(flags["morning"]["status"], "recalibration_needed")
+        self.assertEqual(flags["morning"]["mean_delta"], 2.0)
+
+    def test_rpe_trigger_ok_when_noise_cancels(self):
+        # +1, -1, +1, -1, 0 -> mean 0.0 -> ok (noise, not bias)
+        deltas = [1, -1, 1, -1, 0]
+        recs = [self._rpe(deltas[i], "morning", i + 1) for i in range(5)]
+        flags = check_rpe_trigger(recs)
+        self.assertEqual(flags["morning"]["status"], "ok")
+
+    def test_rpe_trigger_insufficient_data(self):
+        recs = [self._rpe(2, "morning", d) for d in range(1, 4)]
+        flags = check_rpe_trigger(recs)
+        self.assertEqual(flags["morning"]["status"], "insufficient_data")
+
+    def test_attribute_post_3pm_only(self):
+        flags = {"morning": {"status": "ok", "mean_delta": 0.2},
+                 "post_3pm": {"status": "recalibration_needed", "mean_delta": 1.6}}
+        self.assertEqual(attribute_rpe(flags), "post_3pm correction constant")
+
+    def test_attribute_both_slots_same_sign(self):
+        flags = {"morning": {"status": "recalibration_needed", "mean_delta": 1.4},
+                 "post_3pm": {"status": "recalibration_needed", "mean_delta": 1.8}}
+        self.assertIn("base table", attribute_rpe(flags))
+
+    def test_ftp_trigger_fires_when_both_outside(self):
+        recs = [{"type": "ftp_gain", "status": "reconciled", "reconciled": "2026-04-01",
+                 "delta": "outside (1.0pp below range)"},
+                {"type": "ftp_gain", "status": "reconciled", "reconciled": "2026-05-01",
+                 "delta": "outside (0.5pp above range)"}]
+        self.assertEqual(check_ftp_trigger(recs)["status"], "recalibration_needed")
+
+    def test_ftp_trigger_ok_when_one_inside(self):
+        recs = [{"type": "ftp_gain", "status": "reconciled", "reconciled": "2026-04-01",
+                 "delta": "inside"},
+                {"type": "ftp_gain", "status": "reconciled", "reconciled": "2026-05-01",
+                 "delta": "outside (0.5pp above range)"}]
+        self.assertEqual(check_ftp_trigger(recs)["status"], "ok")
 
 
 if __name__ == "__main__":

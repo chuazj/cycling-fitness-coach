@@ -234,5 +234,73 @@ def reconcile(records, reviews, new_ftp=None, ftp_test_date=None):
     return records, just
 
 
+def check_rpe_trigger(records):
+    """Per slot, over the last RPE_TRIGGER_WINDOW reconciled rpe_at_if
+    predictions, flag when |mean signed delta| >= RPE_TRIGGER_THRESHOLD.
+
+    Returns {slot: {status, mean_delta, n}}. status is "recalibration_needed",
+    "ok", or "insufficient_data".
+    """
+    by_slot = {}
+    for rec in records:
+        if rec["type"] == "rpe_at_if" and rec.get("status") == "reconciled":
+            by_slot.setdefault(_slot_of(rec), []).append(rec)
+    flags = {}
+    for slot, recs in by_slot.items():
+        recs = sorted(recs, key=lambda r: r["reconciled"])[-RPE_TRIGGER_WINDOW:]
+        if len(recs) < RPE_TRIGGER_WINDOW:
+            flags[slot] = {"status": "insufficient_data", "n": len(recs)}
+            continue
+        mean_delta = round(sum(r["delta"] for r in recs) / len(recs), 2)
+        flags[slot] = {
+            "status": ("recalibration_needed"
+                       if abs(mean_delta) >= RPE_TRIGGER_THRESHOLD else "ok"),
+            "mean_delta": mean_delta,
+            "n": len(recs),
+        }
+    return flags
+
+
+def attribute_rpe(flags):
+    """Given check_rpe_trigger() output, name what to recalibrate.
+
+    Both slots flagged with the same-sign bias -> the base table.
+    Only post_3pm flagged -> the post_3pm correction constant.
+    Otherwise -> None (nothing to attribute).
+    """
+    fired = {s: f for s, f in flags.items()
+             if f.get("status") == "recalibration_needed"}
+    if not fired:
+        return None
+    if len(fired) >= 2:
+        signs = {f["mean_delta"] > 0 for f in fired.values()}
+        if len(signs) == 1:
+            return "base table (bias present in all slots)"
+        return "base table and/or corrections (mixed-sign bias — review per slot)"
+    slot = next(iter(fired))
+    if slot == "post_3pm":
+        return "post_3pm correction constant"
+    return "base table (morning slot bias)"
+
+
+def check_ftp_trigger(records):
+    """Flag when the last FTP_TRIGGER_WINDOW reconciled ftp_gain predictions all
+    landed outside their predicted range.
+
+    Returns {status, n}. status is "recalibration_needed", "ok", or
+    "insufficient_data".
+    """
+    recs = [r for r in records
+            if r["type"] == "ftp_gain" and r.get("status") == "reconciled"]
+    recs = sorted(recs, key=lambda r: r["reconciled"])[-FTP_TRIGGER_WINDOW:]
+    if len(recs) < FTP_TRIGGER_WINDOW:
+        return {"status": "insufficient_data", "n": len(recs)}
+    all_outside = all(str(r["delta"]).startswith("outside") for r in recs)
+    return {
+        "status": "recalibration_needed" if all_outside else "ok",
+        "n": len(recs),
+    }
+
+
 if __name__ == "__main__":
     main()
