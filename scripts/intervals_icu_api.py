@@ -13,12 +13,12 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
     sys.stderr.reconfigure(encoding="utf-8")
 
-from intervals_icu.api_client import IntervalsIcuClient, load_env
+from intervals_icu.api_client import BASE_URL, IntervalsIcuClient, load_env
 from intervals_icu.metrics import (
     _clean_watts, compute_np, compute_peaks, compute_zones, compute_drift,
     interval_stats, detect_ftp_test, detect_indoor, fmt_time, extract_id,
     parse_power_curve, parse_streams, analyze_power_profile,
-    POWER_ZONES, POWER_PROFILE,
+    POWER_ZONES, POWER_PROFILE, CYCLING_TYPES, FTP_TEST_KEYWORDS,
 )
 from intervals_icu.activity import analyze, weekly_summary
 from intervals_icu.wellness import wellness_summary

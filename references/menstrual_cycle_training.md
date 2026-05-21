@@ -80,7 +80,7 @@ An athlete on a hormonal contraceptive (HC) — combined pill, progestogen-only 
 **The most important section in this document.** A missing or lost period is a health warning sign, not a training convenience.
 
 - **Amenorrhea** = no menstrual period for **3+ consecutive months** (not pregnant, not on an HC that suppresses bleeding). **Oligomenorrhea** = infrequent periods, cycles consistently longer than ~35 days.
-- In athletes the common cause is **functional hypothalamic amenorrhea**, driven by **low energy availability (LEA)** — not eating enough to cover training energy cost. LEA is the root cause of **Relative Energy Deficiency in Sport (RED-S)**, which also harms bone health, immunity, iron status, and performance.
+- In athletes the common cause is **functional hypothalamic amenorrhea** — the brain switching off the menstrual cycle in response to an energy shortfall — driven by **low energy availability (LEA)**, i.e. not eating enough to cover the energy cost of training. LEA is the root cause of **Relative Energy Deficiency in Sport (RED-S)**, which also harms bone health, immunity, iron status, and performance.
 - **A lost period is the body down-regulating reproductive function to conserve energy. It is a symptom of an energy-deficit problem, and it is fixed by correcting the energy deficit — not by a training adjustment.**
 
 **Hard gate — if a female athlete reports amenorrhea or oligomenorrhea** (or, on an HC, reports LEA signs: unexplained performance decline, frequent illness or injury, stress fractures, persistent fatigue, disordered-eating signs):
@@ -109,5 +109,5 @@ This applies **regardless of the athlete's body size or weight** — RED-S occur
 - McNulty et al. (2020) — *The Effects of Menstrual Cycle Phase on Exercise Performance in Eumenorrheic Women: A Systematic Review and Meta-Analysis*, **Sports Medicine** 50:1813–1827. [PMC7497427](https://pmc.ncbi.nlm.nih.gov/articles/PMC7497427/)
 - Elliott-Sale et al. (2020) — *The Effects of Oral Contraceptives on Exercise Performance in Women: A Systematic Review and Meta-analysis*, **Sports Medicine** 50:1785–1812. [PMC7497464](https://pmc.ncbi.nlm.nih.gov/articles/PMC7497464/)
 - Systematic review & meta-analysis (2023) — *Effect of Hormonal Contraceptive Use on Skeletal Muscle Hypertrophy, Power and Strength Adaptations to Resistance Exercise Training*. [PMID 37755666](https://pubmed.ncbi.nlm.nih.gov/37755666/)
-- *Strength & Conditioning Journal* (2025) — *Evidence for Periodizing Strength and/or Endurance Training According to Menstrual Cycle Phases*.
-- Mountjoy et al. (2023) — *2023 IOC consensus statement on Relative Energy Deficiency in Sport (REDs)*, **British Journal of Sports Medicine**.
+- *Strength & Conditioning Journal* (2025), 47(6) — *Evidence for Periodizing Strength and/or Endurance Training According to Menstrual Cycle Phases*. [journals.lww.com/nsca-scj](https://journals.lww.com/nsca-scj/fulltext/2025/12000/evidence_for_periodizing_strength_and_or_endurance.4.aspx)
+- Mountjoy et al. (2023) — *2023 IOC consensus statement on Relative Energy Deficiency in Sport (REDs)*, **British Journal of Sports Medicine** 57(17):1073–1097. [DOI 10.1136/bjsports-2023-106994](https://doi.org/10.1136/bjsports-2023-106994)

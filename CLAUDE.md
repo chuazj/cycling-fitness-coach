@@ -108,12 +108,12 @@ python scripts/rpe_trend.py --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-c
 ```
 Reads YAML frontmatter from each `.md`, extracts `(date, session_type, if, rpe)`, compares last `--weeks` weeks to the prior `--weeks` weeks per session type. Flags `rising_rpe_at_constant_if` when ΔRPE ≥ 1.0 with ΔIF within ±0.03. Used by the Weekly Review workflow. Returns `error` field if no usable reviews found (silent skip in workflow).
 
-No build or lint infrastructure exists. Tests: `python -m unittest discover tests -v` (312 tests across 4 files, runs in ~0.1s — run before AND after any script change).
+No build or lint infrastructure exists. Tests: `python -m unittest discover tests -v` (446 tests across 5 files, runs in ~0.1s — run before AND after any script change).
 
 ## Wellness signal changes
 
 - **Test fixtures exclude today from baseline**: `wellness_summary()` uses `history = daily[:-1]`. To test an N-day baseline rule (CV-trend needs 14d, RHR/HRV band-check/respiration need 7d), provide **N+1 daily records** — sending N gives only N-1 history days and the rule silently won't fire.
-- **Signal-change sync list** (when adding/modifying a wellness rule, all 6 must update): code (`scripts/intervals_icu_api.py`) → tests (`tests/test_with_mocks.py`) → Fatigue Indicators (`references/training_zones.md`) → readiness template in `workflows/advise.md` AND `workflows/plan.md` → project `CLAUDE.md` Block-wide gating rules. Skip any → doc/code drift.
+- **Signal-change sync list** (when adding/modifying a wellness rule, all 6 must update): code (`scripts/intervals_icu/wellness.py`, verdict layer in `readiness.py`) → tests (`tests/test_with_mocks.py`, `tests/test_internal_helpers.py`) → Fatigue Indicators (`references/training_zones.md`) → readiness template in `workflows/advise.md` AND `workflows/plan.md` → project `CLAUDE.md` Block-wide gating rules. Skip any → doc/code drift.
 
 ## Architecture
 
@@ -125,7 +125,14 @@ workflows/
   generate.md                   ← ZWO Generation
   advise.md                     ← Training Advice + Mid-Week Check-In + Race Peaking
 scripts/
-  intervals_icu_api.py          ← intervals.icu API client + metrics computation (NP, IF, TSS, zones, peaks, cardiac drift)
+  intervals_icu_api.py          ← Thin re-export façade + CLI entry point (preserves the `from intervals_icu_api import …` surface)
+  intervals_icu/                ← intervals.icu API client package (split from the former monolith — see audits/ W1 refactor)
+    api_client.py               ← HTTP client, auth, .env loading
+    metrics.py                  ← Pure metric computation (NP, IF, TSS, zones, peaks, cardiac drift, power profile)
+    activity.py                 ← Single-activity analysis + weekly training summary
+    wellness.py                 ← WHOOP wellness fields, baselines, Yellow/Red flag detection
+    readiness.py                ← Pre-ride readiness verdict engine
+    cli.py                      ← argparse definition + mode dispatch
   generate_zwo.py               ← Zwift .zwo XML generator using dataclasses for interval types
   pmc_calculator.py             ← PMC bootstrap (90-day history) + weekly update (planned vs actual, CTL/ATL/TSB, peaks)
   batch_generate_zwo.py         ← Batch .zwo generation from JSON array (full week of workouts)
@@ -147,6 +154,7 @@ plans/
 tests/
   test_pure_functions.py        ← Offline unit tests for pure functions (no API calls)
   test_with_mocks.py            ← Tests with mocked HTTP responses
+  test_internal_helpers.py      ← Unit tests for the intervals_icu package's decomposed helpers
   test_cli.py                   ← CLI argument parsing tests
   test_pmc_integration.py       ← PMC bootstrap/weekly with mocked API
   fixtures/                     ← Mock API responses (activity.json, intervals.json, power_curve.json)
