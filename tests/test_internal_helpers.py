@@ -17,6 +17,9 @@ from intervals_icu.wellness import (
     _latest_date_age_days, _subjective_stale, _training_load,
     _progression_signal, _days_with_whoop_data, _overall_status, _baseline_note,
 )
+from intervals_icu.activity import (
+    _compute_power_metrics, _compute_stream_metrics, _build_lap_list,
+)
 
 
 def _daily_record(date, **overrides):
@@ -300,6 +303,168 @@ class TestWellnessHelpers(unittest.TestCase):
         note = _baseline_note("consolidating", [10, 12, 11])
         self.assertIsInstance(note, str)
         self.assertTrue(len(note) > 0)
+
+
+class TestActivityHelpers(unittest.TestCase):
+
+    # ------------------------------------------------------------------
+    # _build_lap_list
+    # ------------------------------------------------------------------
+
+    def test_build_lap_list_maps_interval_fields(self):
+        intervals = [{"label": "Work 1", "type": "WORK", "elapsed_time": 300,
+                      "moving_time": 300, "average_watts": 180}]
+        laps = _build_lap_list(intervals)
+        self.assertEqual(len(laps), 1)
+        self.assertEqual(laps[0]["name"], "Work 1")
+        self.assertEqual(laps[0]["type"], "WORK")
+        self.assertEqual(laps[0]["average_watts"], 180)
+        self.assertEqual(laps[0]["lap_index"], 0)
+
+    def test_build_lap_list_skips_non_dict_entries(self):
+        self.assertEqual(_build_lap_list([None, "x", 5]), [])
+
+    def test_build_lap_list_empty_input(self):
+        self.assertEqual(_build_lap_list([]), [])
+
+    def test_build_lap_list_uses_type_when_label_missing(self):
+        # label absent → falls back to type
+        intervals = [{"type": "REST"}]
+        laps = _build_lap_list(intervals)
+        self.assertEqual(laps[0]["name"], "REST")
+
+    def test_build_lap_list_preserves_lap_index_across_mixed_entries(self):
+        # Non-dict entries are skipped but idx still increments (enumerate)
+        intervals = [None, {"label": "Work 1", "type": "WORK"}]
+        laps = _build_lap_list(intervals)
+        self.assertEqual(len(laps), 1)
+        self.assertEqual(laps[0]["lap_index"], 1)  # idx was 1 at the valid entry
+
+    # ------------------------------------------------------------------
+    # _compute_power_metrics
+    # ------------------------------------------------------------------
+
+    def _activity_with_all_fields(self):
+        return {
+            "icu_weighted_avg_watts": 190,
+            "icu_average_watts": 175,
+            "icu_intensity": 89.0,      # → IF = 0.890
+            "icu_training_load": 75,
+            "average_heartrate": 150,
+        }
+
+    def test_compute_power_metrics_happy_path(self):
+        a = self._activity_with_all_fields()
+        warnings = []
+        m = _compute_power_metrics(a, [200] * 100, ftp=188, weight=74,
+                                   moving_time=3600, fetch_warnings=warnings)
+        self.assertEqual(m["normalized_power"], 190)
+        self.assertEqual(m["intensity_factor"], 0.89)   # 89.0/100 = 0.890
+        self.assertEqual(m["tss"], 75.0)                # pre-computed
+        self.assertIn("power_to_weight", m)
+        self.assertEqual(m["power_to_weight"], round(175 / 74, 2))
+        # No warnings expected on the happy path
+        self.assertEqual(warnings, [])
+
+    def test_compute_power_metrics_fallback_when_icu_intensity_and_tss_absent(self):
+        # Omit icu_intensity and icu_training_load → force NP/FTP fallback
+        a = {
+            "icu_weighted_avg_watts": 190,
+            "icu_average_watts": 175,
+            "average_heartrate": 150,
+            # icu_intensity intentionally absent
+            # icu_training_load intentionally absent
+        }
+        warnings = []
+        m = _compute_power_metrics(a, [200] * 100, ftp=188, weight=74,
+                                   moving_time=3600, fetch_warnings=warnings)
+        expected_if = round(190 / 188, 3)
+        self.assertEqual(m["intensity_factor"], expected_if)
+        # TSS fallback: (3600 * IF**2 / 3600) * 100
+        expected_tss = round((3600 * (190 / 188) ** 2) / 3600 * 100, 1)
+        self.assertEqual(m["tss"], expected_tss)
+        self.assertEqual(warnings, [])
+
+    def test_compute_power_metrics_no_normalized_power_when_no_stream_and_no_api(self):
+        # icu_weighted_avg_watts absent, watts=[] → np_val stays None
+        a = {"icu_average_watts": 175, "average_heartrate": 150}
+        warnings = []
+        m = _compute_power_metrics(a, [], ftp=188, weight=74,
+                                   moving_time=3600, fetch_warnings=warnings)
+        self.assertIsNone(m["normalized_power"])
+        # IF and TSS require np_val → both absent
+        self.assertNotIn("intensity_factor", m)
+        self.assertNotIn("tss", m)
+
+    def test_compute_power_metrics_out_of_range_if_appends_warning(self):
+        # icu_intensity = 250 → IF = 2.50 → out of [0.3, 2.0] → recompute from NP
+        a = {
+            "icu_weighted_avg_watts": 190,
+            "icu_average_watts": 175,
+            "icu_intensity": 250,   # → IF = 2.5, out of range
+            "average_heartrate": 150,
+        }
+        warnings = []
+        m = _compute_power_metrics(a, [200] * 100, ftp=188, weight=74,
+                                   moving_time=3600, fetch_warnings=warnings)
+        # Should have fallen back to NP/FTP
+        self.assertEqual(m["intensity_factor"], round(190 / 188, 3))
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("if_out_of_range", warnings[0])
+
+    # ------------------------------------------------------------------
+    # _compute_stream_metrics
+    # ------------------------------------------------------------------
+
+    def test_compute_stream_metrics_no_streams(self):
+        # Both has_power_stream and has_hr_stream False
+        warnings = []
+        m = _compute_stream_metrics(
+            a={}, watts=[], hr=[], power_curve={},
+            has_power_stream=False, has_hr_stream=False,
+            ftp=188, fetch_warnings=warnings,
+        )
+        self.assertIsNone(m["zone_seconds"])
+        self.assertIsNone(m["zone_percent"])
+        self.assertIsNone(m["cardiac_drift"])
+        # peak_powers falls back to empty dict, warning appended
+        self.assertEqual(m["peak_powers"], {})
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("unavailable", warnings[0])
+
+    def test_compute_stream_metrics_with_power_and_hr_streams_no_curve(self):
+        # Provide a real watts + hr list, no power_curve → zones populated,
+        # peaks computed from stream, cardiac_drift computed
+        watts = [150] * 60 + [200] * 60  # 120 samples spanning Z2/Z3
+        hr = [140] * 120
+        warnings = []
+        m = _compute_stream_metrics(
+            a={}, watts=watts, hr=hr, power_curve={},
+            has_power_stream=True, has_hr_stream=True,
+            ftp=188, fetch_warnings=warnings,
+        )
+        self.assertIsNotNone(m["zone_seconds"])
+        self.assertIsNotNone(m["zone_percent"])
+        self.assertIsInstance(m["peak_powers"], dict)
+        self.assertGreater(len(m["peak_powers"]), 0)
+        self.assertIsNotNone(m["cardiac_drift"])
+        # A warning about curve fallback should be appended
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("peak powers computed from streams", warnings[0])
+
+    def test_compute_stream_metrics_uses_power_curve_when_present(self):
+        # When power_curve is non-empty, peak_powers == power_curve; no warning
+        power_curve = {"5s": 350, "1min": 270, "5min": 220, "20min": 195}
+        watts = [150] * 60
+        warnings = []
+        m = _compute_stream_metrics(
+            a={}, watts=watts, hr=[], power_curve=power_curve,
+            has_power_stream=True, has_hr_stream=False,
+            ftp=188, fetch_warnings=warnings,
+        )
+        self.assertEqual(m["peak_powers"], power_curve)
+        self.assertIsNone(m["cardiac_drift"])  # has_hr_stream=False
+        self.assertEqual(warnings, [])
 
 
 if __name__ == "__main__":
