@@ -748,6 +748,35 @@ class TestWorkoutFromXml(unittest.TestCase):
         with self.assertRaises(ValueError):
             workout_from_xml("<not_a_workout><workout/></not_a_workout>")
 
+    def test_textevent_round_trip(self):
+        # Covers textevent parsing: one default duration (10), one explicit (!=10).
+        original = ZwiftWorkout(
+            name="TE Test",
+            intervals=[
+                SteadyState(duration=600, power=0.85, text_events=[
+                    TextEvent(timeoffset=0, message="Start"),
+                    TextEvent(timeoffset=300, message="Halfway", duration=15),
+                ]),
+            ],
+        )
+        xml = create_zwo_xml(original)
+        parsed = workout_from_xml(xml)
+        evs = parsed.intervals[0].text_events
+        self.assertEqual(len(evs), 2)
+        self.assertEqual(evs[0].timeoffset, 0)
+        self.assertEqual(evs[0].message, "Start")
+        self.assertEqual(evs[0].duration, 10)
+        self.assertEqual(evs[1].timeoffset, 300)
+        self.assertEqual(evs[1].duration, 15)
+        self.assertEqual(create_zwo_xml(parsed), xml)  # byte-identical round trip
+
+    def test_missing_required_attribute_raises(self):
+        # _f / _i must raise ValueError for a missing required attribute.
+        bad = ('<workout_file><name>x</name><workout>'
+               '<SteadyState Duration="600"/></workout></workout_file>')
+        with self.assertRaises(ValueError):
+            workout_from_xml(bad)
+
 
 # ===================================================================
 # pmc_calculator.py
