@@ -88,7 +88,7 @@ class IntervalsIcuClient:
 
 
 def load_env(env_path=None):
-    """Load .env file from script dir or project root."""
+    """Load .env from the first of: this module's dir, scripts/, or the skill root."""
     if env_path is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         # script_dir is scripts/intervals_icu/; walk up to also check
