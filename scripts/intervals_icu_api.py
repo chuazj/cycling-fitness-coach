@@ -795,7 +795,7 @@ def weekly_summary(client, days=7, ftp=200, weight=70.0):
 
     # Training vs rest days
     training_days = len(training_dates)
-    rest_days = days - training_days
+    rest_days = max(0, days - training_days)
 
     result = {
         "period_days": days,

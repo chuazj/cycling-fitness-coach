@@ -584,6 +584,39 @@ class TestWeeklySummaryOptimization(unittest.TestCase):
             result = weekly_summary(self.client, days=7, ftp=ftp, weight=74)
         self.assertFalse(result["ftp_update_suggested"])
 
+    def test_rest_days_non_negative_when_training_every_day_in_window(self):
+        """rest_days must never go negative even when every date in the
+        look-back window has a cycling activity.
+
+        With days=7 the window spans 8 distinct calendar dates (now-7d through
+        now inclusive). 8 cycling activities on those 8 dates produce
+        training_days=8 > days=7, which caused rest_days=-1 before the fix.
+        Expected post-fix: rest_days == 0 (clamped to non-negative)."""
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        # 8 activities on 8 distinct dates spanning the full days=7 window
+        activities = [
+            {
+                "id": f"ride{i}",
+                "name": f"Ride day -{i}",
+                "type": "VirtualRide",
+                "moving_time": 3600,
+                "start_date_local": (now - timedelta(days=i)).strftime("%Y-%m-%dT08:00:00"),
+                "icu_training_load": 50,
+                "icu_intensity": 80,
+                "icu_joules": 500000,
+            }
+            for i in range(8)  # days 0 (today) through 7
+        ]
+        with patch.object(self.client, "list_activities", return_value=activities), \
+             patch.object(self.client, "get_power_curve",
+                          return_value={"secs": [1200], "watts": [200]}):
+            result = weekly_summary(self.client, days=7, ftp=192, weight=74)
+        self.assertGreaterEqual(result["rest_days"], 0,
+                                "rest_days must be non-negative")
+        self.assertEqual(result["rest_days"], 0,
+                         "rest_days should be 0 when every window date has an activity")
+
 
 class TestCompactMode(unittest.TestCase):
     """Test apply_compact filtering using the real module-level function."""
