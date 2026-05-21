@@ -71,7 +71,7 @@ class TestClientAuth(unittest.TestCase):
     def test_429_retries_then_raises(self):
         mock_resp = make_mock_response(status_code=429)
         with patch.object(self.client.session, "get", return_value=mock_resp):
-            with patch("intervals_icu_api.time.sleep") as mock_sleep:
+            with patch("intervals_icu.api_client.time.sleep") as mock_sleep:
                 with self.assertRaises(RuntimeError) as ctx:
                     self.client._get("/activity/i999")
                 self.assertIn("after 3 attempts", str(ctx.exception))
@@ -82,7 +82,7 @@ class TestClientAuth(unittest.TestCase):
         fail_resp = make_mock_response(status_code=429)
         ok_resp = make_mock_response(status_code=200, json_data={"id": "i999"})
         with patch.object(self.client.session, "get", side_effect=[fail_resp, ok_resp]):
-            with patch("intervals_icu_api.time.sleep"):
+            with patch("intervals_icu.api_client.time.sleep"):
                 result = self.client._get("/activity/i999")
                 self.assertEqual(result["id"], "i999")
 
@@ -90,7 +90,7 @@ class TestClientAuth(unittest.TestCase):
         fail_resp = make_mock_response(status_code=502)
         ok_resp = make_mock_response(status_code=200, json_data={"ok": True})
         with patch.object(self.client.session, "get", side_effect=[fail_resp, ok_resp]):
-            with patch("intervals_icu_api.time.sleep"):
+            with patch("intervals_icu.api_client.time.sleep"):
                 result = self.client._get("/test")
                 self.assertEqual(result["ok"], True)
 
@@ -105,7 +105,7 @@ class TestClientNetworkErrors(unittest.TestCase):
         import requests
         with patch.object(self.client.session, "get",
                           side_effect=requests.ConnectionError("connection refused")):
-            with patch("intervals_icu_api.time.sleep") as mock_sleep:
+            with patch("intervals_icu.api_client.time.sleep") as mock_sleep:
                 with self.assertRaises(RuntimeError) as ctx:
                     self.client._get("/test")
                 self.assertIn("ConnectionError", str(ctx.exception))
@@ -116,7 +116,7 @@ class TestClientNetworkErrors(unittest.TestCase):
         import requests
         with patch.object(self.client.session, "get",
                           side_effect=requests.Timeout("read timed out")):
-            with patch("intervals_icu_api.time.sleep") as mock_sleep:
+            with patch("intervals_icu.api_client.time.sleep") as mock_sleep:
                 with self.assertRaises(RuntimeError) as ctx:
                     self.client._get("/test")
                 self.assertIn("Timeout", str(ctx.exception))
@@ -127,7 +127,7 @@ class TestClientNetworkErrors(unittest.TestCase):
         ok_resp = make_mock_response(status_code=200, json_data={"ok": True})
         with patch.object(self.client.session, "get",
                           side_effect=[requests.ConnectionError("fail"), ok_resp]):
-            with patch("intervals_icu_api.time.sleep"):
+            with patch("intervals_icu.api_client.time.sleep"):
                 result = self.client._get("/test")
                 self.assertEqual(result["ok"], True)
 
