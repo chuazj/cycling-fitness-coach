@@ -525,11 +525,11 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
     trainer = a.get("trainer", False)
     sport_type = a.get("type", "")
     is_indoor = detect_indoor(trainer, sport_type)
-    warnings = list(fetch_warnings)
+    data_warnings = list(fetch_warnings)
     if not has_power:
-        warnings.append("estimated_power: No power meter detected — power metrics may be inaccurate")
+        data_warnings.append("estimated_power: No power meter detected — power metrics may be inaccurate")
     if not has_power and not is_indoor:
-        warnings.append("outdoor_no_power: Outdoor ride without power meter — power data is estimated")
+        data_warnings.append("outdoor_no_power: Outdoor ride without power meter — power data is estimated")
 
     # Max watts: from power curve if available, else from intervals
     max_watts = None
@@ -565,7 +565,7 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
             "context": "indoor" if is_indoor else "outdoor",
         },
         "data_completeness": data_completeness,
-        "data_warnings": warnings,
+        "data_warnings": data_warnings,
         "fetch_errors": fetch_errors,  # {} when all 3 concurrent fetches succeeded
         "laps": lap_list,
         "metrics": m,
