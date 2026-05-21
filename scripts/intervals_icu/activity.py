@@ -121,8 +121,8 @@ def _compute_power_metrics(a, watts, ftp, weight, moving_time, fetch_warnings):
     return m
 
 
-def _compute_stream_metrics(a, watts, hr, power_curve, has_power_stream, has_hr_stream, ftp,
-                             fetch_warnings):
+def _compute_stream_metrics(watts, hr, power_curve, has_power_stream, has_hr_stream, ftp,
+                            fetch_warnings):
     """Compute peak_powers / zone_seconds / zone_percent / cardiac_drift from streams.
 
     Mutates fetch_warnings in place for power-curve fallback cases.
@@ -251,7 +251,7 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
     # --- Metrics ---
     m = {}
     m.update(_compute_power_metrics(a, watts, ftp, weight, moving_time, fetch_warnings))
-    m.update(_compute_stream_metrics(a, watts, hr, power_curve, has_power_stream, has_hr_stream,
+    m.update(_compute_stream_metrics(watts, hr, power_curve, has_power_stream, has_hr_stream,
                                      ftp, fetch_warnings))
 
     # --- Intervals/laps ---

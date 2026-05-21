@@ -420,7 +420,7 @@ class TestActivityHelpers(unittest.TestCase):
         # Both has_power_stream and has_hr_stream False
         warnings = []
         m = _compute_stream_metrics(
-            a={}, watts=[], hr=[], power_curve={},
+            watts=[], hr=[], power_curve={},
             has_power_stream=False, has_hr_stream=False,
             ftp=188, fetch_warnings=warnings,
         )
@@ -439,7 +439,7 @@ class TestActivityHelpers(unittest.TestCase):
         hr = [140] * 120
         warnings = []
         m = _compute_stream_metrics(
-            a={}, watts=watts, hr=hr, power_curve={},
+            watts=watts, hr=hr, power_curve={},
             has_power_stream=True, has_hr_stream=True,
             ftp=188, fetch_warnings=warnings,
         )
@@ -458,7 +458,7 @@ class TestActivityHelpers(unittest.TestCase):
         watts = [150] * 60
         warnings = []
         m = _compute_stream_metrics(
-            a={}, watts=watts, hr=[], power_curve=power_curve,
+            watts=watts, hr=[], power_curve=power_curve,
             has_power_stream=True, has_hr_stream=False,
             ftp=188, fetch_warnings=warnings,
         )
