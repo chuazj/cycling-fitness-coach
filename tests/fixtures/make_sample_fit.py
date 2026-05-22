@@ -28,13 +28,16 @@ def _crc16(data):
 def build_fit():
     body = bytearray()
     # file_id definition (local type 0, global msg 0), 1 field: type (enum).
+    # Record header 0x40: bit 6 is the definition-message flag (def, not data).
     body += bytes([0x40, 0x00, 0x00])
     body += struct.pack("<H", 0)
     body += bytes([1])
-    body += bytes([0, 1, 0x00])
+    body += bytes([0, 1, 0x00])  # field: type (0) size 1, enum
     # file_id data: type = 4 (activity).
     body += bytes([0x00, 4])
     # record definition (local type 1, global msg 20), 4 fields.
+    # Record header 0x41: bit 6 def-message flag set, local type 1 (vs the
+    # 0x00 / 0x01 data-message headers emitted further down).
     body += bytes([0x41, 0x00, 0x00])
     body += struct.pack("<H", 20)
     body += bytes([4])

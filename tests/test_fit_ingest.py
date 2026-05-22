@@ -178,7 +178,12 @@ class TestParseFitSmoke(unittest.TestCase):
         records, metadata = parse_fit(_FIXTURE)
         result = analyze_local(records, metadata, ftp=200, weight=70)
         self.assertEqual(result["source"], "fit_file")
-        self.assertIsNotNone(result["metrics"]["normalized_power"])
+        # The fixture is a fixed 180-239W ramp; NP/IF are deterministic, so
+        # assert concrete values to catch silent metric regressions.
+        self.assertAlmostEqual(result["metrics"]["normalized_power"], 210.1,
+                               delta=1)
+        self.assertAlmostEqual(result["metrics"]["intensity_factor"], 1.05,
+                               delta=0.01)
 
 
 if __name__ == "__main__":
