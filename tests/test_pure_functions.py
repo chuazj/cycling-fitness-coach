@@ -20,6 +20,7 @@ from intervals_icu_api import (
     compute_peaks,
     compute_zones,
     compute_drift,
+    compute_tss,
     detect_indoor,
     interval_stats,
     detect_ftp_test,
@@ -91,6 +92,27 @@ class TestComputeNP(unittest.TestCase):
     def test_empty_returns_none(self):
         self.assertIsNone(compute_np([]))
         self.assertIsNone(compute_np(None))
+
+
+class TestComputeTss(unittest.TestCase):
+    """compute_tss — TSS from Normalized Power."""
+
+    def test_if_one_full_hour_is_100(self):
+        # NP == FTP → IF 1.0 → 3600s → TSS 100
+        self.assertEqual(compute_tss(200, 200, 3600), 100.0)
+
+    def test_half_intensity(self):
+        # NP 100, FTP 200 → IF 0.5 → IF² 0.25 → 3600s → TSS 25
+        self.assertEqual(compute_tss(100, 200, 3600), 25.0)
+
+    def test_none_np_returns_none(self):
+        self.assertIsNone(compute_tss(None, 200, 3600))
+
+    def test_zero_ftp_returns_none(self):
+        self.assertIsNone(compute_tss(200, 0, 3600))
+
+    def test_zero_duration_returns_none(self):
+        self.assertIsNone(compute_tss(200, 200, 0))
 
 
 class TestComputePeaks(unittest.TestCase):

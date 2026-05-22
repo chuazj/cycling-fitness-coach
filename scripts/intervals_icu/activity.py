@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 from .metrics import (
-    _is_cycling, analyze_power_profile, compute_drift, compute_np,
+    _is_cycling, analyze_power_profile, compute_drift, compute_np, compute_tss,
     compute_peaks, compute_zones, detect_ftp_test, detect_indoor, fmt_time,
     interval_stats, parse_power_curve, parse_streams,
 )
@@ -96,14 +96,14 @@ def _compute_power_metrics(a, watts, ftp, weight, moving_time, fetch_warnings):
     elif np_val and ftp:
         m["intensity_factor"] = round(np_val / ftp, 3)
 
-    # TSS: prefer pre-computed
+    # TSS: prefer pre-computed, else model from NP/FTP/duration
     tss_val = a.get("icu_training_load")
     if tss_val is not None:
         m["tss"] = round(tss_val, 1)
-    elif np_val and ftp and moving_time:
-        # TSS = (duration_s × IF² / 3600) × 100, where IF = NP / FTP
-        intensity_factor = np_val / ftp
-        m["tss"] = round((moving_time * intensity_factor ** 2) / 3600 * 100, 1)
+    else:
+        modeled_tss = compute_tss(np_val, ftp, moving_time)
+        if modeled_tss is not None:
+            m["tss"] = modeled_tss
 
     # Variability Index
     if np_val and avg_w and avg_w > 0:

@@ -15,7 +15,7 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
 
 from intervals_icu.api_client import BASE_URL, IntervalsIcuClient, load_env
 from intervals_icu.metrics import (
-    _clean_watts, compute_np, compute_peaks, compute_zones, compute_drift,
+    _clean_watts, compute_np, compute_tss, compute_peaks, compute_zones, compute_drift,
     interval_stats, detect_ftp_test, detect_indoor, fmt_time, extract_id,
     parse_power_curve, parse_streams, analyze_power_profile,
     POWER_ZONES, POWER_PROFILE, CYCLING_TYPES, FTP_TEST_KEYWORDS,

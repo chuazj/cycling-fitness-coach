@@ -66,6 +66,19 @@ def compute_np(watts):
     return round((rolling_fourth / n_windows) ** 0.25, 1)
 
 
+def compute_tss(np_watts, ftp, duration_s):
+    """Training Stress Score from Normalized Power.
+
+    TSS = duration_s × IF² / 3600 × 100, where IF = NP / FTP.
+    Returns None when any input is missing or non-positive (no TSS is
+    better than a misleading zero).
+    """
+    if not np_watts or not ftp or not duration_s:
+        return None
+    intensity_factor = np_watts / ftp
+    return round((duration_s * intensity_factor ** 2) / 3600 * 100, 1)
+
+
 def compute_peaks(watts):
     """Fallback peak power computation from stream data."""
     if not watts: return {}
