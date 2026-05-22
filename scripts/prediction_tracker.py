@@ -77,15 +77,29 @@ def predict_ftp_gain(model, start_ftp):
 
 
 def load_ledger(path):
-    """Read the JSONL ledger -> list of record dicts. Missing file -> []."""
+    """Read the JSONL ledger -> list of record dicts. Missing file -> [].
+
+    Malformed lines are skipped with a WARNING to stderr (includes 1-based line
+    number and a short snippet) so a single corrupt line never aborts the read.
+    Empty/whitespace-only lines are silently skipped.
+    """
     if not os.path.isfile(path):
         return []
     records = []
     with open(path, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
+        for lineno, raw in enumerate(f, start=1):
+            line = raw.strip()
+            if not line:
+                continue
+            try:
                 records.append(json.loads(line))
+            except json.JSONDecodeError:
+                snippet = line[:72] + ("..." if len(line) > 72 else "")
+                print(
+                    f"WARNING: ledger line {lineno} is not valid JSON — skipping."
+                    f" Snippet: {snippet!r}",
+                    file=sys.stderr,
+                )
     return records
 
 
@@ -381,7 +395,23 @@ def run_reconcile(args):
 
 
 def main():
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
+
+    # Range validation — only fires when the arg was actually supplied.
+    if args.if_value is not None and not (0.3 <= args.if_value <= 1.5):
+        parser.error(
+            f"--if must be between 0.3 and 1.5 (got {args.if_value})"
+        )
+    if args.start_ftp is not None and not (50 <= args.start_ftp <= 500):
+        parser.error(
+            f"--start-ftp must be between 50 and 500 watts (got {args.start_ftp})"
+        )
+    if args.new_ftp is not None and not (50 <= args.new_ftp <= 500):
+        parser.error(
+            f"--new-ftp must be between 50 and 500 watts (got {args.new_ftp})"
+        )
+
     if args.mode == "predict":
         if not args.type:
             print("ERROR: --type is required for --mode predict", file=sys.stderr)

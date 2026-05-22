@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Unit tests for scripts/prediction_tracker.py (W5 validation loop)."""
 
+import contextlib
+import io
 import json
 import os
 import sys
@@ -285,6 +287,265 @@ class TestCLI(unittest.TestCase):
         with patch.object(sys, "argv", argv):
             with self.assertRaises(SystemExit):
                 main()
+
+
+class TestLoadLedgerMalformed(unittest.TestCase):
+    """I-4: load_ledger must skip malformed lines with a WARNING, not crash."""
+
+    def _write_ledger(self, path, lines):
+        with open(path, "w", encoding="utf-8") as f:
+            for line in lines:
+                f.write(line + "\n")
+
+    def test_malformed_line_skipped_returns_valid_records(self):
+        """One valid, one corrupt, one valid -> 2 valid records returned, no exception."""
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "ledger.jsonl")
+            self._write_ledger(path, [
+                '{"id": "P001", "type": "rpe_at_if"}',
+                'NOT_VALID_JSON{{{',
+                '{"id": "P002", "type": "ftp_gain"}',
+            ])
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                records = load_ledger(path)
+            self.assertEqual(len(records), 2)
+            self.assertEqual(records[0]["id"], "P001")
+            self.assertEqual(records[1]["id"], "P002")
+
+    def test_malformed_line_emits_warning_with_line_number(self):
+        """The WARNING must mention the 1-based line number of the bad line."""
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "ledger.jsonl")
+            self._write_ledger(path, [
+                '{"id": "P001", "type": "rpe_at_if"}',
+                'CORRUPTED_LINE',
+                '{"id": "P002", "type": "ftp_gain"}',
+            ])
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                load_ledger(path)
+            warning = buf.getvalue()
+            self.assertIn("WARNING", warning)
+            self.assertIn("2", warning)  # 1-based line number of bad line
+
+    def test_empty_and_whitespace_lines_silently_skipped(self):
+        """Blank/whitespace-only lines produce no WARNING and no crash."""
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "ledger.jsonl")
+            self._write_ledger(path, [
+                '{"id": "P001", "type": "rpe_at_if"}',
+                '',
+                '   ',
+                '{"id": "P002", "type": "ftp_gain"}',
+            ])
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                records = load_ledger(path)
+            self.assertEqual(len(records), 2)
+            self.assertEqual(buf.getvalue(), "")  # no warnings
+
+    def test_multiple_malformed_lines_all_warned(self):
+        """Two bad lines -> two warnings emitted, one good record returned."""
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "ledger.jsonl")
+            self._write_ledger(path, [
+                'BAD_LINE_1',
+                '{"id": "P001", "type": "rpe_at_if"}',
+                'BAD_LINE_2',
+            ])
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                records = load_ledger(path)
+            self.assertEqual(len(records), 1)
+            warning_count = buf.getvalue().count("WARNING")
+            self.assertEqual(warning_count, 2)
+
+
+class TestCLIRangeValidation(unittest.TestCase):
+    """M-5: --if, --start-ftp, --new-ftp must be validated in main()."""
+
+    def _run_main(self, argv):
+        """Run main() with given argv, return (exit_code_or_None, stderr_text).
+
+        Returns (None, '') if no SystemExit raised (i.e. command completed).
+        Returns (exit_code, stderr_text) on SystemExit.
+        """
+        buf = io.StringIO()
+        with contextlib.redirect_stderr(buf):
+            with patch.object(sys, "argv", argv):
+                try:
+                    main()
+                    return (None, buf.getvalue())
+                except SystemExit as e:
+                    return (e.code, buf.getvalue())
+
+    # --- --if validation ---
+
+    def test_if_out_of_range_high_exits(self):
+        code, _ = self._run_main(
+            ["prog", "--mode", "predict", "--type", "rpe_at_if",
+             "--if", "5.0", "--session-date", "2026-06-02", "--session-type", "Threshold"])
+        self.assertIsNotNone(code)
+        self.assertNotEqual(code, 0)
+
+    def test_if_out_of_range_low_exits(self):
+        code, _ = self._run_main(
+            ["prog", "--mode", "predict", "--type", "rpe_at_if",
+             "--if", "0.1", "--session-date", "2026-06-02", "--session-type", "Threshold"])
+        self.assertIsNotNone(code)
+        self.assertNotEqual(code, 0)
+
+    def test_if_in_range_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            cal = os.path.join(d, "cal.md")
+            code, _ = self._run_main(
+                ["prog", "--mode", "predict", "--type", "rpe_at_if",
+                 "--if", "0.84", "--session-date", "2026-06-02", "--session-type", "Threshold",
+                 "--ledger-path", ledger, "--calibration-path", cal])
+            self.assertEqual(code, None)  # no exit -> success
+
+    def test_if_boundary_low_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            cal = os.path.join(d, "cal.md")
+            code, _ = self._run_main(
+                ["prog", "--mode", "predict", "--type", "rpe_at_if",
+                 "--if", "0.3", "--session-date", "2026-06-02", "--session-type", "Threshold",
+                 "--ledger-path", ledger, "--calibration-path", cal])
+            self.assertEqual(code, None)
+
+    def test_if_boundary_high_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            cal = os.path.join(d, "cal.md")
+            code, _ = self._run_main(
+                ["prog", "--mode", "predict", "--type", "rpe_at_if",
+                 "--if", "1.5", "--session-date", "2026-06-02", "--session-type", "Threshold",
+                 "--ledger-path", ledger, "--calibration-path", cal])
+            self.assertEqual(code, None)
+
+    def test_if_not_supplied_does_not_trip_validation(self):
+        """seed-baseline mode with no --if must not trigger IF range check."""
+        with tempfile.TemporaryDirectory() as d:
+            # vault_path must exist for collect_reviews to not error
+            vault = os.path.join(d, "reviews")
+            os.makedirs(vault)
+            cal = os.path.join(d, "cal.md")
+            code, _ = self._run_main(
+                ["prog", "--mode", "seed-baseline",
+                 "--vault-path", vault,
+                 "--calibration-path", cal,
+                 "--ledger-path", os.path.join(d, "ledger.jsonl")])
+            # May exit 0 or None (success) — just must NOT exit with argparse error (code 2)
+            self.assertNotEqual(code, 2)
+
+    # --- --start-ftp validation ---
+
+    def test_start_ftp_out_of_range_high_exits(self):
+        code, _ = self._run_main(
+            ["prog", "--mode", "predict", "--type", "ftp_gain",
+             "--start-ftp", "50000",
+             "--block-label", "FTP Builder", "--block-end", "2026-06-28"])
+        self.assertIsNotNone(code)
+        self.assertNotEqual(code, 0)
+
+    def test_start_ftp_out_of_range_low_exits(self):
+        code, _ = self._run_main(
+            ["prog", "--mode", "predict", "--type", "ftp_gain",
+             "--start-ftp", "10",
+             "--block-label", "FTP Builder", "--block-end", "2026-06-28"])
+        self.assertIsNotNone(code)
+        self.assertNotEqual(code, 0)
+
+    def test_start_ftp_in_range_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            cal = os.path.join(d, "cal.md")
+            code, _ = self._run_main(
+                ["prog", "--mode", "predict", "--type", "ftp_gain",
+                 "--start-ftp", "188",
+                 "--block-label", "FTP Builder", "--block-end", "2026-06-28",
+                 "--ledger-path", ledger, "--calibration-path", cal])
+            self.assertEqual(code, None)
+
+    def test_start_ftp_boundary_50_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            cal = os.path.join(d, "cal.md")
+            code, _ = self._run_main(
+                ["prog", "--mode", "predict", "--type", "ftp_gain",
+                 "--start-ftp", "50",
+                 "--block-label", "FTP Builder", "--block-end", "2026-06-28",
+                 "--ledger-path", ledger, "--calibration-path", cal])
+            self.assertEqual(code, None)
+
+    def test_start_ftp_boundary_500_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            cal = os.path.join(d, "cal.md")
+            code, _ = self._run_main(
+                ["prog", "--mode", "predict", "--type", "ftp_gain",
+                 "--start-ftp", "500",
+                 "--block-label", "FTP Builder", "--block-end", "2026-06-28",
+                 "--ledger-path", ledger, "--calibration-path", cal])
+            self.assertEqual(code, None)
+
+    # --- --new-ftp validation ---
+
+    def test_new_ftp_out_of_range_exits(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            code, _ = self._run_main(
+                ["prog", "--mode", "reconcile",
+                 "--new-ftp", "9999",
+                 "--ftp-test-date", "2026-06-28",
+                 "--ledger-path", ledger])
+            self.assertIsNotNone(code)
+            self.assertNotEqual(code, 0)
+
+    def test_new_ftp_in_range_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            code, _ = self._run_main(
+                ["prog", "--mode", "reconcile",
+                 "--new-ftp", "196",
+                 "--ftp-test-date", "2026-06-28",
+                 "--ledger-path", ledger])
+            self.assertEqual(code, None)
+
+    def test_new_ftp_not_supplied_does_not_trip_validation(self):
+        """reconcile mode without --new-ftp must not trigger FTP range check."""
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            code, _ = self._run_main(
+                ["prog", "--mode", "reconcile",
+                 "--ledger-path", ledger])
+            self.assertEqual(code, None)
+
+    # --- error message format ---
+
+    def test_if_error_message_format(self):
+        """Error message must follow sibling script style."""
+        code, stderr = self._run_main(
+            ["prog", "--mode", "predict", "--type", "rpe_at_if",
+             "--if", "5.0", "--session-date", "2026-06-02", "--session-type", "Threshold"])
+        self.assertNotEqual(code, 0)
+        self.assertIn("0.3", stderr)
+        self.assertIn("1.5", stderr)
+        self.assertIn("5.0", stderr)
+
+    def test_start_ftp_error_message_format(self):
+        """FTP error message must include the 50-500 range and the bad value."""
+        code, stderr = self._run_main(
+            ["prog", "--mode", "predict", "--type", "ftp_gain",
+             "--start-ftp", "50000",
+             "--block-label", "FTP Builder", "--block-end", "2026-06-28"])
+        self.assertNotEqual(code, 0)
+        self.assertIn("50", stderr)
+        self.assertIn("500", stderr)
+        self.assertIn("50000", stderr)
 
 
 if __name__ == "__main__":
