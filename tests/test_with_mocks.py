@@ -1702,6 +1702,11 @@ class TestDetectSignalMode(unittest.TestCase):
             "full",
         )
 
+    def test_full_when_recovery_is_zero(self):
+        # Recovery=0 is a valid WHOOP "total wreck" score — must classify full,
+        # not fall through to reduced/minimal. Locks the `is not None` semantics.
+        self.assertEqual(detect_signal_mode({"readiness": 0}), "full")
+
     def test_reduced_when_hrv_present(self):
         self.assertEqual(detect_signal_mode({"hrv": 60}), "reduced")
 
