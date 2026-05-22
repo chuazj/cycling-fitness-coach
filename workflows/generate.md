@@ -56,6 +56,9 @@ Write XML directly using the templates and tag spec in `references/zwo_format.md
 | FTP test | Test effort is a `<FreeRide>` (never `<SteadyState>` — ERG holds current FTP); `ftptest="1"` on `<workout>` + `show_avg="1"` on the FreeRide | `references/zwo_format.md` |
 | Tag reference | Consult h4l/zwift-workout-file-reference for attribute validation | CLAUDE.md conventions |
 | Recovery intervals | Between VO2max reps ≈ work duration @ 40-50% FTP; between SS/Threshold reps ~5min @ 50-55% FTP | `references/periodization.md` → Warmup/Cooldown Standards |
+| Lint pass | Run `zwo_lint.py` on the finished file — 0 errors required; review warnings | `scripts/zwo_lint.py` |
+
+**Lint an existing or hand-edited `.zwo`:** `py -3 scripts/zwo_lint.py <file.zwo> --ftp <athlete FTP>`. The linter catches the known anti-patterns (textevent-in-IntervalsT, offset past duration, ERG-inert power cues, FTP-test-as-SteadyState, ERG short reps) and reports the workout's NP-based modeled stats. A clean generated file should lint with 0 errors.
 
 **Step 5:** Save and report:
 - Save to the user's Zwift custom workouts folder — see `references/setup.md` → Zwift Workout Directory for the platform-specific path (`%LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\` on Windows, `~/Documents/Zwift/Workouts/<athlete_id>/` on macOS/Linux). Confirm the path with the user before writing.

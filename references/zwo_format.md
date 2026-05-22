@@ -196,6 +196,50 @@ Useful for filtering workouts in Zwift:
 
 For a complete example .zwo file, see `assets/template_sweetspot.zwo`.
 
+## Workout Statistics & NP-based TSS
+
+`generate_zwo.py` estimates TSS from **Normalised Power** computed over a
+synthesized per-second power timeline — interval variability is captured
+directly, so there is no avg-power under-report. `tss_method` reports
+`np_modeled`. For `ftptest` workouts the main effort is a rider-controlled
+`<FreeRide>`, so TSS is reported as **unmodeled** rather than as a misleading
+placeholder number. Modeled TSS assumes the rider executes the prescribed
+power; for ERG-mode structured workouts it tracks intervals.icu's post-ride
+TSS within **±8% (target — refined empirically by W6's spot-check)**.
+
+## Linting `.zwo` files
+
+`scripts/zwo_lint.py` validates an existing `.zwo` file against the canonical
+element reference below and the project's hygiene rules:
+
+```bash
+python zwo_lint.py path/to/workout.zwo --ftp 188
+```
+
+It collects every finding in one pass (errors and warnings), prints a
+human-readable report, optionally writes JSON (`-o report.json`), and reports
+the workout's modeled stats. Exit code: 0 = clean, 1 = errors, 2 = unreadable.
+
+**Errors** (exit 1): malformed XML · wrong root element · no `<workout>` ·
+unknown interval type · power outside 0.0–2.0 · ramp direction wrong ·
+duration ≤ 0 · `<textevent>` inside `<IntervalsT>`.
+
+**Warnings** (exit 0): unknown attribute · textevent offset ≥ interval
+duration · both fixed and range cadence · `ftptest="1"` with no `<FreeRide>` ·
+ERG-inert power-command cue · ERG short/micro work rep · non-UTF-8 encoding.
+
+### Canonical element/attribute reference
+
+The linter validates attributes against this set (from h4l/zwift-workout-file-reference):
+
+| Element | Valid attributes |
+|---------|------------------|
+| `Warmup` / `Cooldown` / `Ramp` | `Duration`, `PowerLow`, `PowerHigh`, `Cadence`, `CadenceLow`, `CadenceHigh`, `show_avg` |
+| `SteadyState` | `Duration`, `Power`, `Cadence`, `CadenceLow`, `CadenceHigh`, `show_avg` |
+| `IntervalsT` | `Repeat`, `OnDuration`, `OffDuration`, `OnPower`, `OffPower`, `Cadence`, `CadenceResting`, `CadenceLow`, `CadenceHigh` |
+| `FreeRide` | `Duration`, `FlatRoad`, `ftptest`, `show_avg`, `Cadence`, `CadenceLow`, `CadenceHigh` |
+| `MaxEffort` | `Duration`, `Cadence`, `CadenceLow`, `CadenceHigh` |
+
 ## File Installation
 
 Save `.zwo` files to:
