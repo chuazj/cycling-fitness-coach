@@ -200,7 +200,7 @@ For a complete example .zwo file, see `assets/template_sweetspot.zwo`.
 
 `generate_zwo.py` estimates TSS from **Normalised Power** computed over a
 synthesized per-second power timeline — interval variability is captured
-directly, so there is no avg-power under-report. `tss_method` reports
+directly, so there is no avg-power under-report. `tss_method` begins with
 `np_modeled`. For `ftptest` workouts the main effort is a rider-controlled
 `<FreeRide>`, so TSS is reported as **unmodeled** rather than as a misleading
 placeholder number. Modeled TSS assumes the rider executes the prescribed
