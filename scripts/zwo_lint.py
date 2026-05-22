@@ -280,6 +280,8 @@ def format_report(file_path: str, findings: list, stats) -> str:
         lines.append(f"  Modeled: {stats['total_duration_min']}min  "
                      f"IF {stats['estimated_if']}  TSS {tss_s}  "
                      f"({stats['tss_method']})")
+        if stats.get("tss_warning"):
+            lines.append(f"  Note: {stats['tss_warning']}")
     else:
         lines.append("  Modeled stats unavailable.")
     lines.append(f"  {len(errors)} error(s), {len(warns)} warning(s)")

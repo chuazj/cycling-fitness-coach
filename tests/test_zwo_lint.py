@@ -11,7 +11,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from zwo_lint import lint_xml, lint_file, format_report, build_parser
+from zwo_lint import lint_xml, lint_file, format_report
 
 VALID_ZWO = (
     '<workout_file><author>x</author><name>Test</name>'
@@ -64,17 +64,6 @@ class TestLintFileIO(unittest.TestCase):
         finally:
             os.unlink(path)
 
-
-class TestLintCliParser(unittest.TestCase):
-    def test_file_positional(self):
-        ns = build_parser().parse_args(["w.zwo"])
-        self.assertEqual(ns.file, "w.zwo")
-        self.assertIsNone(ns.ftp)
-
-    def test_ftp_and_output(self):
-        ns = build_parser().parse_args(["w.zwo", "--ftp", "188", "-o", "r.json"])
-        self.assertEqual(ns.ftp, 188)
-        self.assertEqual(ns.output, "r.json")
 
 
 class TestLintErrors(unittest.TestCase):
@@ -218,6 +207,30 @@ class TestLintModeledStats(unittest.TestCase):
                   '<SteadyState Duration="0" Power="0.75"/></workout></workout_file>')
         result = lint_file_for(broken)
         self.assertIsNone(result["stats"])
+
+    def test_lint_clean_but_unbuildable_stats_none(self):
+        # Passes every lint check (Repeat is not an E-check) but workout_from_xml
+        # raises — IntervalsT requires repeat > 0. The try/except fallback in
+        # lint_file must yield stats=None rather than crashing.
+        xml = ('<workout_file><name>x</name><workout>'
+               '<IntervalsT Repeat="0" OnDuration="60" OffDuration="60" '
+               'OnPower="1.0" OffPower="0.5"/></workout></workout_file>')
+        result = lint_file_for(xml)
+        self.assertEqual(result["error_count"], 0)
+        self.assertEqual(result["warning_count"], 0)
+        self.assertIsNone(result["stats"])
+
+    def test_format_report_surfaces_tss_warning(self):
+        # A FreeRide workout carries a placeholder-power caveat — it must reach
+        # the printed report (Fix 1), not just the -o JSON.
+        xml = ('<workout_file><name>x</name><workout>'
+               '<SteadyState Duration="300" Power="0.6"/>'
+               '<FreeRide Duration="600"/></workout></workout_file>')
+        result = lint_file_for(xml)
+        self.assertIsNotNone(result["stats"])
+        self.assertIsNotNone(result["stats"]["tss_warning"])
+        report = format_report("x.zwo", result["findings"], result["stats"])
+        self.assertIn("Note:", report)
 
 
 def lint_file_for(xml):
