@@ -134,7 +134,10 @@ def interval_stats(laps):
     # over-under sessions correctly where power-based heuristic misclassifies both as "hard"
     typed = all(l.get("type") for l in work_laps)
     if typed:
-        hard = [l["average_watts"] for l in work_laps if l.get("type") == "WORK"]
+        # W7/B-3: any non-RECOVERY typed lap counts as work. intervals.icu may
+        # emit types beyond WORK/RECOVERY (e.g. ACTIVE); the old WORK-only
+        # filter dropped them from both buckets. RECOVERY is the sole easy tag.
+        hard = [l["average_watts"] for l in work_laps if l.get("type") != "RECOVERY"]
         easy = [l["average_watts"] for l in work_laps if l.get("type") == "RECOVERY"]
     else:
         # Fall back to 75%-of-max power heuristic

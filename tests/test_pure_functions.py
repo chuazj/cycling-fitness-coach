@@ -1065,6 +1065,32 @@ class TestIntervalStatsValidation(unittest.TestCase):
         self.assertIsNone(interval_stats(laps))
 
 
+class TestIntervalStatsLapTypes(unittest.TestCase):
+    """B-3 — a typed lap that is neither WORK nor RECOVERY must not be dropped."""
+
+    def test_non_recovery_type_counts_as_hard(self):
+        laps = [
+            {"average_watts": 250, "type": "WORK"},
+            {"average_watts": 120, "type": "RECOVERY"},
+            {"average_watts": 200, "type": "ACTIVE"},
+        ]
+        result = interval_stats(laps)
+        # ACTIVE is non-RECOVERY → hard bucket; not silently dropped.
+        self.assertEqual(result["hard_intervals"]["n"], 2)
+        self.assertEqual(result["easy_intervals"]["n"], 1)
+
+    def test_work_recovery_unchanged(self):
+        # Regression guard: pure WORK/RECOVERY behaves exactly as before.
+        laps = [
+            {"average_watts": 250, "type": "WORK"},
+            {"average_watts": 120, "type": "RECOVERY"},
+            {"average_watts": 248, "type": "WORK"},
+        ]
+        result = interval_stats(laps)
+        self.assertEqual(result["hard_intervals"]["n"], 2)
+        self.assertEqual(result["easy_intervals"]["n"], 1)
+
+
 # ===================================================================
 # New feature tests (Phase 2)
 # ===================================================================
