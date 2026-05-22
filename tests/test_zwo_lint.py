@@ -117,6 +117,22 @@ class TestLintErrors(unittest.TestCase):
             '<textevent timeoffset="10" message="go"/></IntervalsT>'
             '</workout></workout_file>'))
 
+    def test_e5_non_numeric_power(self):
+        self.assertIn("E5", self._codes(
+            '<workout_file><workout>'
+            '<SteadyState Duration="60" Power="abc"/></workout></workout_file>'))
+
+    def test_e7_missing_duration(self):
+        self.assertIn("E7", self._codes(
+            '<workout_file><workout>'
+            '<SteadyState Power="0.75"/></workout></workout_file>'))
+
+    def test_e7_intervalst_missing_onduration(self):
+        self.assertIn("E7", self._codes(
+            '<workout_file><workout>'
+            '<IntervalsT Repeat="3" OffDuration="60" OnPower="1.1" OffPower="0.5"/>'
+            '</workout></workout_file>'))
+
     def test_clean_file_no_errors(self):
         self.assertEqual(self._codes(VALID_ZWO), set())
 

@@ -90,24 +90,21 @@ def _check_interval(elem, loc: str, findings: list) -> None:
             findings.append(_finding("error", "E6",
                 f"Cooldown PowerLow ({lo}) < PowerHigh ({hi}) — must ramp down", loc))
 
-    # E7 — durations present and > 0
-    if tag == "IntervalsT":
-        for da in ("OnDuration", "OffDuration"):
-            dv = _iattr(elem, da)
-            if dv is None:
-                findings.append(_finding("error", "E7",
-                    f"<IntervalsT> missing {da}", loc))
-            elif dv <= 0:
-                findings.append(_finding("error", "E7",
-                    f"{da}={dv} must be > 0", loc))
-    else:
-        dv = _iattr(elem, "Duration")
+    # E7 — durations present, numeric, and > 0
+    duration_attrs = ("OnDuration", "OffDuration") if tag == "IntervalsT" else ("Duration",)
+    for da in duration_attrs:
+        v = elem.get(da)
+        if v is None:
+            findings.append(_finding("error", "E7",
+                f"<{tag}> missing {da}", loc))
+            continue
+        dv = _iattr(elem, da)
         if dv is None:
             findings.append(_finding("error", "E7",
-                f"<{tag}> missing Duration", loc))
+                f"{da}='{v}' is not an integer", loc))
         elif dv <= 0:
             findings.append(_finding("error", "E7",
-                f"Duration={dv} must be > 0", loc))
+                f"{da}={dv} must be > 0", loc))
 
     # E8 — textevent inside IntervalsT
     if tag == "IntervalsT" and elem.findall("textevent"):
