@@ -19,6 +19,7 @@ from generate_zwo import build_parser as build_generate_parser
 from batch_generate_zwo import build_parser as build_batch_parser
 from pmc_calculator import build_parser as build_pmc_parser
 from zwo_lint import build_parser as build_zwo_lint_parser
+from fit_ingest import build_parser as build_fit_ingest_parser
 
 
 class TestIntervalsIcuApiCli(unittest.TestCase):
@@ -166,6 +167,30 @@ class TestZwoLintCli(unittest.TestCase):
     def test_missing_file_fails(self):
         with self.assertRaises(SystemExit):
             self._parse([])  # file is required
+
+
+class TestFitIngestCli(unittest.TestCase):
+    """fit_ingest.py argument parsing."""
+
+    def _parse(self, args):
+        return build_fit_ingest_parser().parse_args(args)
+
+    def test_file_required(self):
+        with self.assertRaises(SystemExit):
+            self._parse([])
+
+    def test_file_and_options(self):
+        ns = self._parse(["--file", "ride.fit", "--ftp", "188",
+                          "--weight", "74", "-o", "out.json"])
+        self.assertEqual(ns.file, "ride.fit")
+        self.assertEqual(ns.ftp, 188)
+        self.assertEqual(ns.weight, 74.0)
+        self.assertEqual(ns.output, "out.json")
+
+    def test_ftp_weight_default_none(self):
+        ns = self._parse(["--file", "ride.fit"])
+        self.assertIsNone(ns.ftp)
+        self.assertIsNone(ns.weight)
 
 
 class TestFtpBoundsValidation(unittest.TestCase):

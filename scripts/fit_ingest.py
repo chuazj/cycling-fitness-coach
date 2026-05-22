@@ -231,3 +231,52 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
         "ftp_reference": ftp,
         "source": "fit_file",
     }
+
+
+def build_parser():
+    """Build the CLI argument parser. Exposed for tests and reuse."""
+    p = argparse.ArgumentParser(
+        description="Analyze a local .fit activity file (intervals.icu fallback)")
+    p.add_argument("--file", required=True, help="Path to the .fit file")
+    p.add_argument("--ftp", type=int, default=None,
+                   help="FTP in watts. If omitted, 200W is used with a stderr warning.")
+    p.add_argument("--weight", type=float, default=None,
+                   help="Body weight in kg. If omitted, 70kg is used with a stderr warning.")
+    p.add_argument("-o", "--output", help="Output JSON file path (default: stdout)")
+    return p
+
+
+def main():
+    args = build_parser().parse_args()
+
+    ftp, weight = args.ftp, args.weight
+    fallbacks = []
+    if ftp is None:
+        ftp = 200
+        fallbacks.append("FTP=200W")
+    if weight is None:
+        weight = 70.0
+        fallbacks.append("weight=70kg")
+    if fallbacks:
+        print(f"WARNING: using neutral default {' / '.join(fallbacks)} — "
+              "power/zone/TSS analysis will be inaccurate. Pass --ftp / --weight.",
+              file=sys.stderr)
+
+    try:
+        records, metadata = parse_fit(args.file)
+    except RuntimeError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    result = analyze_local(records, metadata, ftp=ftp, weight=weight)
+    out = json.dumps(result, indent=2, default=str, ensure_ascii=False)
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(out)
+        print(f"Output written to {args.output}", file=sys.stderr)
+    else:
+        print(out)
+
+
+if __name__ == "__main__":
+    main()
