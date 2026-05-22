@@ -8,7 +8,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from fit_ingest import _extract, _import_fitparse
+from fit_ingest import _extract, _import_fitparse, analyze_local
 
 
 class _FakeMsg:
@@ -95,6 +95,49 @@ class TestImportFitparse(unittest.TestCase):
             with self.assertRaises(RuntimeError) as cm:
                 _import_fitparse()
         self.assertIn("pip install fitparse", str(cm.exception))
+
+
+class TestAnalyzeLocal(unittest.TestCase):
+    """analyze_local — synthetic records → the analyze() dict shape."""
+
+    ANALYZE_KEYS = ("activity", "data_completeness", "data_warnings",
+                    "fetch_errors", "laps", "metrics", "streams_available",
+                    "ftp_reference", "source")
+
+    def _meta(self, **over):
+        m = {"name": "Test Ride", "sport_type": "Ride", "start_date_local": "",
+             "distance_m": 0, "moving_time_s": 3600, "elapsed_time_s": 3600,
+             "total_elevation_gain": 0, "device_watts": True, "trainer": True,
+             "laps": []}
+        m.update(over)
+        return m
+
+    def test_power_ride_metrics(self):
+        records = [{"seconds": i, "watts": 200, "heartrate": 140, "cadence": 90}
+                   for i in range(3600)]
+        result = analyze_local(records, self._meta(), ftp=200, weight=70)
+        self.assertEqual(result["source"], "fit_file")
+        self.assertAlmostEqual(result["metrics"]["normalized_power"], 200, delta=1)
+        self.assertEqual(result["metrics"]["intensity_factor"], 1.0)
+        self.assertEqual(result["metrics"]["tss"], 100.0)
+
+    def test_dict_shape_matches_analyze(self):
+        records = [{"seconds": i, "watts": 200, "heartrate": 140, "cadence": 90}
+                   for i in range(120)]
+        result = analyze_local(records, self._meta(moving_time_s=120),
+                               ftp=200, weight=70)
+        for key in self.ANALYZE_KEYS:
+            self.assertIn(key, result)
+        self.assertEqual(result["fetch_errors"], {})
+
+    def test_no_power_ride(self):
+        records = [{"seconds": i, "watts": None, "heartrate": 140, "cadence": None}
+                   for i in range(120)]
+        result = analyze_local(records, self._meta(device_watts=False),
+                               ftp=200, weight=70)
+        self.assertIsNone(result["metrics"]["normalized_power"])
+        self.assertIsNone(result["metrics"].get("tss"))
+        self.assertTrue(any("estimated_power" in w for w in result["data_warnings"]))
 
 
 if __name__ == "__main__":

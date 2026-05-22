@@ -82,6 +82,7 @@ def _extract(fitfile, name):
     used — so it is tested with a fake FitFile, no .fit bytes required.
     """
     records = []
+    # FIT cycling records are 1Hz — matches intervals_icu.metrics' sampling assumption.
     for i, m in enumerate(fitfile.get_messages("record")):
         records.append({
             "seconds": i,
@@ -123,3 +124,106 @@ def parse_fit(path):
         return _extract(fitfile, name)
     except Exception as e:
         raise RuntimeError(f"Failed to parse .fit file '{path}': {e}") from e
+
+
+def analyze_local(records, metadata, ftp=200, weight=70.0):
+    """Analyze parsed .fit records → the same dict shape as activity.analyze().
+
+    Pure (no fitparse). `records` is the list from parse_fit; `metadata` its
+    companion dict. `source` is "fit_file"; `fetch_errors` is {} so the dict
+    is a drop-in for any analyze() consumer (e.g. workflows/analyze.md).
+    """
+    watts = [r.get("watts") for r in records]
+    hr = [r.get("heartrate") for r in records]
+    cadence = [r.get("cadence") for r in records]
+
+    watts_present = [w for w in watts if w is not None]
+    hr_present = [h for h in hr if h is not None]
+    cadence_present = [c for c in cadence if c is not None]
+
+    has_power_stream = bool(watts_present) and len(watts) >= 30
+    has_hr_stream = bool(hr_present) and len(hr) >= 30
+    has_power = bool(metadata.get("device_watts")) and bool(watts_present)
+
+    moving_time = metadata.get("moving_time_s") or len(records)
+
+    m = {}
+    np_val = compute_np(watts) if watts_present else None
+    m["normalized_power"] = np_val
+    avg_w = round(sum(watts_present) / len(watts_present), 1) if watts_present else None
+    avg_hr = round(sum(hr_present) / len(hr_present), 1) if hr_present else None
+    avg_cad = round(sum(cadence_present) / len(cadence_present), 1) if cadence_present else None
+
+    if np_val and ftp:
+        m["intensity_factor"] = round(np_val / ftp, 3)
+    tss = compute_tss(np_val, ftp, moving_time)
+    if tss is not None:
+        m["tss"] = tss
+    if np_val and avg_w and avg_w > 0:
+        m["variability_index"] = round(np_val / avg_w, 3)
+    if np_val is not None and avg_hr is not None and avg_hr > 0:
+        m["efficiency_factor"] = round(np_val / avg_hr, 3)
+    if avg_w is not None and weight:
+        m["power_to_weight"] = round(avg_w / weight, 2)
+
+    peaks = compute_peaks(watts) if watts_present else {}
+    m["peak_powers"] = peaks
+    if has_power_stream:
+        zs, zp = compute_zones(watts, ftp)
+        m["zone_seconds"], m["zone_percent"] = zs, zp
+    else:
+        m["zone_seconds"], m["zone_percent"] = None, None
+    m["cardiac_drift"] = compute_drift(watts, hr) if (has_power_stream and has_hr_stream) else None
+
+    laps = metadata.get("laps") or []
+    m["interval_consistency"] = interval_stats(laps)
+
+    ftp_test = detect_ftp_test(metadata.get("name", ""), peaks, moving_time, ftp_ref=ftp)
+    if ftp_test:
+        m["ftp_test"] = ftp_test
+    if peaks and weight and weight > 0:
+        m["power_profile"] = analyze_power_profile(peaks, ftp, weight)
+
+    data_warnings = []
+    if not has_power:
+        data_warnings.append("estimated_power: No power data in the .fit file — power metrics unavailable or estimated")
+    if watts_present and not has_power_stream:
+        data_warnings.append("streams_too_short: Power stream present but too short for zone/drift analysis")
+
+    max_watts = max(watts_present) if watts_present else None
+    is_indoor = bool(metadata.get("trainer")) or metadata.get("sport_type") in ("VirtualRide", "VirtualRun")
+    kj = round(sum(watts_present) / 1000, 1) if watts_present else None
+
+    activity = {
+        "id": metadata.get("name", ""),
+        "name": metadata.get("name", ""),
+        "sport_type": metadata.get("sport_type", ""),
+        "start_date_local": metadata.get("start_date_local", ""),
+        "distance_km": round((metadata.get("distance_m") or 0) / 1000, 2),
+        "moving_time": moving_time,
+        "moving_time_fmt": fmt_time(moving_time),
+        "elapsed_time": metadata.get("elapsed_time_s") or 0,
+        "elevation_gain": metadata.get("total_elevation_gain") or 0,
+        "average_watts": avg_w,
+        "max_watts": max_watts,
+        "average_heartrate": avg_hr,
+        "max_heartrate": max(hr_present) if hr_present else None,
+        "average_cadence": avg_cad,
+        "kilojoules": kj,
+        "has_power": has_power,
+        "trainer": bool(metadata.get("trainer")),
+        "power_data_quality": "measured" if has_power else "estimated",
+        "context": "indoor" if is_indoor else "outdoor",
+    }
+
+    return {
+        "activity": activity,
+        "data_completeness": "complete",
+        "data_warnings": data_warnings,
+        "fetch_errors": {},
+        "laps": laps,
+        "metrics": m,
+        "streams_available": bool(watts_present or hr_present),
+        "ftp_reference": ftp,
+        "source": "fit_file",
+    }
