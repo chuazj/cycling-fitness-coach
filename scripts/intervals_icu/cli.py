@@ -65,8 +65,10 @@ def _resolve_profile_ftp(profile):
     """Resolve FTP from an intervals.icu athlete profile.
 
     Tries top-level `icu_ftp`, then walks `sportSettings` for the first
-    bike entry. Returns (ftp_value, source_str); ftp_value is None when no
-    FTP is found.
+    bike entry. Returns `(ftp_value, source_str)`; `ftp_value` is None when
+    no FTP is found, and `source_str` reflects where the lookup stopped —
+    e.g. a bike entry that exists but has no `ftp` key yields
+    `(None, "sportSettings[...]")`, not `(None, "icu_ftp")`.
     """
     ftp_value = profile.get("icu_ftp")
     if ftp_value:

@@ -120,6 +120,8 @@ def load_env(env_path=None):
                             val = val[1:close]
                         # malformed (no closing quote): leave val as-is
                     else:
-                        val = re.split(r'\s+#', val, maxsplit=1)[0].strip()
+                        # val was already .strip()-ed above; the split drops
+                        # the '\s+#' delimiter, so no trailing strip is needed.
+                        val = re.split(r'\s+#', val, maxsplit=1)[0]
                     os.environ.setdefault(key.strip(), val)
             return

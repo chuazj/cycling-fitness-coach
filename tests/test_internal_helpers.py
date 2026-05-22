@@ -1228,6 +1228,13 @@ class TestResolveProfileFtp(unittest.TestCase):
         self.assertEqual(ftp, 188)
         self.assertIn("sportSettings", source)
 
+    def test_sport_settings_bike_entry_no_ftp(self):
+        from intervals_icu.cli import _resolve_profile_ftp
+        # bike entry present but no ftp key → ftp_value None, source still reflects sportSettings
+        ftp, source = _resolve_profile_ftp({"sportSettings": [{"types": ["Ride"]}]})
+        self.assertIsNone(ftp)
+        self.assertIn("sportSettings", source)
+
     def test_no_ftp_anywhere(self):
         from intervals_icu.cli import _resolve_profile_ftp
         self.assertEqual(_resolve_profile_ftp({}), (None, "icu_ftp"))
