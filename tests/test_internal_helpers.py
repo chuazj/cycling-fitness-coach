@@ -1213,6 +1213,55 @@ class TestReadinessHelpers(unittest.TestCase):
         vb, _verdict, _ceiling = _synthesize_verdict("missing", "green", [], "full")
         self.assertEqual(vb, "GREEN")
 
+    # ------------------------------------------------------------------
+    # M-3: reduced-mode banner accurately reflects HRV baseline maturity
+    # ------------------------------------------------------------------
+
+    def test_render_sleep_hrv_reduced_immature_hrv_no_hrv_claim(self):
+        # reduced mode + HRV sample_size < MIN_BASELINE_SIZE (7) →
+        # banner must NOT claim HRV 7-day band is driving the verdict
+        result = _minimal_result(signal_mode="reduced")
+        result["hrv"]["sample_size"] = 4  # immature: 4/7
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertIn("REDUCED-SIGNAL", text)
+        # Must NOT claim the mature HRV-band-driven wording
+        self.assertNotIn("HRV 7-day band", text)
+        # Must explain that HRV baseline is still building
+        self.assertIn("HRV baseline still building", text)
+        # Must clarify what is actually driving the verdict
+        self.assertIn("sleep + resting HR", text)
+
+    def test_render_sleep_hrv_reduced_immature_hrv_shows_n_of_min(self):
+        # The immature-HRV banner must include a progress indicator (N/7 days)
+        result = _minimal_result(signal_mode="reduced")
+        result["hrv"]["sample_size"] = 3
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        # Should show something like "3/7 days"
+        self.assertIn("3/7", text)
+
+    def test_render_sleep_hrv_reduced_mature_hrv_keeps_existing_wording(self):
+        # reduced mode + HRV sample_size >= MIN_BASELINE_SIZE (7) →
+        # existing banner wording must be retained unchanged
+        result = _minimal_result(signal_mode="reduced")
+        result["hrv"]["sample_size"] = 7  # exactly at threshold
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertIn("REDUCED-SIGNAL", text)
+        self.assertIn("HRV 7-day band", text)
+        # Must NOT show the immature-HRV wording
+        self.assertNotIn("HRV baseline still building", text)
+
+    def test_render_sleep_hrv_reduced_mature_hrv_large_sample(self):
+        # sample_size well above threshold → mature path, existing wording
+        result = _minimal_result(signal_mode="reduced")
+        result["hrv"]["sample_size"] = 14
+        lines = _render_sleep_hrv(result)
+        text = "\n".join(lines)
+        self.assertIn("HRV 7-day band", text)
+        self.assertNotIn("HRV baseline still building", text)
+
 
 class TestResolveProfileFtp(unittest.TestCase):
     """W7 — extracted athlete-profile FTP resolution helper."""

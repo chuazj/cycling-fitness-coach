@@ -1,7 +1,7 @@
 """Pre-ride readiness verdict and its human-readable rendering."""
 from datetime import datetime
 
-from .wellness import wellness_summary
+from .wellness import wellness_summary, MIN_BASELINE_SIZE
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +126,14 @@ def _render_sleep_hrv(result):
     mode = result.get("signal_mode")
     if mode == "reduced":
         lines.append("⚠ REDUCED-SIGNAL MODE — no WHOOP Recovery / respiration / SpO2.")
-        lines.append("  Verdict from HRV 7-day band + RHR + sleep + subjective.")
+        hrv_n = result.get("hrv", {}).get("sample_size") or 0
+        if hrv_n < MIN_BASELINE_SIZE:
+            lines.append(
+                f"  HRV baseline still building ({hrv_n}/{MIN_BASELINE_SIZE} days)"
+                f" — verdict from sleep + resting HR."
+            )
+        else:
+            lines.append("  Verdict from HRV 7-day band + RHR + sleep + subjective.")
     elif mode == "minimal":
         lines.append("⚠ MINIMAL-SIGNAL MODE — sleep + subjective only (no HRV / RHR / Recovery).")
         lines.append("  Verdict is a sleep gate; self-assess before any intensity.")
