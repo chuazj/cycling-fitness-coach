@@ -27,7 +27,7 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from intervals_icu.metrics import (
-    analyze_power_profile, compute_drift, compute_np, compute_peaks,
+    compute_drift, compute_np, compute_peaks,
     compute_tss, compute_zones, detect_ftp_test, fmt_time, interval_stats,
 )
 
@@ -133,9 +133,9 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
     companion dict. `source` is "fit_file"; `fetch_errors` is {} so the dict
     is a drop-in for any analyze() consumer (e.g. workflows/analyze.md).
 
-    Emits an extra `metrics["power_profile"]` key not present in
-    activity.analyze()'s per-ride output (analyze() reserves power_profile for
-    weekly summaries) — an intentional W7 Task 7 spec choice.
+    The metrics sub-dict has the same key set as analyze()'s per-ride output.
+    `power_profile` is a top-level key of weekly_summary only; it is never set
+    inside a single-ride metrics dict.
     """
     watts = [r.get("watts") for r in records]
     hr = [r.get("heartrate") for r in records]
@@ -154,7 +154,10 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
     m = {}
     np_val = compute_np(watts) if watts_present else None
     m["normalized_power"] = np_val
-    avg_w = round(sum(watts_present) / len(watts_present), 1) if watts_present else None
+    # M-1: average watts over ALL records (zero-fill None gaps so coasting seconds
+    # contribute 0 W, not nothing — matches the correct ride-average convention).
+    avg_w = (round(sum(w if w is not None else 0 for w in watts) / len(watts), 1)
+             if watts_present else None)
     avg_hr = round(sum(hr_present) / len(hr_present), 1) if hr_present else None
     avg_cad = round(sum(cadence_present) / len(cadence_present), 1) if cadence_present else None
 
@@ -185,8 +188,8 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
     ftp_test = detect_ftp_test(metadata.get("name", ""), peaks, moving_time, ftp_ref=ftp)
     if ftp_test:
         m["ftp_test"] = ftp_test
-    if peaks and weight and weight > 0:
-        m["power_profile"] = analyze_power_profile(peaks, ftp, weight)
+    # I-1: power_profile is a top-level key of weekly_summary only; omit from
+    # per-ride metrics to maintain drop-in parity with activity.analyze().
 
     data_warnings = []
     if not has_power:
@@ -194,9 +197,20 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
     if watts_present and not has_power_stream:
         data_warnings.append("streams_too_short: Power stream present but too short for zone/drift analysis")
 
+    # I-2: data_completeness reflects actual power availability, not always "complete".
+    # When there is no usable power data, match analyze()'s "partial (missing: X)" format.
+    missing_components = []
+    if not watts_present:
+        missing_components.append("power")
+    data_completeness = ("complete" if not missing_components
+                         else f"partial (missing: {', '.join(missing_components)})")
+
     max_watts = max(watts_present) if watts_present else None
     is_indoor = bool(metadata.get("trainer")) or metadata.get("sport_type") in ("VirtualRide", "VirtualRun")
-    kj = round(sum(watts_present) / 1000, 1) if watts_present else None
+    # I-3: zero-fill None gaps so every recorded second contributes 0 W during
+    # coasting — prevents undercounting energy on files with None gaps.
+    kj = (round(sum(w if w is not None else 0 for w in watts) / 1000, 1)
+          if watts_present else None)
 
     activity = {
         "id": metadata.get("name", ""),
@@ -222,7 +236,7 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
 
     return {
         "activity": activity,
-        "data_completeness": "complete",
+        "data_completeness": data_completeness,
         "data_warnings": data_warnings,
         "fetch_errors": {},
         "laps": laps,
