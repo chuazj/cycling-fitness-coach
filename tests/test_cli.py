@@ -193,6 +193,103 @@ class TestFitIngestCli(unittest.TestCase):
         self.assertIsNone(ns.weight)
 
 
+class TestResolveFtpArg(unittest.TestCase):
+    """M-6 — shared resolve_ftp_arg helper in generate_zwo.py."""
+
+    def setUp(self):
+        from generate_zwo import build_parser, resolve_ftp_arg
+        self._resolve = resolve_ftp_arg
+        self._parser = build_parser()
+
+    def _capture_stderr(self, fn, *args, **kwargs):
+        """Call fn(*args) and return (result, stderr_text)."""
+        import io
+        import sys
+        buf = io.StringIO()
+        old = sys.stderr
+        sys.stderr = buf
+        try:
+            result = fn(*args, **kwargs)
+        finally:
+            sys.stderr = old
+        return result, buf.getvalue()
+
+    def test_none_defaults_to_200_with_warning(self):
+        # ftp_value=None → returns 200 and emits a warning to stderr
+        result, stderr = self._capture_stderr(
+            self._resolve, None, self._parser,
+            "WARNING: --ftp not supplied — using 200W for stats."
+        )
+        self.assertEqual(result, 200)
+        self.assertIn("WARNING", stderr)
+        self.assertIn("200W", stderr)
+
+    def test_warning_text_is_passed_through_verbatim(self):
+        # The caller controls the warning text; the helper emits it as-is
+        custom_msg = "WARNING: custom message for this specific caller"
+        result, stderr = self._capture_stderr(
+            self._resolve, None, self._parser, custom_msg
+        )
+        self.assertIn(custom_msg, stderr)
+
+    def test_valid_ftp_passes_through_unchanged(self):
+        result, stderr = self._capture_stderr(
+            self._resolve, 188, self._parser,
+            "WARNING: --ftp not supplied — using 200W for stats."
+        )
+        self.assertEqual(result, 188)
+        self.assertEqual(stderr, "")
+
+    def test_lower_bound_50_is_valid(self):
+        result, _ = self._capture_stderr(
+            self._resolve, 50, self._parser,
+            "WARNING: --ftp not supplied — using 200W for stats."
+        )
+        self.assertEqual(result, 50)
+
+    def test_upper_bound_500_is_valid(self):
+        result, _ = self._capture_stderr(
+            self._resolve, 500, self._parser,
+            "WARNING: --ftp not supplied — using 200W for stats."
+        )
+        self.assertEqual(result, 500)
+
+    def test_below_50_calls_parser_error(self):
+        # parser.error() calls sys.exit(2) — captured as SystemExit
+        with self.assertRaises(SystemExit) as cm:
+            self._resolve(49, self._parser,
+                          "WARNING: --ftp not supplied — using 200W for stats.")
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_above_500_calls_parser_error(self):
+        with self.assertRaises(SystemExit) as cm:
+            self._resolve(501, self._parser,
+                          "WARNING: --ftp not supplied — using 200W for stats.")
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_generate_zwo_warning_text_exact(self):
+        # generate_zwo's warning text (verbatim from production code)
+        from generate_zwo import build_parser, resolve_ftp_arg
+        parser = build_parser()
+        gen_warning = (
+            "WARNING: --ftp not supplied — using 200W for stats. TSS and intensity "
+            "estimates will be wrong unless 200W is the athlete's actual FTP. "
+            "Re-run with --ftp <actual> for accurate numbers."
+        )
+        result, stderr = self._capture_stderr(resolve_ftp_arg, None, parser, gen_warning)
+        self.assertEqual(result, 200)
+        self.assertIn(gen_warning, stderr)
+
+    def test_zwo_lint_warning_text_exact(self):
+        # zwo_lint's shorter warning text (verbatim from production code)
+        from zwo_lint import build_parser as lint_parser, resolve_ftp_arg
+        parser = lint_parser()
+        lint_warning = "WARNING: --ftp not supplied — using 200W for modeled stats."
+        result, stderr = self._capture_stderr(resolve_ftp_arg, None, parser, lint_warning)
+        self.assertEqual(result, 200)
+        self.assertIn(lint_warning, stderr)
+
+
 class TestFtpBoundsValidation(unittest.TestCase):
     """Test that FTP bounds validation works in main() for intervals_icu_api.py."""
 

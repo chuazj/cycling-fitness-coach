@@ -26,7 +26,7 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
     sys.stderr.reconfigure(encoding="utf-8")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from generate_zwo import erg_rep_severity, workout_from_xml, calculate_workout_stats
+from generate_zwo import erg_rep_severity, workout_from_xml, calculate_workout_stats, resolve_ftp_arg
 
 KNOWN_INTERVALS = {"Warmup", "Cooldown", "SteadyState", "Ramp",
                    "IntervalsT", "FreeRide", "MaxEffort"}
@@ -305,12 +305,10 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
 
-    if args.ftp is None:
-        print("WARNING: --ftp not supplied — using 200W for modeled stats.",
-              file=sys.stderr)
-        args.ftp = 200
-    if not (50 <= args.ftp <= 500):
-        parser.error(f"--ftp must be between 50 and 500 watts (got {args.ftp})")
+    args.ftp = resolve_ftp_arg(
+        args.ftp, parser,
+        "WARNING: --ftp not supplied — using 200W for modeled stats.",
+    )
 
     try:
         result = lint_file(args.file, ftp=args.ftp)

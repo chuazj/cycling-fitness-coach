@@ -612,6 +612,33 @@ def check_erg_design(workout: ZwiftWorkout) -> list[str]:
     return out
 
 
+def resolve_ftp_arg(ftp_value, parser, warning_message):
+    """Resolve and validate the --ftp CLI argument.
+
+    Shared helper used by generate_zwo and zwo_lint to avoid copy-pasted logic.
+
+    Args:
+        ftp_value: The raw --ftp value from argparse (int or None).
+        parser:    The argparse.ArgumentParser instance (for parser.error calls).
+        warning_message: The caller-supplied warning string to emit when
+                         ftp_value is None. Each CLI has its own wording.
+
+    Returns:
+        The resolved FTP as an int (200 if ftp_value was None).
+
+    Side effects:
+        - Prints warning_message to stderr when ftp_value is None.
+        - Calls parser.error() (which raises SystemExit(2)) when the value
+          is outside the valid range 50-500.
+    """
+    if ftp_value is None:
+        print(warning_message, file=sys.stderr)
+        ftp_value = 200
+    if not (50 <= ftp_value <= 500):
+        parser.error(f"--ftp must be between 50 and 500 watts (got {ftp_value})")
+    return ftp_value
+
+
 def build_parser():
     """Build the CLI argument parser. Exposed for tests and reuse."""
     parser = argparse.ArgumentParser(description="Generate Zwift workout files")
@@ -628,14 +655,12 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
     
-    if args.ftp is None:
-        print("WARNING: --ftp not supplied — using 200W for stats. TSS and intensity "
-              "estimates will be wrong unless 200W is the athlete's actual FTP. "
-              "Re-run with --ftp <actual> for accurate numbers.", file=sys.stderr)
-        args.ftp = 200
-
-    if not (50 <= args.ftp <= 500):
-        parser.error(f"--ftp must be between 50 and 500 watts (got {args.ftp})")
+    args.ftp = resolve_ftp_arg(
+        args.ftp, parser,
+        "WARNING: --ftp not supplied — using 200W for stats. TSS and intensity "
+        "estimates will be wrong unless 200W is the athlete's actual FTP. "
+        "Re-run with --ftp <actual> for accurate numbers.",
+    )
 
     try:
         with open(args.json, "r", encoding="utf-8") as f:
