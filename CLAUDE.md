@@ -11,7 +11,7 @@ This is a **Claude Code skill** (not a standalone application). It provides cycl
 
 ## Running Scripts
 
-**Dependency:** `pip install requests`
+**Dependencies:** `pip install requests` (core). The `.fit` ingest parse layer (`scripts/fit_ingest.py`) additionally needs `pip install fitparse`.
 
 ### Activity Analysis (intervals.icu)
 ```bash
@@ -40,9 +40,23 @@ python scripts/intervals_icu_api.py --activity i126468486 -o output.json
 ```
 Output is JSON to stdout (use `-o file.json` to save).
 
+### Local .fit File Analysis (intervals.icu fallback)
+```bash
+# Analyze a ride that exists only on Strava/Garmin/Zwift and never synced to intervals.icu.
+# Emits the same analysis JSON as --activity (source: "fit_file"). Needs: pip install fitparse
+python scripts/fit_ingest.py --file ride.fit --ftp 200 --weight 70 -o output.json
+```
+
 ### Zwift Workout Generation
 ```bash
 python scripts/generate_zwo.py --json workout_def.json --output workout.zwo --ftp 200
+```
+
+### ZWO Linting
+```bash
+# Validate a .zwo against the canonical element reference + project hygiene rules.
+# Exit 0 = clean, 1 = warnings, 2 = errors. Reports NP-based modeled stats.
+python scripts/zwo_lint.py workout.zwo --ftp 200
 ```
 
 ### PMC Calculator (Performance Management Chart)
@@ -87,7 +101,7 @@ Returns `error` field if athlete doesn't log wellness in intervals.icu (or no we
 # Wraps wellness_summary, adds sleep-score tiebreaker, recovery slope, baseline-maturity guard
 python scripts/intervals_icu_api.py --readiness-check -o readiness.json
 ```
-Used by the Mid-Week Check-In workflow. Deviation flags (RHR/HRV/respiration) auto-suppressed when sample size <7 to avoid noise. See `references/training_zones.md` → Fatigue Indicators for thresholds.
+Used by the Mid-Week Check-In workflow. Deviation flags (RHR/HRV/respiration) auto-suppressed when sample size <7 to avoid noise. The verdict adapts to `signal_mode`: `full` (WHOOP Recovery present → 4-band cascade), `reduced` (HRV/RHR only, no Recovery → coarser 3-band), `minimal`/`insufficient` (degrades gracefully with a banner — never an error). See `references/training_zones.md` → Fatigue Indicators for thresholds.
 
 ### Sparkline (Peak Power Trends visualization)
 ```bash
@@ -137,16 +151,18 @@ workflows/
   advise.md                     ← Training Advice + Mid-Week Check-In + Race Peaking
 scripts/
   intervals_icu_api.py          ← Thin re-export façade + CLI entry point (preserves the `from intervals_icu_api import …` surface)
-  intervals_icu/                ← intervals.icu API client package (split from the former monolith — see audits/ W1 refactor)
+  intervals_icu/                ← intervals.icu API client package (split from the former monolith in the W1 refactor)
     api_client.py               ← HTTP client, auth, .env loading
     metrics.py                  ← Pure metric computation (NP, IF, TSS, zones, peaks, cardiac drift, power profile)
     activity.py                 ← Single-activity analysis + weekly training summary
     wellness.py                 ← WHOOP wellness fields, baselines, Yellow/Red flag detection
     readiness.py                ← Pre-ride readiness verdict engine
     cli.py                      ← argparse definition + mode dispatch
+  fit_ingest.py                 ← Local .fit file analysis — intervals.icu fallback (same analysis JSON; needs fitparse)
   generate_zwo.py               ← Zwift .zwo XML generator using dataclasses for interval types
   pmc_calculator.py             ← PMC bootstrap (90-day history) + weekly update (planned vs actual, CTL/ATL/TSB, peaks)
   batch_generate_zwo.py         ← Batch .zwo generation from JSON array (full week of workouts)
+  zwo_lint.py                   ← ZWO linter — validates .zwo vs canonical element reference + hygiene rules (exit 0/1/2)
   sparkline.py                  ← Pure-Python ASCII sparkline helper for Peak Power Trends visualization
   rpe_trend.py                  ← RPE trend aggregator (Obsidian frontmatter scan + functional-overreaching detection)
   prediction_tracker.py         ← W5 validation loop: predict/reconcile/seed forecasts, recalibration triggers
@@ -155,8 +171,10 @@ references/
   workout_analysis.md           ← Analysis framework, coaching response templates, ERG mode guidance
   zwo_format.md                 ← Zwift XML element spec and examples (local subset; canonical ref: h4l/zwift-workout-file-reference)
   intervals_icu_api.md          ← intervals.icu API endpoints, auth, data models
+  setup.md                      ← Credentials, Zwift workout directory, Obsidian vault paths & folder structure
   periodization.md              ← Block templates, TSS distribution, progressive overload, adaptation decision trees, durability
   fueling.md                    ← Pre/during/post-ride nutrition, carb targets, gut training, GI troubleshooting
+  menstrual_cycle_training.md   ← Female-athlete coaching — cycle/contraceptive autoregulation, symptom tiers, RED-S red flag
   plan_state_schema.md          ← Structure spec for plans/active_plan.md
   obsidian_templates.md         ← Frontmatter templates for workout reviews, plans, weekly reviews
   adaptation_rules.md           ← Per-activity forward-cascade adaptation rules (signals → severity → next-session adjustments)
@@ -184,7 +202,7 @@ assets/
 ```
 
 **Data flows:**
-- **Activity analysis:** intervals.icu link → `intervals_icu_api.py` extracts ID, authenticates via API key, fetches activity/intervals/streams/power-curve, computes metrics → JSON output → Claude provides coaching analysis using reference docs.
+- **Activity analysis:** intervals.icu link → `intervals_icu_api.py` extracts ID, authenticates via API key, fetches activity/intervals/streams/power-curve, computes metrics → JSON output → Claude provides coaching analysis using reference docs. Fallback for a ride that never synced to intervals.icu: `fit_ingest.py` parses a local `.fit` and emits the same JSON shape.
 - **Plan creation:** `pmc_calculator.py --bootstrap` → PMC baseline → Claude designs block using `periodization.md` rules → writes `plans/active_plan.md` → `batch_generate_zwo.py` generates week's .zwo files.
 - **Weekly review:** `pmc_calculator.py --weekly-update` → planned vs actual comparison → Claude applies adaptation decision trees → updates `plans/active_plan.md` → generates next week's .zwo files.
 
@@ -214,8 +232,8 @@ assets/
 - **FTP/weight bounds**: All scripts validate FTP (50-500W) and weight (30-200kg) — rejects nonsensical values
 - **Athlete profile source of truth**: `plans/active_plan.md` → Athlete Profile section holds the current FTP + weight. For one-off script runs, prefer `--use-athlete-profile` (auto-fetches from intervals.icu) over hard-coded `--ftp`/`--weight` flags so values don't drift
 - **`--use-athlete-profile` resolution chain**: (1) `profile['icu_ftp']` (legacy/some accounts), then (2) walk `profile['sportSettings']` for the bike entry (matches `Ride`/`VirtualRide`/`Cyclocross` types) and use its `ftp`. The script reports the source field on stderr so users can see which path was taken. Same pattern for weight (`icu_weight` only — no per-sport weight). If neither lookup yields a value, the script **prompts interactively** when stdin is a TTY (validates FTP ∈ [50,500] W, weight ∈ [30,200] kg), or **hard-errors** when stdin isn't a TTY (CI/piped) and requires the explicit `--ftp` / `--weight` flag. This avoids silently falling through to the generic 200W/70kg defaults when the user has explicitly opted into profile-driven values
-- **`plans/` is gitignored**: `plans/active_plan.md`, `plans/block_history.md`, `plans/archived_*.md`, `plans/*_regen.json`, and `plans/*_original.md` contain athlete PII (FTP, weight, training history, personal notes). Never `git add` them — even by accident via `git add .`. Stage files explicitly.
-- **Script-output PII files are also gitignored** (root-anchored): `/output.json`, `/wellness.json`, `/rpe_trend.json`, `/summary.json`, `/trend.json` — these match the `-o` filenames documented above for `intervals_icu_api.py --weekly-summary`, `--wellness`, and `rpe_trend.py`. They contain HRV, RHR, sleep, RPE, and training-load history. **If you add a new script output file, name it from this list (or extend `.gitignore`)** — do not invent a new ad-hoc filename like `data.json` that would be tracked. The rules are root-anchored so test fixtures with the same names under `tests/fixtures/` are unaffected.
+- **The entire `plans/` directory is gitignored**: `.gitignore` ignores `plans/*` with a single `!plans/.gitkeep` exception, so every file under `plans/` — `active_plan.md`, `block_history.md`, `archived_*.md`, `*_regen.json`, `*_original.md`, `prediction_ledger.jsonl`, `athlete_calibration.md` — is excluded by default. All contain athlete PII (FTP, weight, training history, personal notes). Never `git add` them — even by accident via `git add .`. Stage files explicitly.
+- **Script-output PII files are also gitignored** (root-anchored): `/output.json`, `/wellness.json`, `/readiness.json`, `/rpe_trend.json`, `/summary.json`, `/trend.json` — these match the `-o` filenames documented above for `intervals_icu_api.py --weekly-summary`, `--wellness`, `--readiness-check`, and `rpe_trend.py`. They contain HRV, RHR, sleep, RPE, and training-load history. **If you add a new script output file, name it from this list (or extend `.gitignore`)** — do not invent a new ad-hoc filename like `data.json` that would be tracked. The rules are root-anchored so test fixtures with the same names under `tests/fixtures/` are unaffected.
 - **New standing coaching rule → rule registry**: when adding a conditional/situational coaching rule to any `references/` doc (a guardrail, conditional adjustment, abort criterion, hygiene rule), add a row to `references/rule_registry.md` AND wire its workflow surface point in the same change. A rule with no workflow surface point is orphaned by definition. See `references/rule_registry.md` for the catalogue and the two surfacing mechanisms (coach-internal `Checks applied` line vs athlete-facing inline note).
 
 ### Context (background for debugging/understanding)
@@ -226,10 +244,11 @@ assets/
 - **`training_day_pattern`**: `pmc_calculator.py --bootstrap` output includes `training_day_pattern` (e.g., `["Tue", "Thu", "Sat"]`) — auto-detected from activity history day-of-week frequency. Use to pre-fill training days in the Create Plan workflow Step 2 instead of asking the athlete.
 - **weekly_summary top-3 optimization**: `weekly_summary()` fetches power curves only from the top-3 TSS activities (not all N) via `ThreadPoolExecutor(max_workers=3)`. Result includes `week_peaks` (5s/1min/5min/20min max across the 3) and `power_profile` (Coggan classification) when weight is provided.
 - **wellness baseline maturity (tiered)**: `wellness_summary()` returns `baseline_maturity` (insufficient / preliminary / consolidating / stable) + per-metric `baseline_sample_sizes`. Deviation flags (RHR/HRV/respiration + the SpO2 relative-yellow) auto-suppressed below `MIN_BASELINE_SIZE = 7`; absolute-threshold flags (Recovery/sleep/subjective + the SpO2 <90% red floor) fire regardless. Surface `baseline_note` verbatim in coaching output. Rationale in `references/training_zones.md` → Baseline maturity note. Legacy `partial_baseline` boolean still emitted (true only when history is empty).
+- **Wellness signal mode (non-WHOOP graceful degradation)**: `detect_signal_mode()` classifies the latest record into `signal_mode` — `full` (WHOOP Recovery present), `reduced` (HRV and/or RHR, no Recovery), `minimal` (only sleep hours / subjective fields), `insufficient` (nothing usable). `wellness_summary()` and `readiness_check()` both emit it, and the readiness verdict degrades per mode (4-band → 3-band → coarse). Don't assume the athlete uses WHOOP — a non-WHOOP athlete gets a `reduced`/`minimal` verdict with a banner, not an error.
 - **Whoop fields from intervals.icu (what flows, what doesn't)**: Whoop syncs Recovery, HRV (rMSSD), RHR, sleep hours, sleep score, respiration, and SpO2 to intervals.icu. **Whoop strain is NOT synced** (dropped at the intervals.icu integration layer — not in `client.get_wellness()` output regardless of athlete settings). Don't propose features that depend on Whoop strain; use TSS for training load instead.
 - **Whoop-exclusive wellness fields**: `WHOOP_EXCLUSIVE_FIELDS` in `wellness_summary()` lists fields that ONLY arrive via Whoop sync (no manual UI in intervals.icu): `resting_hr, hrv, sleep_score, readiness, respiration, spo2`. `sleep_hours` is intentionally excluded — intervals.icu lets athletes enter sleep manually, so a record with only `sleepSecs` populated is NOT a Whoop-synced day. When adding a wellness field, decide which polarity it has before touching `days_with_whoop_data` membership.
-- **wellness_summary output schema**: Beyond `baseline` + `latest` + `flags`, wellness_summary now returns `recovery_slope_3day` (today vs 3 days ago with `alarm: bool`), `subjective_stale_warning` (true when 3+ subjective fields all=1), `training_load` (CTL/ATL/TSB pulled from latest wellness record's server-side values), and `days_with_whoop_data` (count of records with ≥1 Whoop-sourced metric — disambiguates from `days_with_data` which counts all returned dates). `readiness_check()` consumes these from wellness_summary rather than recomputing — single source of truth.
-- **Mid-Week Check-In delegates to `--readiness-check`**: `workflows/advise.md` Mid-Week Check-In runs `intervals_icu_api.py --readiness-check`, not `--wellness 14`. The readiness-check tool returns the full wellness summary fields plus verdict_band (GREEN / YELLOW-HIGH / YELLOW-LOW / RED) + ceiling + sleep-score tiebreaker logic. Weekly Review (`workflows/plan.md`) still uses `--wellness 14` because it needs the per-day daily array for the weekly trend.
+- **wellness_summary output schema**: Beyond `baseline` + `latest` + `flags`, wellness_summary now returns `recovery_slope_3day` (today vs 3 days ago with `alarm: bool`), `subjective_stale_warning` (true when 3+ subjective fields all=1), `training_load` (CTL/ATL/TSB pulled from latest wellness record's server-side values), `days_with_whoop_data` (count of records with ≥1 Whoop-sourced metric — disambiguates from `days_with_data` which counts all returned dates), `signal_mode` (which readiness signals are present — see above), and `progression_signal` (HRV-above-band 3 days + CTL rising → green-lights a 5–10% TSS bump; None when criteria unmet). `readiness_check()` consumes these from wellness_summary rather than recomputing — single source of truth.
+- **Mid-Week Check-In delegates to `--readiness-check`**: `workflows/advise.md` Mid-Week Check-In runs `intervals_icu_api.py --readiness-check`, not `--wellness 14`. The readiness-check tool returns the full wellness summary fields plus verdict_band (GREEN / YELLOW-HIGH / YELLOW-LOW / RED in `full` signal mode; a coarser 3-band set in `reduced`) + ceiling + sleep-score tiebreaker logic. Weekly Review (`workflows/plan.md`) still uses `--wellness 14` because it needs the per-day daily array for the weekly trend.
 - **Two parallel readiness templates**: Both `workflows/advise.md` (Mid-Week Check-In) and `workflows/plan.md` (Weekly Review) contain a `### Readiness (...)` output template. When updating wellness output fields (e.g., adding a new flag, surfacing a new metric), edit BOTH or coaching output will diverge between the two workflows.
 - **FTP test detection**: `detect_ftp_test()` returns `detection_methods` (list), not a single string — multiple detection heuristics can match simultaneously. Each detected method emits TWO fields: the **value** (`estimated_ftp_20min` / `estimated_ftp_ramp`, rounded watts) AND the **formula string** (`estimated_ftp_formula_20min` / `estimated_ftp_formula_ramp`, e.g. `"20min_avg × 0.95"`). The formulas are per-method (not a shared `estimated_ftp_formula`). Workflow `analyze.md` has the full schema.
 - **FTP test bounds**: 20-min heuristic triggers only when 80–150% of reference FTP (rejects anomalous data)
