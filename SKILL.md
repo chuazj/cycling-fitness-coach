@@ -99,6 +99,7 @@ Read these on demand based on the task:
 
 **Scripts and assets:**
 - `scripts/intervals_icu_api.py` — intervals.icu API client with metrics computation. Modes: `--activity` (single ride), `--latest`, `--list-recent N`, `--weekly-summary [N]` (training summary), `--wellness [N]` (RHR/HRV/sleep + Whoop Recovery/respiration/SpO2 readiness summary with Yellow/Red flag detection), `--readiness-check` (pre-ride GREEN/YELLOW-HIGH/YELLOW-LOW/RED verdict + session-type ceiling — used by Mid-Week Check-In)
+- `scripts/fit_ingest.py` — analyze a local `.fit` file when an activity has not synced to intervals.icu (emits the same analysis JSON; `source: "fit_file"`). Requires `pip install fitparse`.
 - `scripts/generate_zwo.py` — Programmatic ZWO generation (single workout)
 - `scripts/pmc_calculator.py` — PMC bootstrap (90-day history) and weekly update (planned vs actual, CTL/ATL/TSB, peak powers)
 - `scripts/batch_generate_zwo.py` — Batch ZWO generation from JSON array (full week of workouts)

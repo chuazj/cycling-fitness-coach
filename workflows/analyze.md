@@ -14,6 +14,12 @@ When user pastes an intervals.icu URL or activity ID:
 - If user provides FTP/weight: `python scripts/intervals_icu_api.py --activity {ID} --ftp {FTP} --weight {W} -o output.json`
 - Otherwise (default): `python scripts/intervals_icu_api.py --activity {ID} --use-athlete-profile -o output.json`
 
+**Fallback — activity not on intervals.icu.** If a ride exists only on Strava / Garmin / Zwift and has not synced to intervals.icu, analyze the local `.fit` file instead:
+
+`py -3 scripts/fit_ingest.py --file <ride.fit> --ftp <FTP> --weight <W> -o output.json`
+
+This emits the same analysis JSON shape as the API path (`source: "fit_file"`); every following step of this workflow is unchanged. Requires `pip install fitparse`.
+
 The script outputs JSON with:
 - Activity details (distance, time, power, HR, cadence, `power_data_quality`, `context`)
 - `data_warnings[]` — flags for estimated power, outdoor no-power, etc. **Check this first — estimated power invalidates power-based analysis; shift to HR/RPE feedback.**

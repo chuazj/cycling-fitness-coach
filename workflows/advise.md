@@ -102,7 +102,16 @@ Deviation flags (RHR/HRV/respiration/SpO2) are auto-suppressed when per-metric s
 
 **Subjective override (within YELLOW-HIGH only):** the verdict above is driven by Recovery/HRV/sleep/SpO2; the intervals.icu subjective fields (fatigue/soreness/stress/mood, 1=best…4=worst) are otherwise only a data-quality check. When the verdict lands **YELLOW-HIGH** and the athlete logs subjective fields, apply this tiebreaker: if **soreness ≥3 OR fatigue ≥3 OR mood ≥3**, step the session ceiling down to **YELLOW-LOW** (Sweet Spot, not Threshold/VO2max). The athlete logs all six fields daily — genuine signal, not noise — so let it subdivide the borderline band. Does not apply to GREEN (subjective alone doesn't veto a clear day) or to YELLOW-LOW/RED (already conservative).
 
-**Wearable dependency (reuse note):** Recovery, respiration, SpO2 and sleepScore are WHOOP-exclusive fields — a non-WHOOP athlete loses those four signals and the readiness check degrades to HRV + RHR + sleep-hours only. The verdict still works but at lower resolution; recalibrate the Recovery bands if a different wearable's `readiness` field is present (see `references/training_zones.md` → Recovery score notes).
+**Wearable dependency — signal-mode contract.** `--readiness-check` classifies the available signals into a mode and adapts the verdict; `signal_mode` is on both `--readiness-check` and `--wellness` output:
+
+| Mode | Available signals | Verdict bands | Banner |
+|---|---|---|---|
+| `full` | WHOOP Recovery present | GREEN / YELLOW-HIGH / YELLOW-LOW / RED | none |
+| `reduced` | HRV and/or RHR, no Recovery | GREEN / YELLOW-LOW / RED | reduced-signal |
+| `minimal` | sleep / subjective only | GREEN / YELLOW-LOW / RED | minimal-signal |
+| `insufficient` | nothing usable | INSUFFICIENT-DATA | — |
+
+A non-WHOOP athlete still gets a valid verdict — `reduced` mode green-lights all session types on a clean HRV + RHR + sleep day, with an explicit reduced-signal banner in the output. There is no YELLOW-HIGH band outside `full` mode (it is a WHOOP-Recovery subdivision). **The subjective override above applies in `full` mode only** — `reduced`/`minimal` have no YELLOW-HIGH band to subdivide.
 
 **Step 3:** Present current status:
 ```

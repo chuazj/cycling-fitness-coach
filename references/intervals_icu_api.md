@@ -179,4 +179,7 @@ Also accepts plain numeric IDs (e.g., `17478304236`).
 
 ## Dependency Note
 
-intervals.icu is a **hard dependency** — the skill reads all activity and wellness data through this API and has no fallback data source. An activity that exists only on Strava/Garmin and has not synced to intervals.icu is invisible to the skill. If an expected ride is missing, check the intervals.icu sync (Strava/Garmin auto-sync, or a manual `.fit` upload) before assuming an API error. **Reuse note:** an athlete who does not use intervals.icu cannot use this skill as-is — the API client would need a new backend.
+intervals.icu is the **primary** data source — the skill reads activity and wellness data through this API. Two fallbacks exist for reuse outside that setup:
+
+- **Activity not synced** — a ride that exists only on Strava/Garmin/Zwift is invisible to the API. Analyze the local `.fit` instead: `py -3 scripts/fit_ingest.py --file <ride.fit> --ftp <FTP> --weight <W>` parses it and emits the same analysis JSON as the API path (`source: "fit_file"`). Requires `pip install fitparse`.
+- **Non-WHOOP wellness** — `--readiness-check` has no offline source, but it degrades gracefully: a `signal_mode` of `full` / `reduced` / `minimal` / `insufficient` adapts the verdict to whatever signals are present (see `workflows/advise.md` → signal-mode contract). An athlete on Garmin/Oura still gets a `reduced`-mode verdict from HRV + RHR + sleep.

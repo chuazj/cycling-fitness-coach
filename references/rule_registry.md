@@ -73,8 +73,11 @@ Standing rules added after the W4 audit and wired into a workflow in the same ch
 | RPE-at-IF recalibration trigger | `references/prediction_calibration.md` → Recalibration triggers | coach-internal | Weekly review; abs mean signed delta ≥ 1.0 over the last 5 reconciled RPE predictions in one slot | `plan.md` Weekly Review → Forecast Accuracy block | wired |
 | FTP-gain recalibration trigger | `references/prediction_calibration.md` → Recalibration triggers | coach-internal | Weekly review; 2 consecutive completed blocks with actual gain outside the predicted range | `plan.md` Weekly Review → Forecast Accuracy block | wired |
 | ERG long-rep design rule | project `CLAUDE.md` → .zwo edit hygiene | coach-internal | Generating/linting a workout with high-intensity reps (≥1.05 FTP) ≤2 min long | `generate.md` Step 4 validation table (Lint pass) — enforced by `generate_zwo.py check_erg_design` + `zwo_lint.py` W6 | wired |
+| Signal-mode readiness contract | W7 / audit D2-3 | coach-internal | Non-WHOOP wellness data present (no `readiness` field) | `workflows/advise.md` → signal-mode contract + `readiness.py` verdict | wired |
+| `.fit` ingest fallback | W7 / audit D4-4 | coach-internal | Activity not on intervals.icu | `workflows/analyze.md` → fallback path | wired |
 
 ---
 *Created by W4, 2026-05-21.*
 *W5 (2026-05-21) appended the Post-W4 rules section — the 2 recalibration triggers.*
 *W6 (2026-05-21) wired the ERG long-rep design rule into `generate_zwo.py` + `zwo_lint.py`.*
+*W7 (2026-05-22) registered the signal-mode readiness contract and the `.fit` ingest fallback.*
