@@ -364,6 +364,28 @@ class TestDataCompleteness(unittest.TestCase):
         self.assertTrue(any("streams_too_short" in w for w in result["data_warnings"]))
 
 
+class TestStreamsTooShortMessage(unittest.TestCase):
+    """S2 — the 'streams_too_short' message must fire only for a genuinely
+    short power stream, never for a ride that has no power stream at all."""
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test", "test")
+        self.activity_data = load_fixture("activity.json")
+        self.power_curve_data = load_fixture("power_curve.json")
+
+    def test_no_power_stream_emits_no_too_short_message(self):
+        # HR-only ride: streams have heartrate, no watts/power key at all.
+        with patch.object(self.client, "get_activity", return_value=self.activity_data), \
+             patch.object(self.client, "get_intervals", return_value=[]), \
+             patch.object(self.client, "get_streams", return_value={"heartrate": [140] * 100}), \
+             patch.object(self.client, "get_power_curve", return_value=self.power_curve_data):
+            result = analyze(self.client, "i999", ftp=192, weight=74)
+        self.assertFalse(
+            any("streams_too_short" in w for w in result["data_warnings"]),
+            f"unexpected streams_too_short warning: {result['data_warnings']}",
+        )
+
+
 class TestWeeklySummaryOptimization(unittest.TestCase):
     """Test that weekly_summary fetches power curves only for top-3 TSS activities."""
 

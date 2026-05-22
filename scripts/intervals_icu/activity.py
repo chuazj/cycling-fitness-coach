@@ -240,8 +240,12 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
         if "power_curve_fetch_failed" in warn:
             missing_components.append("power_curve")
     if not has_power_stream and "streams" not in missing_components:
-        if watts is not None and len(watts) <= 30:
-            fetch_warnings.append("streams_too_short: Power stream available but too short for zone/drift analysis")
+        # S2: emit "too short" only for a genuinely short power stream.
+        # A fully absent power stream (watts == []) is already reflected by
+        # has_power_stream=False → zone_seconds=None + the peak-powers
+        # "unavailable" warning; a second (misleading) message is wrong.
+        if watts and len(watts) < 30:
+            fetch_warnings.append("streams_too_short: Power stream present but too short for zone/drift analysis")
     data_completeness = "complete" if not missing_components else f"partial (missing: {', '.join(missing_components)})"
 
     avg_w = a.get("icu_average_watts")
