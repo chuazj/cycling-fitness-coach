@@ -100,6 +100,7 @@ class TestImportFitparse(unittest.TestCase):
 class TestAnalyzeLocal(unittest.TestCase):
     """analyze_local — synthetic records → the analyze() dict shape."""
 
+    # Keep in sync with activity.analyze()'s return dict (drop-in contract).
     ANALYZE_KEYS = ("activity", "data_completeness", "data_warnings",
                     "fetch_errors", "laps", "metrics", "streams_available",
                     "ftp_reference", "source")
@@ -138,6 +139,19 @@ class TestAnalyzeLocal(unittest.TestCase):
         self.assertIsNone(result["metrics"]["normalized_power"])
         self.assertIsNone(result["metrics"].get("tss"))
         self.assertTrue(any("estimated_power" in w for w in result["data_warnings"]))
+
+    def test_sparse_power_skips_zone_drift(self):
+        # 200 records, only ~10 with real watts — sparse power must NOT pass the
+        # power-stream gate (the gate counts real samples, not record count).
+        records = []
+        for i in range(200):
+            records.append({"seconds": i,
+                            "watts": 200 if i < 10 else None,
+                            "heartrate": 140, "cadence": None})
+        result = analyze_local(records, self._meta(moving_time_s=200),
+                               ftp=200, weight=70)
+        self.assertIsNone(result["metrics"]["zone_percent"])
+        self.assertIsNone(result["metrics"]["cardiac_drift"])
 
 
 if __name__ == "__main__":

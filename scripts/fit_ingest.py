@@ -132,6 +132,10 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
     Pure (no fitparse). `records` is the list from parse_fit; `metadata` its
     companion dict. `source` is "fit_file"; `fetch_errors` is {} so the dict
     is a drop-in for any analyze() consumer (e.g. workflows/analyze.md).
+
+    Emits an extra `metrics["power_profile"]` key not present in
+    activity.analyze()'s per-ride output (analyze() reserves power_profile for
+    weekly summaries) — an intentional W7 Task 7 spec choice.
     """
     watts = [r.get("watts") for r in records]
     hr = [r.get("heartrate") for r in records]
@@ -141,8 +145,8 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
     hr_present = [h for h in hr if h is not None]
     cadence_present = [c for c in cadence if c is not None]
 
-    has_power_stream = bool(watts_present) and len(watts) >= 30
-    has_hr_stream = bool(hr_present) and len(hr) >= 30
+    has_power_stream = len(watts_present) >= 30
+    has_hr_stream = len(hr_present) >= 30
     has_power = bool(metadata.get("device_watts")) and bool(watts_present)
 
     moving_time = metadata.get("moving_time_s") or len(records)
