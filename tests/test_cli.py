@@ -18,6 +18,7 @@ from intervals_icu_api import build_parser as build_intervals_parser
 from generate_zwo import build_parser as build_generate_parser
 from batch_generate_zwo import build_parser as build_batch_parser
 from pmc_calculator import build_parser as build_pmc_parser
+from zwo_lint import build_parser as build_zwo_lint_parser
 
 
 class TestIntervalsIcuApiCli(unittest.TestCase):
@@ -144,6 +145,27 @@ class TestPmcCalculatorCli(unittest.TestCase):
     def test_prev_peaks_arg(self):
         ns = self._parse(["--weekly-update", "--prev-peaks", '{"5s":450}'])
         self.assertEqual(ns.prev_peaks, '{"5s":450}')
+
+
+class TestZwoLintCli(unittest.TestCase):
+    """Test zwo_lint.py argument parsing."""
+
+    def _parse(self, args):
+        return build_zwo_lint_parser().parse_args(args)
+
+    def test_file_positional(self):
+        ns = self._parse(["workout.zwo"])
+        self.assertEqual(ns.file, "workout.zwo")
+        self.assertIsNone(ns.ftp)
+
+    def test_ftp_and_output(self):
+        ns = self._parse(["w.zwo", "--ftp", "188", "-o", "report.json"])
+        self.assertEqual(ns.ftp, 188)
+        self.assertEqual(ns.output, "report.json")
+
+    def test_missing_file_fails(self):
+        with self.assertRaises(SystemExit):
+            self._parse([])  # file is required
 
 
 class TestFtpBoundsValidation(unittest.TestCase):

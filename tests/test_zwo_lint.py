@@ -207,5 +207,30 @@ class TestLintWarnings(unittest.TestCase):
         self.assertEqual(self._codes(VALID_ZWO), set())
 
 
+class TestLintModeledStats(unittest.TestCase):
+    def test_clean_file_reports_stats(self):
+        result = lint_file_for(VALID_ZWO)
+        self.assertIsNotNone(result["stats"])
+        self.assertEqual(result["stats"]["total_duration_min"], 10.0)
+
+    def test_broken_file_stats_none(self):
+        broken = ('<workout_file><workout>'
+                  '<SteadyState Duration="0" Power="0.75"/></workout></workout_file>')
+        result = lint_file_for(broken)
+        self.assertIsNone(result["stats"])
+
+
+def lint_file_for(xml):
+    """Helper: write xml to a temp .zwo and lint it."""
+    with tempfile.NamedTemporaryFile("w", suffix=".zwo", delete=False,
+                                     encoding="utf-8") as fh:
+        fh.write(xml)
+        path = fh.name
+    try:
+        return lint_file(path, ftp=188)
+    finally:
+        os.unlink(path)
+
+
 if __name__ == "__main__":
     unittest.main()

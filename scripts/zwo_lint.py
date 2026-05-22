@@ -26,7 +26,7 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
     sys.stderr.reconfigure(encoding="utf-8")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from generate_zwo import erg_rep_severity
+from generate_zwo import erg_rep_severity, workout_from_xml, calculate_workout_stats
 
 KNOWN_INTERVALS = {"Warmup", "Cooldown", "SteadyState", "Ramp",
                    "IntervalsT", "FreeRide", "MaxEffort"}
@@ -245,7 +245,15 @@ def lint_file(path: str, ftp: int = 200) -> dict:
         xml_string = raw.decode("utf-8", errors="replace")
 
     findings.extend(lint_xml(xml_string))
-    stats = None  # modeled stats wired in Task 8
+    # Modeled stats — only attempt when the file has no structural errors,
+    # since workout_from_xml is strict and would raise on a broken file.
+    stats = None
+    if not any(f["severity"] == "error" for f in findings):
+        try:
+            workout = workout_from_xml(xml_string)
+            stats = calculate_workout_stats(workout, ftp=ftp)
+        except Exception:
+            stats = None
 
     return {
         "file": path,
