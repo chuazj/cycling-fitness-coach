@@ -205,7 +205,8 @@ directly, so there is no avg-power under-report. `tss_method` begins with
 `<FreeRide>`, so TSS is reported as **unmodeled** rather than as a misleading
 placeholder number. Modeled TSS assumes the rider executes the prescribed
 power; for ERG-mode structured workouts it tracks intervals.icu's post-ride
-TSS within **±8% (target — refined empirically by W6's spot-check)**.
+TSS within **±10% (measured 2026-05-22: mean abs delta 4.0%, max 9.5%, n=4
+BLK3 ERG sessions)**.
 
 ## Linting `.zwo` files
 
