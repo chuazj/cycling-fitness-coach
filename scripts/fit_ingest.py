@@ -247,7 +247,8 @@ def build_parser():
 
 
 def main():
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
 
     ftp, weight = args.ftp, args.weight
     fallbacks = []
@@ -261,6 +262,11 @@ def main():
         print(f"WARNING: using neutral default {' / '.join(fallbacks)} — "
               "power/zone/TSS analysis will be inaccurate. Pass --ftp / --weight.",
               file=sys.stderr)
+
+    if not (50 <= ftp <= 500):
+        parser.error(f"--ftp must be between 50 and 500 watts (got {ftp})")
+    if not (30 <= weight <= 200):
+        parser.error(f"--weight must be between 30 and 200 kg (got {weight})")
 
     try:
         records, metadata = parse_fit(args.file)
