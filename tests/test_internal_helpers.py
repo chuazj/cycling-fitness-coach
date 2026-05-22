@@ -26,6 +26,7 @@ from intervals_icu.activity import (
 from intervals_icu.readiness import (
     _recovery_band, _sleep_status, _synthesize_verdict,
     _render_sleep_hrv, _render_vitals, _render_tsb_subjective, _render_verdict_flags,
+    _reduced_basis_phrase, _hrv_baseline_mature, format_readiness_check,
 )
 
 
@@ -1261,6 +1262,96 @@ class TestReadinessHelpers(unittest.TestCase):
         text = "\n".join(lines)
         self.assertIn("HRV 7-day band", text)
         self.assertNotIn("HRV baseline still building", text)
+
+    # --- M-3: shared basis helper -------------------------------------
+
+    def test_hrv_baseline_mature_threshold(self):
+        # Mature iff sample_size >= MIN_BASELINE_SIZE (7).
+        self.assertFalse(_hrv_baseline_mature(6))
+        self.assertTrue(_hrv_baseline_mature(7))
+        self.assertTrue(_hrv_baseline_mature(20))
+        self.assertFalse(_hrv_baseline_mature(0))
+        self.assertFalse(_hrv_baseline_mature(None))
+
+    def test_reduced_basis_phrase_immature(self):
+        # Immature HRV → phrase must NOT reference the HRV band.
+        phrase = _reduced_basis_phrase(4)
+        self.assertNotIn("HRV 7-day band", phrase)
+        self.assertIn("sleep + resting HR", phrase)
+
+    def test_reduced_basis_phrase_mature(self):
+        # Mature HRV → phrase references the HRV 7-day band.
+        phrase = _reduced_basis_phrase(10)
+        self.assertIn("HRV 7-day band", phrase)
+
+    # --- M-3: reduced-GREEN ceiling parenthetical is maturity-aware ---
+
+    def test_synthesize_verdict_reduced_green_immature_ceiling(self):
+        # reduced-mode GREEN with an immature HRV baseline → the ceiling
+        # parenthetical must NOT claim the HRV band is driving the verdict.
+        vb, _verdict, ceiling = _synthesize_verdict(
+            "green", None, [], "reduced", hrv_sample_size=4)
+        self.assertEqual(vb, "GREEN")
+        self.assertNotIn("HRV 7-day band", ceiling)
+        self.assertIn("sleep + resting HR", ceiling)
+
+    def test_synthesize_verdict_reduced_green_mature_ceiling(self):
+        # reduced-mode GREEN with a mature HRV baseline → existing wording.
+        vb, _verdict, ceiling = _synthesize_verdict(
+            "green", None, [], "reduced", hrv_sample_size=10)
+        self.assertEqual(vb, "GREEN")
+        self.assertIn("HRV 7-day band", ceiling)
+
+    def test_synthesize_verdict_reduced_green_default_arg_is_immature(self):
+        # hrv_sample_size defaults to 0 → immature → no HRV-band claim.
+        # Locks backward-compat: the 4-arg call form still works.
+        vb, _verdict, ceiling = _synthesize_verdict("green", None, [], "reduced")
+        self.assertEqual(vb, "GREEN")
+        self.assertNotIn("HRV 7-day band", ceiling)
+
+    def test_synthesize_verdict_reduced_green_tier_unchanged_by_hrv_arg(self):
+        # The verdict TIER and human verdict line must be byte-identical
+        # regardless of HRV maturity — only the ceiling parenthetical moves.
+        vb_a, verdict_a, _ = _synthesize_verdict(
+            "green", None, [], "reduced", hrv_sample_size=4)
+        vb_b, verdict_b, _ = _synthesize_verdict(
+            "green", None, [], "reduced", hrv_sample_size=20)
+        self.assertEqual(vb_a, vb_b)
+        self.assertEqual(verdict_a, verdict_b)
+        self.assertEqual(vb_a, "GREEN")
+        self.assertEqual(verdict_a, "GREEN — all session types clear.")
+
+    # --- M-3: banner ⇔ ceiling agreement (the regression that matters) ---
+
+    def test_reduced_immature_banner_and_ceiling_agree(self):
+        # Full render of a reduced-mode GREEN result with an immature HRV
+        # baseline: the banner and the CEILING line must reference the SAME
+        # signals — neither may claim the HRV band drives the verdict.
+        result = _minimal_result(signal_mode="reduced")
+        result["hrv"]["sample_size"] = 4
+        # Reduced-mode GREEN ceiling, immature → maturity-aware parenthetical.
+        _vb, _verdict, ceiling = _synthesize_verdict(
+            "green", None, result["flags"], "reduced", hrv_sample_size=4)
+        result["ceiling"] = ceiling
+        text = format_readiness_check(result)
+        # Neither banner nor ceiling oversells HRV.
+        self.assertNotIn("HRV 7-day band", text)
+        # Both reference the honest basis.
+        self.assertGreaterEqual(text.count("sleep + resting HR"), 2)
+        # And the ceiling line specifically carries it.
+        self.assertIn("CEILING:", text)
+        self.assertIn("verdict from sleep + resting HR", ceiling)
+
+    def test_reduced_mature_banner_and_ceiling_agree(self):
+        # Paired mature case: both banner and ceiling reference the HRV band.
+        result = _minimal_result(signal_mode="reduced")
+        result["hrv"]["sample_size"] = 10
+        _vb, _verdict, ceiling = _synthesize_verdict(
+            "green", None, result["flags"], "reduced", hrv_sample_size=10)
+        result["ceiling"] = ceiling
+        text = format_readiness_check(result)
+        self.assertIn("HRV 7-day band", text)        # banner
+        self.assertIn("HRV 7-day band", ceiling)     # ceiling
 
 
 class TestResolveProfileFtp(unittest.TestCase):

@@ -8,6 +8,30 @@ from .wellness import wellness_summary, MIN_BASELINE_SIZE
 # Module-private helpers — readiness_check decomposition
 # ---------------------------------------------------------------------------
 
+def _hrv_baseline_mature(hrv_n):
+    """True when the HRV baseline has reached MIN_BASELINE_SIZE days of history.
+
+    Below this size, HRV-derived flags (_flag_hrv_band, _flag_hrv_cv_trend) are
+    suppressed by wellness_summary, so an immature HRV baseline does NOT
+    contribute to a reduced-mode verdict.
+    """
+    return (hrv_n or 0) >= MIN_BASELINE_SIZE
+
+
+def _reduced_basis_phrase(hrv_n):
+    """The 'verdict from ...' signal-source phrase for a reduced-mode verdict.
+
+    Single source of truth feeding BOTH the banner (_render_sleep_hrv) and the
+    ceiling parenthetical (_synthesize_verdict), so the two strings can never
+    drift apart. When the HRV baseline is immature its flags are suppressed —
+    the verdict is sleep + RHR only — and the phrase says so honestly; the
+    callers add their own "still building" / "(N/7 days)" framing around it.
+    """
+    if _hrv_baseline_mature(hrv_n):
+        return "verdict from HRV 7-day band + RHR + sleep"
+    return "verdict from sleep + resting HR"
+
+
 def _recovery_band(today_recovery):
     """Map a raw recovery score to a band string, or None when score is None."""
     if today_recovery is None:
@@ -50,7 +74,7 @@ def _sleep_status(latest):
     return sleep_status, sleep_note
 
 
-def _synthesize_verdict(sleep_status, band, flags, signal_mode):
+def _synthesize_verdict(sleep_status, band, flags, signal_mode, hrv_sample_size=0):
     """Derive the worst-of verdict, branching on the wellness signal mode.
 
     full     — the WHOOP 4-band cascade (GREEN/YELLOW-HIGH/YELLOW-LOW/RED).
@@ -62,6 +86,12 @@ def _synthesize_verdict(sleep_status, band, flags, signal_mode):
     The legacy "recovery"-signal flag is excluded from gating in every mode
     (the `band` variable supersedes it in full mode; it cannot exist in the
     others).
+
+    `hrv_sample_size` only affects the descriptive parenthetical in the
+    reduced-mode GREEN ceiling string — never the verdict tier or the
+    session-ceiling decision. An immature HRV baseline (<MIN_BASELINE_SIZE)
+    means HRV flags are suppressed, so the parenthetical must not claim the
+    HRV band is driving the verdict (mirrors the banner in _render_sleep_hrv).
 
     Returns (verdict_band, verdict, ceiling).
     """
@@ -86,7 +116,8 @@ def _synthesize_verdict(sleep_status, band, flags, signal_mode):
         if signal_mode == "reduced":
             return ("GREEN",
                     "GREEN — all session types clear.",
-                    "No restrictions (reduced-signal — verdict from HRV 7-day band + RHR + sleep)")
+                    f"No restrictions (reduced-signal — "
+                    f"{_reduced_basis_phrase(hrv_sample_size)})")
         return ("GREEN",
                 "GREEN — all session types clear.",
                 "No restrictions (minimal-signal — sleep-gated; self-assess before intensity)")
@@ -127,13 +158,15 @@ def _render_sleep_hrv(result):
     if mode == "reduced":
         lines.append("⚠ REDUCED-SIGNAL MODE — no WHOOP Recovery / respiration / SpO2.")
         hrv_n = result.get("hrv", {}).get("sample_size") or 0
-        if hrv_n < MIN_BASELINE_SIZE:
+        if _hrv_baseline_mature(hrv_n):
+            lines.append("  Verdict from HRV 7-day band + RHR + sleep + subjective.")
+        else:
+            # Shared basis phrase (also used in the ceiling) keeps banner ⇔
+            # ceiling in lockstep; the (N/7 days) progress detail is banner-only.
             lines.append(
                 f"  HRV baseline still building ({hrv_n}/{MIN_BASELINE_SIZE} days)"
-                f" — verdict from sleep + resting HR."
+                f" — {_reduced_basis_phrase(hrv_n)}."
             )
-        else:
-            lines.append("  Verdict from HRV 7-day band + RHR + sleep + subjective.")
     elif mode == "minimal":
         lines.append("⚠ MINIMAL-SIGNAL MODE — sleep + subjective only (no HRV / RHR / Recovery).")
         lines.append("  Verdict is a sleep gate; self-assess before any intensity.")
@@ -343,7 +376,9 @@ def readiness_check(client, lookback_days=14):
 
     band = _recovery_band(today_recovery)
     sleep_status, sleep_note = _sleep_status(latest)
-    verdict_band, verdict, ceiling = _synthesize_verdict(sleep_status, band, flags, signal_mode)
+    verdict_band, verdict, ceiling = _synthesize_verdict(
+        sleep_status, band, flags, signal_mode,
+        hrv_sample_size=sample_sizes.get("hrv", 0))
 
     # Subjective stale-data + subjective values: lifted from wellness_summary (R6).
     subj_keys = ["fatigue", "soreness", "stress", "mood"]
