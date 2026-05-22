@@ -34,13 +34,10 @@ desktop.ini
 *.orig
 
 # Athlete-specific plan state (PII — see CLAUDE.md → "plans/ is gitignored")
-plans/active_plan.md
-plans/block_history.md
-plans/archived_*.md
-plans/*_regen.json
-plans/*_original.md
-plans/prediction_ledger.jsonl
-plans/athlete_calibration.md
+# Ignore the entire directory so any future PII file is excluded by default;
+# keep only the .gitkeep placeholder so the directory itself stays tracked.
+plans/*
+!plans/.gitkeep
 
 # Script outputs containing athlete data (HRV, RHR, RPE, FTP, weight, training history)
 # Anchored to repo root so test fixtures with the same name are unaffected.
