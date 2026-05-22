@@ -533,6 +533,31 @@ def _baseline_note(maturity, nonzero_sizes):
         return None
 
 
+def detect_signal_mode(latest):
+    """Classify which readiness signals are present → degradation tier.
+
+    Returns one of:
+      "full"         WHOOP Recovery score present — the complete verdict.
+      "reduced"      HRV and/or RHR present, no Recovery — HRV-band verdict.
+      "minimal"      only sleep hours and/or subjective fields.
+      "insufficient" nothing usable.
+
+    Inputs are read defensively with .get — a missing key means the signal
+    is absent, never an exception. `latest` is the normalized snake_case
+    daily record (e.g. as built by _build_daily).
+    """
+    if latest.get("readiness") is not None:
+        return "full"
+    if latest.get("hrv") is not None or latest.get("resting_hr") is not None:
+        return "reduced"
+    subjective_present = any(
+        latest.get(k) is not None for k in ("fatigue", "soreness", "stress", "mood")
+    )
+    if latest.get("sleep_hours") is not None or subjective_present:
+        return "minimal"
+    return "insufficient"
+
+
 def wellness_summary(client, days=14):
     """Aggregate the last N days of intervals.icu wellness data into a readiness summary.
 
@@ -558,6 +583,8 @@ def wellness_summary(client, days=14):
           - `baseline_maturity`: "insufficient" / "preliminary" / "consolidating" / "stable"
             (derived from smallest non-zero per-metric sample size; ≥7 = consolidating,
             ≥14 = stable)
+          - `signal_mode`: "full" / "reduced" / "minimal" / "insufficient" —
+            which readiness signals are present (drives the readiness verdict)
           - `baseline_sample_sizes`: per-metric history counts
             (e.g. `{"resting_hr": 4, "hrv": 4, "respiration": 4, ...}`)
           - `baseline`: per-metric averages (only populated for metrics with history)
@@ -619,6 +646,7 @@ def wellness_summary(client, days=14):
         "history_days": len(history),
         "partial_baseline": partial_baseline,
         "baseline_maturity": maturity,
+        "signal_mode": detect_signal_mode(latest),
         "baseline_sample_sizes": sizes,
         "baseline": baseline,
         "latest": latest,

@@ -21,6 +21,7 @@ from intervals_icu_api import (
     weekly_summary,
     wellness_summary,
 )
+from intervals_icu.wellness import detect_signal_mode
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
@@ -1686,6 +1687,44 @@ class TestWellnessSummaryEdgeCases(unittest.TestCase):
         self.assertEqual(result["baseline_maturity"], "preliminary")
         # baseline_note must surface the smallest n so reader sees which metric blocks
         self.assertIn("n=2", result["baseline_note"])
+
+
+class TestDetectSignalMode(unittest.TestCase):
+    """W7/D1 — readiness signal-mode tier ladder."""
+
+    def test_full_when_recovery_present(self):
+        self.assertEqual(detect_signal_mode({"readiness": 65}), "full")
+
+    def test_full_takes_precedence(self):
+        # readiness present → full even when HRV/sleep also present
+        self.assertEqual(
+            detect_signal_mode({"readiness": 60, "hrv": 55, "sleep_hours": 7}),
+            "full",
+        )
+
+    def test_reduced_when_hrv_present(self):
+        self.assertEqual(detect_signal_mode({"hrv": 60}), "reduced")
+
+    def test_reduced_when_rhr_present(self):
+        self.assertEqual(detect_signal_mode({"resting_hr": 48}), "reduced")
+
+    def test_minimal_when_only_sleep(self):
+        self.assertEqual(detect_signal_mode({"sleep_hours": 7.5}), "minimal")
+
+    def test_minimal_when_only_subjective(self):
+        self.assertEqual(detect_signal_mode({"fatigue": 2}), "minimal")
+
+    def test_insufficient_when_nothing_usable(self):
+        self.assertEqual(detect_signal_mode({}), "insufficient")
+        self.assertEqual(detect_signal_mode({"weight": 74}), "insufficient")
+
+    def test_wellness_summary_reports_signal_mode(self):
+        client = IntervalsIcuClient("test", "test")
+        records = [{"id": "2026-05-20", "hrv": 60, "restingHR": 48, "sleepSecs": 27000},
+                   {"id": "2026-05-21", "hrv": 61, "restingHR": 47, "sleepSecs": 26000}]
+        with patch.object(client, "get_wellness", return_value=records):
+            result = wellness_summary(client, days=14)
+        self.assertEqual(result["signal_mode"], "reduced")
 
 
 if __name__ == "__main__":
