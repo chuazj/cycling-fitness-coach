@@ -102,6 +102,7 @@ Read these on demand based on the task:
 - `scripts/generate_zwo.py` — Programmatic ZWO generation (single workout)
 - `scripts/pmc_calculator.py` — PMC bootstrap (90-day history) and weekly update (planned vs actual, CTL/ATL/TSB, peak powers)
 - `scripts/batch_generate_zwo.py` — Batch ZWO generation from JSON array (full week of workouts)
+- `scripts/zwo_lint.py` — Validates an existing .zwo file against the canonical element reference + project hygiene rules. Collects all findings; reports NP-based modeled stats. Exit 0/1/2.
 - `scripts/sparkline.py` — Pure-Python ASCII sparkline helper (no extra deps). Used by Weekly Review to render Peak Power Trends visually in `plans/active_plan.md`.
 - `scripts/rpe_trend.py` — RPE trend aggregator. Scans Obsidian workout-review frontmatter; computes 2-wk-vs-prior-2-wk RPE-at-IF deltas; flags functional-overreaching pattern (rising RPE at constant IF). Pure Python, no extra deps.
 - `scripts/prediction_tracker.py` — W5 validation loop. Logs forecasts (RPE-at-IF, FTP-gain) to `plans/prediction_ledger.jsonl`, reconciles them against actuals, and flags recalibration. Modes: `--mode seed-baseline` / `--mode predict` / `--mode reconcile`. Pure Python, no extra deps.

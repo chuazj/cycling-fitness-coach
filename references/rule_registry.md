@@ -72,7 +72,9 @@ Standing rules added after the W4 audit and wired into a workflow in the same ch
 |---|---|---|---|---|---|
 | RPE-at-IF recalibration trigger | `references/prediction_calibration.md` → Recalibration triggers | coach-internal | Weekly review; abs mean signed delta ≥ 1.0 over the last 5 reconciled RPE predictions in one slot | `plan.md` Weekly Review → Forecast Accuracy block | wired |
 | FTP-gain recalibration trigger | `references/prediction_calibration.md` → Recalibration triggers | coach-internal | Weekly review; 2 consecutive completed blocks with actual gain outside the predicted range | `plan.md` Weekly Review → Forecast Accuracy block | wired |
+| ERG long-rep design rule | project `CLAUDE.md` → .zwo edit hygiene | coach-internal | Generating/linting a workout with high-intensity reps (≥1.05 FTP) shorter than 2-3 min | `generate_zwo.py check_erg_design` (generator output) + `zwo_lint.py` W6 | wired |
 
 ---
-*Created by W4, 2026-05-21. Out of scope: the ERG long-rep design rule — owned by roadmap W6; it will be added here when W6 wires it.*
+*Created by W4, 2026-05-21.*
 *W5 (2026-05-21) appended the Post-W4 rules section — the 2 recalibration triggers.*
+*W6 (2026-05-21) wired the ERG long-rep design rule into `generate_zwo.py` + `zwo_lint.py`.*
