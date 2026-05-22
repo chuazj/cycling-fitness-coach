@@ -8,7 +8,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from fit_ingest import _extract, _import_fitparse, analyze_local
+from fit_ingest import _extract, _import_fitparse, analyze_local, parse_fit
 
 
 class _FakeMsg:
@@ -152,6 +152,33 @@ class TestAnalyzeLocal(unittest.TestCase):
                                ftp=200, weight=70)
         self.assertIsNone(result["metrics"]["zone_percent"])
         self.assertIsNone(result["metrics"]["cardiac_drift"])
+
+
+try:
+    import fitparse as _fitparse_mod  # noqa: F401
+    _HAS_FITPARSE = True
+except ImportError:
+    _HAS_FITPARSE = False
+
+_FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "sample_ride.fit")
+
+
+@unittest.skipUnless(_HAS_FITPARSE and os.path.exists(_FIXTURE),
+                     "requires fitparse + the synthetic sample_ride.fit fixture")
+class TestParseFitSmoke(unittest.TestCase):
+    """Real-bytes smoke test through actual fitparse on a synthetic fixture."""
+
+    def test_parse_synthetic_fit(self):
+        records, metadata = parse_fit(_FIXTURE)
+        self.assertEqual(len(records), 60)
+        self.assertEqual(records[0]["watts"], 180)
+        self.assertTrue(metadata["device_watts"])
+
+    def test_analyze_synthetic_fit_end_to_end(self):
+        records, metadata = parse_fit(_FIXTURE)
+        result = analyze_local(records, metadata, ftp=200, weight=70)
+        self.assertEqual(result["source"], "fit_file")
+        self.assertIsNotNone(result["metrics"]["normalized_power"])
 
 
 if __name__ == "__main__":
