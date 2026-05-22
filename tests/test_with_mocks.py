@@ -1811,5 +1811,53 @@ class TestReadinessSignalModeContract(unittest.TestCase):
         self.assertEqual(result["verdict_band"], "INSUFFICIENT-DATA")
 
 
+class TestGetNonJsonResponse(unittest.TestCase):
+    """W7 — _get raises a clear RuntimeError on a non-JSON response body.
+
+    IntervalsIcuClient and patch are already imported at the top of
+    test_with_mocks.py — no new imports needed."""
+
+    def test_non_json_raises_runtimeerror(self):
+        client = IntervalsIcuClient("i1", "key")
+
+        class _Resp:
+            status_code = 200
+            def raise_for_status(self):
+                pass
+            def json(self):
+                raise ValueError("not json")
+
+        with patch.object(client.session, "get", return_value=_Resp()):
+            with self.assertRaises(RuntimeError) as cm:
+                client._get("/x")
+        self.assertIn("Non-JSON", str(cm.exception))
+
+
+class TestUseAthleteProfileNonTty(unittest.TestCase):
+    """W7 — --use-athlete-profile with no resolvable FTP and a non-TTY stdin
+    must hard-error, never silently default.
+
+    patch, os, sys are already imported at the top of test_with_mocks.py."""
+
+    def test_non_tty_no_ftp_errors(self):
+        import intervals_icu.cli as cli_mod
+
+        class _Client:
+            def __init__(self, *a, **k):
+                pass
+            def get_athlete(self):
+                return {}  # no icu_ftp, no sportSettings → unresolvable
+
+        argv = ["prog", "--activity", "i1", "--use-athlete-profile"]
+        with patch.object(cli_mod, "IntervalsIcuClient", _Client), \
+             patch.object(cli_mod, "load_env", lambda: None), \
+             patch.dict(os.environ, {"INTERVALS_ICU_ATHLETE_ID": "i1",
+                                     "INTERVALS_ICU_API_KEY": "k"}), \
+             patch.object(sys, "argv", argv), \
+             patch.object(sys.stdin, "isatty", lambda: False):
+            with self.assertRaises(SystemExit):
+                cli_mod.main()
+
+
 if __name__ == "__main__":
     unittest.main()

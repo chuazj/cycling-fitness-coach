@@ -61,6 +61,23 @@ def build_parser():
     return p
 
 
+def _resolve_profile_ftp(profile):
+    """Resolve FTP from an intervals.icu athlete profile.
+
+    Tries top-level `icu_ftp`, then walks `sportSettings` for the first
+    bike entry. Returns (ftp_value, source_str); ftp_value is None when no
+    FTP is found.
+    """
+    ftp_value = profile.get("icu_ftp")
+    if ftp_value:
+        return ftp_value, "icu_ftp"
+    for s in profile.get("sportSettings") or []:
+        types = s.get("types") or []
+        if any(t in types for t in ("Ride", "VirtualRide", "Cyclocross")):
+            return s.get("ftp"), f"sportSettings[{','.join(types)}].ftp"
+    return None, "icu_ftp"
+
+
 def main():
     p = build_parser()
     args = p.parse_args()
@@ -85,15 +102,7 @@ def main():
             # sportSettings to find the bike entry. intervals.icu stores per-sport
             # FTPs under sportSettings[i]['ftp'] where types includes Ride/VirtualRide.
             if args.ftp is None:
-                ftp_value = profile.get("icu_ftp")
-                ftp_source = "icu_ftp"
-                if not ftp_value:
-                    for s in profile.get("sportSettings") or []:
-                        types = s.get("types") or []
-                        if any(t in types for t in ("Ride", "VirtualRide", "Cyclocross")):
-                            ftp_value = s.get("ftp")
-                            ftp_source = f"sportSettings[{','.join(types)}].ftp"
-                            break
+                ftp_value, ftp_source = _resolve_profile_ftp(profile)
                 if ftp_value:
                     args.ftp = ftp_value
                     print(f"Using FTP from athlete profile: {args.ftp}W (source: {ftp_source})", file=sys.stderr)

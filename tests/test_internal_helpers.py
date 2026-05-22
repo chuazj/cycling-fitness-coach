@@ -1214,5 +1214,52 @@ class TestReadinessHelpers(unittest.TestCase):
         self.assertEqual(vb, "GREEN")
 
 
+class TestResolveProfileFtp(unittest.TestCase):
+    """W7 — extracted athlete-profile FTP resolution helper."""
+
+    def test_top_level_icu_ftp(self):
+        from intervals_icu.cli import _resolve_profile_ftp
+        self.assertEqual(_resolve_profile_ftp({"icu_ftp": 250}), (250, "icu_ftp"))
+
+    def test_sport_settings_bike_entry(self):
+        from intervals_icu.cli import _resolve_profile_ftp
+        profile = {"sportSettings": [{"types": ["Ride", "VirtualRide"], "ftp": 188}]}
+        ftp, source = _resolve_profile_ftp(profile)
+        self.assertEqual(ftp, 188)
+        self.assertIn("sportSettings", source)
+
+    def test_no_ftp_anywhere(self):
+        from intervals_icu.cli import _resolve_profile_ftp
+        self.assertEqual(_resolve_profile_ftp({}), (None, "icu_ftp"))
+
+
+class TestLoadEnv(unittest.TestCase):
+    """W7 — .env parser coverage."""
+
+    def test_parses_quotes_comments_and_setdefault(self):
+        import tempfile
+        from intervals_icu.api_client import load_env
+        saved = {k: os.environ.get(k)
+                 for k in ("INTERVALS_ICU_API_KEY", "INTERVALS_ICU_ATHLETE_ID")}
+        try:
+            os.environ.pop("INTERVALS_ICU_API_KEY", None)
+            os.environ.pop("INTERVALS_ICU_ATHLETE_ID", None)
+            with tempfile.TemporaryDirectory() as d:
+                envp = os.path.join(d, ".env")
+                with open(envp, "w", encoding="utf-8") as f:
+                    f.write('INTERVALS_ICU_API_KEY="secret123"  # trailing comment\n')
+                    f.write("INTERVALS_ICU_ATHLETE_ID=i999\n")
+                    f.write("\n# a full-line comment\n")
+                load_env(envp)
+                self.assertEqual(os.environ["INTERVALS_ICU_API_KEY"], "secret123")
+                self.assertEqual(os.environ["INTERVALS_ICU_ATHLETE_ID"], "i999")
+        finally:
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+
 if __name__ == "__main__":
     unittest.main()
