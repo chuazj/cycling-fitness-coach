@@ -137,5 +137,50 @@ class TestLintErrors(unittest.TestCase):
         self.assertEqual(self._codes(VALID_ZWO), set())
 
 
+class TestLintWarnings(unittest.TestCase):
+    def _codes(self, xml):
+        return {f["code"] for f in lint_xml(xml)}
+
+    def test_w1_unknown_attribute(self):
+        self.assertIn("W1", self._codes(
+            '<workout_file><workout>'
+            '<SteadyState Duration="60" Power="0.75" Bogus="1"/>'
+            '</workout></workout_file>'))
+
+    def test_w2_textevent_past_duration(self):
+        self.assertIn("W2", self._codes(
+            '<workout_file><workout>'
+            '<SteadyState Duration="60" Power="0.75">'
+            '<textevent timeoffset="90" message="late"/></SteadyState>'
+            '</workout></workout_file>'))
+
+    def test_w3_both_cadence_forms(self):
+        self.assertIn("W3", self._codes(
+            '<workout_file><workout>'
+            '<SteadyState Duration="60" Power="0.75" Cadence="90" '
+            'CadenceLow="85" CadenceHigh="95"/></workout></workout_file>'))
+
+    def test_w4_ftptest_without_freeride(self):
+        self.assertIn("W4", self._codes(
+            '<workout_file><workout ftptest="1">'
+            '<SteadyState Duration="1200" Power="1.0"/></workout></workout_file>'))
+
+    def test_w5_erg_inert_power_cue(self):
+        self.assertIn("W5", self._codes(
+            '<workout_file><workout>'
+            '<SteadyState Duration="600" Power="0.75">'
+            '<textevent timeoffset="10" message="drop to 250 W"/></SteadyState>'
+            '</workout></workout_file>'))
+
+    def test_w6_erg_micro_rep(self):
+        self.assertIn("W6", self._codes(
+            '<workout_file><workout>'
+            '<IntervalsT Repeat="8" OnDuration="20" OffDuration="40" '
+            'OnPower="1.2" OffPower="0.5"/></workout></workout_file>'))
+
+    def test_clean_file_no_warnings(self):
+        self.assertEqual(self._codes(VALID_ZWO), set())
+
+
 if __name__ == "__main__":
     unittest.main()
