@@ -197,18 +197,17 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
     if watts_present and not has_power_stream:
         data_warnings.append("streams_too_short: Power stream present but too short for zone/drift analysis")
 
-    # I-2: data_completeness reflects actual power availability, not always "complete".
-    # When there is no usable power data, match analyze()'s "partial (missing: X)" format.
-    missing_components = []
-    if not watts_present:
-        missing_components.append("power")
-    data_completeness = ("complete" if not missing_components
-                         else f"partial (missing: {', '.join(missing_components)})")
+    # I-2: data_completeness mirrors analyze()'s semantics — it means "did the API
+    # fetches succeed", NOT "is the data high quality". A local .fit has no API
+    # fetches, so nothing can fail to fetch → always "complete". Data-quality
+    # issues (no power, short stream) are surfaced via data_warnings, not here.
+    data_completeness = "complete"
 
     max_watts = max(watts_present) if watts_present else None
     is_indoor = bool(metadata.get("trainer")) or metadata.get("sport_type") in ("VirtualRide", "VirtualRun")
-    # I-3: zero-fill None gaps so every recorded second contributes 0 W during
-    # coasting — prevents undercounting energy on files with None gaps.
+    # M-1 sibling: zero-fill None gaps for kJ. Numerically identical to summing
+    # only non-None samples (a None contributes 0 to a sum either way) — kept
+    # zero-filled purely for symmetry with the avg_w computation above.
     kj = (round(sum(w if w is not None else 0 for w in watts) / 1000, 1)
           if watts_present else None)
 

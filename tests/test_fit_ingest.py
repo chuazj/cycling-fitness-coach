@@ -162,28 +162,25 @@ class TestAnalyzeLocal(unittest.TestCase):
                          "metrics must not contain power_profile (top-level weekly key only)")
 
     # ------------------------------------------------------------------
-    # I-2: data_completeness must reflect missing power, not always "complete"
+    # I-2: data_completeness mirrors analyze() — "did API fetches succeed",
+    # NOT "is the data good". A local .fit has no API fetches, so it is always
+    # "complete". No-power is surfaced via the estimated_power data_warning.
     # ------------------------------------------------------------------
 
-    def test_no_power_data_completeness_is_partial(self):
-        # No power at all → data_completeness starts with "partial"
+    def test_no_power_data_completeness_is_complete(self):
+        # No power at all → data_completeness is still "complete" (parity with
+        # analyze(): a no-power intervals.icu activity is "complete" too).
         records = [{"seconds": i, "watts": None, "heartrate": 140, "cadence": None}
                    for i in range(120)]
         result = analyze_local(records, self._meta(device_watts=False),
                                ftp=200, weight=70)
+        self.assertEqual(result["data_completeness"], "complete")
+        # The no-power case is surfaced via data_warnings, not data_completeness —
+        # this is the real, verifiable parity contract.
         self.assertTrue(
-            result["data_completeness"].startswith("partial"),
-            f"Expected 'partial ...', got: {result['data_completeness']!r}",
+            any("estimated_power" in w for w in result["data_warnings"]),
+            "no-power ride must carry an estimated_power data_warning",
         )
-        self.assertIn("power", result["data_completeness"])
-
-    def test_no_power_data_completeness_format(self):
-        # Exact format: "partial (missing: power)"
-        records = [{"seconds": i, "watts": None, "heartrate": 140, "cadence": None}
-                   for i in range(120)]
-        result = analyze_local(records, self._meta(device_watts=False),
-                               ftp=200, weight=70)
-        self.assertEqual(result["data_completeness"], "partial (missing: power)")
 
     def test_with_power_data_completeness_is_complete(self):
         # When power IS present, "complete" must still be returned.
@@ -194,8 +191,8 @@ class TestAnalyzeLocal(unittest.TestCase):
         self.assertEqual(result["data_completeness"], "complete")
 
     def test_sparse_power_still_complete(self):
-        # <30 real watts triggers streams_too_short warning, but NOT a "partial"
-        # completeness — mirrors analyze()'s behavior (warning, not completeness flag).
+        # <30 real watts triggers a streams_too_short warning, but NOT a
+        # "partial" completeness — mirrors analyze() (warning, not completeness).
         records = [{"seconds": i,
                     "watts": 200 if i < 10 else None,
                     "heartrate": 140, "cadence": None}
@@ -203,47 +200,34 @@ class TestAnalyzeLocal(unittest.TestCase):
         result = analyze_local(records, self._meta(moving_time_s=200),
                                ftp=200, weight=70)
         self.assertEqual(result["data_completeness"], "complete")
+        self.assertTrue(
+            any("streams_too_short" in w for w in result["data_warnings"]),
+            "sparse-power ride must carry a streams_too_short data_warning",
+        )
 
     # ------------------------------------------------------------------
-    # I-3 + M-1: kJ and avg_w must zero-fill None gaps
+    # M-1: avg_w must divide by ALL records, not just non-None samples.
+    # (kJ is unaffected — a None contributes 0 to a sum either way — so there
+    # is no separate I-3 bug; kJ is asserted only as a regression guard.)
     # ------------------------------------------------------------------
 
-    def test_kj_includes_none_gaps_as_zero(self):
-        # 60 records: first 30 at 200W, next 30 at None (coasting).
-        # Correct kJ = (30×200 + 30×0) / 1000 = 6.0 kJ.
-        # Bug: skipping None gives (30×200)/1000 = 6.0 kJ for only 30 samples
-        # — happens to be the same here; use 300W to make the difference visible.
-        # 60 records: 30 @ 300W, 30 @ None → correct = 9.0 kJ, buggy = 9.0 kJ.
-        # Better: use uneven split. 40 records: 10 @ 360W, 30 @ None
-        #   correct = (10×360 + 30×0)/1000 = 3.6 kJ
-        #   buggy   = (10×360)/1000 = 3.6 kJ  (same! bug only shows in avg)
-        # For kJ the difference is mathematical only in avg_w (M-1); test separately.
-        # kJ bug: sum(watts_present)/1000 vs sum(zero_filled)/1000 are identical
-        # because sum([300,300,...None,None]) = sum([300,...]) either way.
-        # So I-3 and M-1 are the SAME bug expressed differently: the total energy
-        # and average are both already correct for kJ (sum of non-None is the same
-        # as sum of zero-filled non-None); the avg_w divisor is the real issue.
-        # Correct: avg_w = sum(zero_filled) / len(all_records)
-        # Bug:     avg_w = sum(watts_present) / len(watts_present)
-        # Test: 10 records at 200W, 10 at None → avg should be 100W (20×samples total)
+    def test_avg_w_divides_over_all_records(self):
+        # 20 records: 10 @ 200W, 10 @ None. avg_w must be over all 20 samples:
+        #   correct: (10*200 + 10*0) / 20 = 100.0
+        #   bug:     (10*200) / 10        = 200.0  (divisor too small)
         records = (
             [{"seconds": i, "watts": 200, "heartrate": 140, "cadence": 90} for i in range(10)]
             + [{"seconds": i + 10, "watts": None, "heartrate": 140, "cadence": 90}
                for i in range(10)]
         )
         result = analyze_local(records, self._meta(moving_time_s=20), ftp=200, weight=70)
-        # avg_w over 20 samples with zero-fill: (10×200 + 10×0) / 20 = 100.0
         self.assertEqual(result["activity"]["average_watts"], 100.0,
                          "avg_w must be computed over ALL records (zero-fill None gaps)")
 
-    def test_kj_zero_fill_over_all_records(self):
-        # kJ = sum(zero_filled_watts) / 1000 using ALL records' duration.
-        # 20 records: 10 @ 200W, 10 @ None
-        # correct kJ = (10*200 + 10*0) / 1000 = 2.0
-        # buggy  kJ  = (10*200) / 1000        = 2.0  ← same! (sum unchanged)
-        # So kJ itself is unaffected by the zero-fill choice (sum of present watts
-        # equals sum of zero-filled watts). The fix is purely in the avg divisor.
-        # This test documents that kJ stays correct either way.
+    def test_kj_unaffected_by_none_gaps(self):
+        # Regression guard: kJ = sum(watts) / 1000. A None contributes 0 to the
+        # sum either way, so kJ is the same whether or not None is zero-filled.
+        # 20 records: 10 @ 200W, 10 @ None → kJ = (10*200) / 1000 = 2.0.
         records = (
             [{"seconds": i, "watts": 200, "heartrate": 140, "cadence": 90} for i in range(10)]
             + [{"seconds": i + 10, "watts": None, "heartrate": 140, "cadence": 90}
