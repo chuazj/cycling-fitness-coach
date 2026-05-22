@@ -178,6 +178,31 @@ class TestLintWarnings(unittest.TestCase):
             '<IntervalsT Repeat="8" OnDuration="20" OffDuration="40" '
             'OnPower="1.2" OffPower="0.5"/></workout></workout_file>'))
 
+    def test_w1_cadence_range_on_freeride_and_maxeffort_ok(self):
+        # FreeRide/MaxEffort legitimately carry a cadence range — must not trip W1.
+        for tag in ("FreeRide", "MaxEffort"):
+            xml = (f'<workout_file><workout>'
+                   f'<{tag} Duration="600" CadenceLow="85" CadenceHigh="95"/>'
+                   f'</workout></workout_file>')
+            self.assertNotIn("W1", self._codes(xml), tag)
+
+    def test_w5_plain_watt_label_not_flagged(self):
+        # An informational watt label is not an ERG-inert *command* — no W5.
+        self.assertNotIn("W5", self._codes(
+            '<workout_file><workout>'
+            '<SteadyState Duration="600" Power="0.95">'
+            '<textevent timeoffset="10" message="Threshold 185W"/></SteadyState>'
+            '</workout></workout_file>'))
+
+    def test_w6_erg_short_rep(self):
+        findings = lint_xml(
+            '<workout_file><workout>'
+            '<IntervalsT Repeat="5" OnDuration="60" OffDuration="60" '
+            'OnPower="1.15" OffPower="0.5"/></workout></workout_file>')
+        w6 = [f for f in findings if f["code"] == "W6"]
+        self.assertEqual(len(w6), 1)
+        self.assertIn("short rep", w6[0]["message"])
+
     def test_clean_file_no_warnings(self):
         self.assertEqual(self._codes(VALID_ZWO), set())
 

@@ -43,13 +43,17 @@ VALID_ATTRS = {
                     "CadenceHigh", "show_avg"},
     "IntervalsT": {"Repeat", "OnDuration", "OffDuration", "OnPower", "OffPower",
                    "Cadence", "CadenceResting", "CadenceLow", "CadenceHigh"},
-    "FreeRide": {"Duration", "FlatRoad", "ftptest", "show_avg", "Cadence"},
-    "MaxEffort": {"Duration", "Cadence"},
+    "FreeRide": {"Duration", "FlatRoad", "ftptest", "show_avg", "Cadence",
+                 "CadenceLow", "CadenceHigh"},
+    "MaxEffort": {"Duration", "Cadence", "CadenceLow", "CadenceHigh"},
 }
 
-# ERG-inert cue patterns — power commands that ERG mode silently ignores.
+# ERG-inert cue patterns — power *commands* that ERG mode silently ignores.
+# Command verbs, or a "to/at NNN W" transition/hold instruction. A bare watt
+# label ("Threshold 185W") is informational, not a command — not flagged.
 ERG_POWER_CUE = re.compile(
-    r"\b(drop to|increase to|raise to|lower to)\b|\d+\s?[Ww]\b", re.IGNORECASE)
+    r"\b(drop to|increase to|raise to|lower to)\b"
+    r"|\b(?:to|at)\s+\d+\s?[Ww]\b", re.IGNORECASE)
 
 
 def _finding(severity: str, code: str, message: str, location: str = "") -> dict:
@@ -84,7 +88,7 @@ def _iattr(elem, attr):
 
 
 def _check_interval(elem, loc: str, findings: list) -> None:
-    """Run per-interval structural error checks (E5-E8) on one element."""
+    """Run per-interval error + warning checks (E5-E8, W1-W3, W5-W6) on one element."""
     tag = elem.tag
 
     # E5 — power attributes in 0.0-2.0
