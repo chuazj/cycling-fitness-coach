@@ -119,7 +119,7 @@ python scripts/prediction_tracker.py --mode reconcile --vault-path "<CYCLING_VAU
 Ledger (`plans/prediction_ledger.jsonl`) and athlete model (`plans/athlete_calibration.md`) are gitignored PII.
 Reads YAML frontmatter from each `.md`, extracts `(date, session_type, if, rpe)`, compares last `--weeks` weeks to the prior `--weeks` weeks per session type. Flags `rising_rpe_at_constant_if` when ΔRPE ≥ 1.0 with ΔIF within ±0.03. Used by the Weekly Review workflow. Returns `error` field if no usable reviews found (silent skip in workflow).
 
-No build or lint infrastructure exists. Tests: `python -m unittest discover tests -v` (446 tests across 5 files, runs in ~0.1s — run before AND after any script change).
+No build or lint infrastructure exists. Tests: `python -m unittest discover tests -v` (637 tests across 8 files, runs in ~0.1s — run before AND after any script change).
 
 ## Wellness signal changes
 
@@ -171,6 +171,9 @@ tests/
   test_internal_helpers.py      ← Unit tests for the intervals_icu package's decomposed helpers
   test_cli.py                   ← CLI argument parsing tests
   test_pmc_integration.py       ← PMC bootstrap/weekly with mocked API
+  test_fit_ingest.py            ← .fit file ingestion tests
+  test_prediction_tracker.py    ← Prediction tracker tests (W5 validation loop)
+  test_zwo_lint.py              ← ZWO linter tests
   fixtures/                     ← Mock API responses (activity.json, intervals.json, power_curve.json)
 evals/
   evals.json                    ← Skill evaluation definitions

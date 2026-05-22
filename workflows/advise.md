@@ -40,6 +40,8 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 
 > HRV framing uses **Plews/Buchheit 7-day rolling band** (μ ± 0.5σ) — the operational rule shipped in `--readiness-check`. Single-day below band = yellow; 2 consecutive days below band = red (de-load trigger). The legacy "% drop" framing is deprecated.
 
+> **Signal-mode scope:** the Recovery-score band cells (Recovery ≥67, 34–66, <34) apply in **`full` signal mode only** — when WHOOP Recovery is present. In `reduced` or `minimal` mode there is no Recovery score; use the RHR, sleep, and HRV signals in each row instead. See the wearable dependency — signal-mode contract in the Mid-Week Check-In section below.
+
 | Fatigue signal | Action | Session adjustment |
 |---|---|---|
 | Mild (RPE +1 vs typical, sleep ok, Recovery ≥67, HRV in/above 7-day band) | Train as planned, monitor first 15 min | None — abort if RPE doesn't settle |

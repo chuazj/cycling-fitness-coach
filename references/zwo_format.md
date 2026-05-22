@@ -208,6 +208,15 @@ power; for ERG-mode structured workouts it tracks intervals.icu's post-ride
 TSS within **±10% (measured 2026-05-22: mean abs delta 4.0%, max 9.5%, n=4
 BLK3 ERG sessions)**.
 
+## Design constraints (ERG)
+
+These constraints apply when the athlete rides in ERG mode (trainer holds commanded power regardless of rider gearing or cadence):
+
+- **ERG-actionable cues**: power-change textevents (e.g., "drop to 250 W") are not actionable in ERG mode — the trainer is already holding the target. Name the mechanism instead: "tap Zwift intensity down ~N%". Power-change instructions only make literal sense inside `<FreeRide>` segments.
+- **ERG interval-length design**: ERG trainers (e.g., Wahoo KICKR) take ~3–5 s to settle after a power step. For VO2max and short-interval workouts, design reps **≥2–3 min** so ERG lag is negligible relative to interval duration. Intervals ≤30 s lose fidelity — redesign longer, or label the file explicitly for resistance/non-ERG riding.
+
+These rules are enforced by `zwo_lint.py` (ERG-inert power-command cue warning; ERG short/micro work rep warning). See the Linting section below.
+
 ## Linting `.zwo` files
 
 `scripts/zwo_lint.py` validates an existing `.zwo` file against the canonical

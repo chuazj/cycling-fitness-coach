@@ -27,8 +27,8 @@ A rule is orphan-prone when ALL hold: it is a standing/situational coaching rule
 |---|---|---|---|---|---|
 | Realistic-gain guardrail | `periodization.md` → FTP Builder → Block-level coaching notes | athlete-facing | Plan creation; goal implies >4% FTP gain in one block | `plan.md` Step 9 plan summary — inline note after Block Structure | wired |
 | ERG-variety Flex-day session | `periodization.md` → FTP Builder block notes | coach-internal | Designing any block with a Flex day | `plan.md` Step 5 Checks applied; `generate.md` Step 2 note | wired |
-| Stimulus rotation | `periodization.md` → Block Selection Logic §5 | coach-internal | 2+ consecutive same-type blocks in `block_history.md` | `plan.md` Step 5 Checks applied | wired |
-| Tropical / indoor heat-adaptation offer | `periodization.md` → Block Selection Logic §6 | athlete-facing | Athlete trains primarily indoors in a hot-humid climate | `plan.md` Step 5 Checks applied (decision) + Step 9 summary (offer) | wired |
+| Stimulus rotation | `periodization.md` → Block Selection Logic → Fitness-state modifiers §5 | coach-internal | 2+ consecutive same-type blocks in `block_history.md` | `plan.md` Step 5 Checks applied | wired |
+| Tropical / indoor heat-adaptation offer | `periodization.md` → Block Selection Logic → Fitness-state modifiers §6 | athlete-facing | Athlete trains primarily indoors in a hot-humid climate | `plan.md` Step 5 Checks applied (decision) + Step 9 summary (offer) | wired |
 | VO2max RPE persistence gate | `periodization.md` → VO2max Block notes | coach-internal | VO2max session analysed; RPE ≥9 or HR fails to reach range | `analyze.md` Analysis Checklist | wired |
 | Max one progression level per week | `periodization.md` → Progressive Overload Tables | coach-internal | Designing the next week's interval progression | `plan.md` Step 5 Checks applied | wired |
 | Aerobic base-squeeze flag | `periodization.md` → FTP Builder block notes | coach-internal | Weekly review; Z1–Z2 share < ~55% | `plan.md` Weekly Review Step 4 Checks applied | wired |
@@ -72,9 +72,9 @@ Standing rules added after the W4 audit and wired into a workflow in the same ch
 |---|---|---|---|---|---|
 | RPE-at-IF recalibration trigger | `references/prediction_calibration.md` → Recalibration triggers | coach-internal | Weekly review; abs mean signed delta ≥ 1.0 over the last 5 reconciled RPE predictions in one slot | `plan.md` Weekly Review → Forecast Accuracy block | wired |
 | FTP-gain recalibration trigger | `references/prediction_calibration.md` → Recalibration triggers | coach-internal | Weekly review; 2 consecutive completed blocks with actual gain outside the predicted range | `plan.md` Weekly Review → Forecast Accuracy block | wired |
-| ERG long-rep design rule | project `CLAUDE.md` → .zwo edit hygiene | coach-internal | Generating/linting a workout with high-intensity reps (≥1.05 FTP) ≤2 min long | `generate.md` Step 4 validation table (Lint pass) — enforced by `generate_zwo.py check_erg_design` + `zwo_lint.py` W6 | wired |
-| Signal-mode readiness contract | W7 / audit D2-3 | coach-internal | Non-WHOOP wellness data present (no `readiness` field) | `workflows/advise.md` → signal-mode contract + `readiness.py` verdict | wired |
-| `.fit` ingest fallback | W7 / audit D4-4 | coach-internal | Activity not on intervals.icu | `workflows/analyze.md` → fallback path | wired |
+| ERG long-rep design rule | `references/zwo_format.md` → Design constraints (ERG) | coach-internal | Generating/linting a workout with high-intensity reps (≥1.05 FTP) ≤2 min long | `generate.md` Step 4 validation table (Lint pass) — enforced by `generate_zwo.py check_erg_design` + `zwo_lint.py` W6 | wired |
+| Signal-mode readiness contract | `references/training_zones.md` → Non-WHOOP degradation; `workflows/advise.md` → signal-mode contract | coach-internal | Non-WHOOP wellness data present (no `readiness` field) | `workflows/advise.md` → signal-mode contract + `readiness.py` verdict | wired |
+| `.fit` ingest fallback | `references/intervals_icu_api.md` → Dependency Note; `workflows/analyze.md` → Fallback — activity not on intervals.icu | coach-internal | Activity not on intervals.icu | `workflows/analyze.md` → fallback path | wired |
 
 ---
 *Created by W4, 2026-05-21.*
