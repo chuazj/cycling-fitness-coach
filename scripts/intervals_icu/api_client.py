@@ -109,13 +109,17 @@ def load_env(env_path=None):
                         continue
                     key, _, val = line.partition("=")
                     val = val.strip()
-                    # Strip inline comments first (only if # is preceded by
-                    # whitespace, to avoid truncating values that contain #),
-                    # then strip matching quotes (single or double). Two-pass
-                    # so that quoted values with trailing comments are handled:
-                    #   "secret123"  # note  →  "secret123"  →  secret123
-                    val = re.split(r'\s+#', val, maxsplit=1)[0].strip()
-                    if len(val) >= 2 and val[0] == val[-1] and val[0] in ('"', "'"):
-                        val = val[1:-1]
+                    # Quote-aware value parsing. A quoted value: take the text
+                    # between the opening quote and its matching close quote;
+                    # anything after (whitespace / trailing comment) is dropped,
+                    # and a '#' inside the quotes is preserved. An unquoted
+                    # value: strip an inline comment (# preceded by whitespace).
+                    if len(val) >= 2 and val[0] in ('"', "'"):
+                        close = val.find(val[0], 1)
+                        if close != -1:
+                            val = val[1:close]
+                        # malformed (no closing quote): leave val as-is
+                    else:
+                        val = re.split(r'\s+#', val, maxsplit=1)[0].strip()
                     os.environ.setdefault(key.strip(), val)
             return

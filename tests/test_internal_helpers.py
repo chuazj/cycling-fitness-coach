@@ -1239,20 +1239,29 @@ class TestLoadEnv(unittest.TestCase):
     def test_parses_quotes_comments_and_setdefault(self):
         import tempfile
         from intervals_icu.api_client import load_env
-        saved = {k: os.environ.get(k)
-                 for k in ("INTERVALS_ICU_API_KEY", "INTERVALS_ICU_ATHLETE_ID")}
+        keys = ("INTERVALS_ICU_API_KEY", "INTERVALS_ICU_ATHLETE_ID",
+                "LOADENV_KEY_WITH_HASH", "LOADENV_PLAIN_KEY")
+        saved = {k: os.environ.get(k) for k in keys}
         try:
-            os.environ.pop("INTERVALS_ICU_API_KEY", None)
-            os.environ.pop("INTERVALS_ICU_ATHLETE_ID", None)
+            for k in keys:
+                os.environ.pop(k, None)
             with tempfile.TemporaryDirectory() as d:
                 envp = os.path.join(d, ".env")
                 with open(envp, "w", encoding="utf-8") as f:
                     f.write('INTERVALS_ICU_API_KEY="secret123"  # trailing comment\n')
                     f.write("INTERVALS_ICU_ATHLETE_ID=i999\n")
                     f.write("\n# a full-line comment\n")
+                    # Quoted value containing a hash — must be preserved.
+                    f.write('LOADENV_KEY_WITH_HASH="va # lue"\n')
+                    # Unquoted value with a trailing comment — must be stripped.
+                    f.write("LOADENV_PLAIN_KEY=plainval  # note\n")
                 load_env(envp)
                 self.assertEqual(os.environ["INTERVALS_ICU_API_KEY"], "secret123")
                 self.assertEqual(os.environ["INTERVALS_ICU_ATHLETE_ID"], "i999")
+                # Hash inside a quoted value is preserved, not truncated.
+                self.assertEqual(os.environ["LOADENV_KEY_WITH_HASH"], "va # lue")
+                # Trailing comment on an unquoted value is stripped.
+                self.assertEqual(os.environ["LOADENV_PLAIN_KEY"], "plainval")
         finally:
             for k, v in saved.items():
                 if v is None:
