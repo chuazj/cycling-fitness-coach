@@ -114,6 +114,14 @@ class TestComputeTss(unittest.TestCase):
     def test_zero_duration_returns_none(self):
         self.assertIsNone(compute_tss(200, 200, 0))
 
+    def test_negative_np_returns_none(self):
+        # Non-positive inputs are rejected, not silently squared into a value
+        self.assertIsNone(compute_tss(-50, 200, 3600))
+
+    def test_rounds_to_one_decimal(self):
+        # NP 173, FTP 188 → IF 0.9202… → TSS 84.66… → rounds to 84.7
+        self.assertEqual(compute_tss(173, 188, 3600), 84.7)
+
 
 class TestComputePeaks(unittest.TestCase):
     def test_known_samples(self):

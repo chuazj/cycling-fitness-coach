@@ -73,7 +73,9 @@ def compute_tss(np_watts, ftp, duration_s):
     Returns None when any input is missing or non-positive (no TSS is
     better than a misleading zero).
     """
-    if not np_watts or not ftp or not duration_s:
+    if np_watts is None or ftp is None or duration_s is None:
+        return None
+    if np_watts <= 0 or ftp <= 0 or duration_s <= 0:
         return None
     intensity_factor = np_watts / ftp
     return round((duration_s * intensity_factor ** 2) / 3600 * 100, 1)
