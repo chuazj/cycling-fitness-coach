@@ -6,7 +6,7 @@ Per-user setup that doesn't change per-session. **Read this once at the start of
 
 **Required:** `requests` (`pip install requests`) — intervals.icu API client (`scripts/intervals_icu_api.py`). All other scripts are stdlib-only.
 
-**Optional:** `fitparse` (`pip install fitparse`) — required only for `scripts/fit_ingest.py`, the `.fit`-file analysis fallback used when an activity has not synced to intervals.icu. All other scripts are stdlib-only except `requests` (for the intervals.icu API client).
+**Optional:** `fitparse` (`pip install fitparse`) — required only for `scripts/fit_ingest.py`, the `.fit`-file analysis fallback used when an activity has not synced to intervals.icu.
 
 ---
 

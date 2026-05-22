@@ -16,7 +16,7 @@ When user pastes an intervals.icu URL or activity ID:
 
 **Fallback — activity not on intervals.icu.** If a ride exists only on Strava / Garmin / Zwift and has not synced to intervals.icu, analyze the local `.fit` file instead:
 
-`py -3 scripts/fit_ingest.py --file <ride.fit> --ftp <FTP> --weight <W> -o output.json`
+`python scripts/fit_ingest.py --file <ride.fit> --ftp <FTP> --weight <W> -o output.json`
 
 This emits the same analysis JSON shape as the API path (`source: "fit_file"`); every following step of this workflow is unchanged. Requires `pip install fitparse`.
 

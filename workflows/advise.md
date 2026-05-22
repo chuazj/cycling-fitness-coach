@@ -82,7 +82,7 @@ When user asks about plan status ("check my plan", "what's next", "plan status")
 ```bash
 python scripts/intervals_icu_api.py --readiness-check -o readiness.json
 ```
-Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type ceiling, plus all underlying signals:
+Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type ceiling, plus all underlying signals (see the signal-mode contract below for how the bands vary by mode):
 
 | Signal | Rule | Gating? |
 |---|---|---|
