@@ -50,7 +50,7 @@ def _sleep_status(latest):
     return sleep_status, sleep_note
 
 
-def _synthesize_verdict(sleep_status, band, flags, signal_mode="full"):
+def _synthesize_verdict(sleep_status, band, flags, signal_mode):
     """Derive the worst-of verdict, branching on the wellness signal mode.
 
     full     — the WHOOP 4-band cascade (GREEN/YELLOW-HIGH/YELLOW-LOW/RED).
@@ -282,9 +282,14 @@ def _render_verdict_flags(result):
 def readiness_check(client, lookback_days=14):
     """Point-in-time pre-ride readiness verdict.
 
-    Aggregates today's WHOOP-synced wellness against a 14-day baseline and emits a
-    single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict with a session-type ceiling.
-    Intended as a one-shot replacement for manual sleep/recovery/TSB gate-checking.
+    Aggregates today's wellness against a 14-day baseline and emits a single
+    verdict with a session-type ceiling. Intended as a one-shot replacement for
+    manual sleep/recovery/TSB gate-checking.
+
+    The verdict adapts to `signal_mode` (from wellness_summary): `full` (WHOOP —
+    the 4-band GREEN/YELLOW-HIGH/YELLOW-LOW/RED cascade), `reduced` (HRV+RHR+sleep
+    — 3-band GREEN/YELLOW-LOW/RED), `minimal` (sleep+subjective — 3-band), and
+    `insufficient` (INSUFFICIENT-DATA). YELLOW-HIGH is full-mode only.
 
     Signals combined (worst-of-severity wins):
       - Sleep hours (≥7h pass, 6-7h tiebroken by WHOOP sleep score, <6h fail)
