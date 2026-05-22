@@ -50,20 +50,48 @@ def _sleep_status(latest):
     return sleep_status, sleep_note
 
 
-def _synthesize_verdict(sleep_status, band, flags):
-    """Derive the worst-of verdict from sleep status, recovery band, and flags.
+def _synthesize_verdict(sleep_status, band, flags, signal_mode="full"):
+    """Derive the worst-of verdict, branching on the wellness signal mode.
 
-    The legacy "recovery" signal flag is excluded from the yellow/red gating
-    check — the `band` variable supersedes it with finer granularity
-    (yellow-high vs yellow-low).
+    full     — the WHOOP 4-band cascade (GREEN/YELLOW-HIGH/YELLOW-LOW/RED).
+    reduced  — no Recovery score; a coarser 3-band scale from HRV-band +
+               RHR + sleep + flags. GREEN clears all session types.
+    minimal  — sleep + subjective only; a sleep gate, 3-band.
+    insufficient — nothing usable.
+
+    The legacy "recovery"-signal flag is excluded from gating in every mode
+    (the `band` variable supersedes it in full mode; it cannot exist in the
+    others).
 
     Returns (verdict_band, verdict, ceiling).
     """
-    # Exclude the legacy "recovery" flag from the yellow/red check.
     gating_flags = [f for f in flags if f.get("signal") != "recovery"]
     has_red_flag = any(f["severity"] == "red" for f in gating_flags)
     has_yellow_flag = any(f["severity"] == "yellow" for f in gating_flags)
 
+    if signal_mode == "insufficient":
+        return ("INSUFFICIENT-DATA",
+                "INSUFFICIENT DATA — log a wellness entry or wait for WHOOP sync.",
+                "—")
+
+    if signal_mode in ("reduced", "minimal"):
+        if sleep_status == "red" or has_red_flag:
+            return ("RED",
+                    "RED — recovery/Z2 only. Skip planned hard session.",
+                    "Z1-Z2 endurance, 60min max, no intervals")
+        if sleep_status == "yellow" or has_yellow_flag:
+            return ("YELLOW-LOW",
+                    "YELLOW-LOW — Sweet Spot OK; downgrade Threshold to SS, swap VO2max to SS or Z2.",
+                    "Sweet Spot 88-94% FTP max")
+        if signal_mode == "reduced":
+            return ("GREEN",
+                    "GREEN — all session types clear.",
+                    "No restrictions (reduced-signal — verdict from HRV 7-day band + RHR + sleep)")
+        return ("GREEN",
+                "GREEN — all session types clear.",
+                "No restrictions (minimal-signal — sleep-gated; self-assess before intensity)")
+
+    # signal_mode == "full" — the unchanged WHOOP cascade.
     if sleep_status == "red" or band == "red" or has_red_flag:
         verdict_band = "RED"
         verdict = "RED — recovery/Z2 only. Skip planned hard session."
@@ -95,6 +123,13 @@ def _synthesize_verdict(sleep_status, band, flags):
 def _render_sleep_hrv(result):
     """Return lines for the date header, sleep block, and HRV block (+ CV-trend sub-line)."""
     lines = [f"Date: {result['date']}"]
+    mode = result.get("signal_mode")
+    if mode == "reduced":
+        lines.append("⚠ REDUCED-SIGNAL MODE — no WHOOP Recovery / respiration / SpO2.")
+        lines.append("  Verdict from HRV 7-day band + RHR + sleep + subjective.")
+    elif mode == "minimal":
+        lines.append("⚠ MINIMAL-SIGNAL MODE — sleep + subjective only (no HRV / RHR / Recovery).")
+        lines.append("  Verdict is a sleep gate; self-assess before any intensity.")
     age = result.get("data_age_days")
     if age is not None and age > 0:
         lines.append(f"  ⚠ Latest wellness record is {age} day(s) old — today's WHOOP may not have synced yet")
@@ -279,6 +314,7 @@ def readiness_check(client, lookback_days=14):
     baseline = summary.get("baseline") or {}
     sample_sizes = summary.get("baseline_sample_sizes") or {}
     flags = list(summary.get("flags") or [])
+    signal_mode = summary.get("signal_mode", "insufficient")
     today_recovery = latest.get("readiness")
 
     today_str = datetime.now().strftime("%Y-%m-%d")
@@ -295,7 +331,7 @@ def readiness_check(client, lookback_days=14):
 
     band = _recovery_band(today_recovery)
     sleep_status, sleep_note = _sleep_status(latest)
-    verdict_band, verdict, ceiling = _synthesize_verdict(sleep_status, band, flags)
+    verdict_band, verdict, ceiling = _synthesize_verdict(sleep_status, band, flags, signal_mode)
 
     # Subjective stale-data + subjective values: lifted from wellness_summary (R6).
     subj_keys = ["fatigue", "soreness", "stress", "mood"]
@@ -311,6 +347,7 @@ def readiness_check(client, lookback_days=14):
         "date": today_str,
         "lookback_days": lookback_days,
         "verdict_band": verdict_band,
+        "signal_mode": signal_mode,
         "verdict": verdict,
         "ceiling": ceiling,
         "data_age_days": age_days,

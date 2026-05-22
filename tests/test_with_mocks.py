@@ -18,6 +18,7 @@ from intervals_icu_api import (
     analyze,
     apply_compact,
     format_readiness_check,
+    readiness_check,
     weekly_summary,
     wellness_summary,
 )
@@ -1730,6 +1731,84 @@ class TestDetectSignalMode(unittest.TestCase):
         with patch.object(client, "get_wellness", return_value=records):
             result = wellness_summary(client, days=14)
         self.assertEqual(result["signal_mode"], "reduced")
+
+
+class TestReadinessSignalModeContract(unittest.TestCase):
+    """W7/D1 — the readiness verdict honours signal_mode across all four tiers.
+
+    This is the audit-deliverable contract: a non-WHOOP athlete gets a real
+    verdict, not INSUFFICIENT-DATA, and full mode is unchanged.
+    """
+
+    @staticmethod
+    def _dates(n):
+        from datetime import datetime, timedelta
+        today = datetime.now().date()
+        return [(today - timedelta(days=n - 1 - i)).strftime("%Y-%m-%d")
+                for i in range(n)]
+
+    class _FakeClient:
+        def __init__(self, wellness):
+            self._w = wellness
+        def get_wellness(self, oldest, newest=None):
+            return self._w
+
+    def _full_payload(self):
+        return [{"id": d, "readiness": 70, "hrv": 65, "restingHR": 48,
+                 "sleepSecs": 27000, "respiration": 14.0, "spO2": 97,
+                 "sleepScore": 88} for d in self._dates(10)]
+
+    def _reduced_payload(self, last_sleep_secs=27000):
+        # Garmin-style: HRV + RHR + sleep, no Recovery/respiration/SpO2/score.
+        days = self._dates(10)
+        payload = [{"id": d, "hrv": 65, "restingHR": 48, "sleepSecs": 27000}
+                   for d in days]
+        payload[-1]["sleepSecs"] = last_sleep_secs
+        return payload
+
+    def _minimal_payload(self):
+        return [{"id": d, "sleepSecs": 27000} for d in self._dates(3)]
+
+    def _insufficient_payload(self):
+        return [{"id": self._dates(1)[0], "weight": 74}]
+
+    def test_full_mode_unchanged_green(self):
+        result = readiness_check(self._FakeClient(self._full_payload()))
+        self.assertEqual(result["signal_mode"], "full")
+        self.assertEqual(result["verdict_band"], "GREEN")
+        self.assertNotIn("REDUCED-SIGNAL", result["verdict_text"])
+        self.assertNotIn("MINIMAL-SIGNAL", result["verdict_text"])
+
+    def test_reduced_mode_clean_day_is_green(self):
+        result = readiness_check(self._FakeClient(self._reduced_payload()))
+        self.assertEqual(result["signal_mode"], "reduced")
+        self.assertEqual(result["verdict_band"], "GREEN")
+        self.assertIn("REDUCED-SIGNAL", result["verdict_text"])
+
+    def test_reduced_mode_short_sleep_is_yellow(self):
+        # 6.5h sleep, no sleep score → yellow sleep status → YELLOW-LOW.
+        result = readiness_check(
+            self._FakeClient(self._reduced_payload(last_sleep_secs=23400)))
+        self.assertEqual(result["signal_mode"], "reduced")
+        self.assertEqual(result["verdict_band"], "YELLOW-LOW")
+
+    def test_reduced_mode_very_short_sleep_is_red(self):
+        # 5h sleep → red sleep status → RED.
+        result = readiness_check(
+            self._FakeClient(self._reduced_payload(last_sleep_secs=18000)))
+        self.assertEqual(result["signal_mode"], "reduced")
+        self.assertEqual(result["verdict_band"], "RED")
+
+    def test_minimal_mode_clean_day_is_green_with_banner(self):
+        result = readiness_check(self._FakeClient(self._minimal_payload()))
+        self.assertEqual(result["signal_mode"], "minimal")
+        self.assertEqual(result["verdict_band"], "GREEN")
+        self.assertIn("MINIMAL-SIGNAL", result["verdict_text"])
+
+    def test_insufficient_mode(self):
+        result = readiness_check(self._FakeClient(self._insufficient_payload()))
+        self.assertEqual(result["signal_mode"], "insufficient")
+        self.assertEqual(result["verdict_band"], "INSUFFICIENT-DATA")
 
 
 if __name__ == "__main__":

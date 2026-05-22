@@ -871,58 +871,58 @@ class TestReadinessHelpers(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def test_synthesize_verdict_green(self):
-        vb, verdict, ceiling = _synthesize_verdict("green", "green", [])
+        vb, verdict, ceiling = _synthesize_verdict("green", "green", [], "full")
         self.assertEqual(vb, "GREEN")
         self.assertIn("GREEN", verdict)
         self.assertEqual(ceiling, "No restrictions")
 
     def test_synthesize_verdict_red_from_sleep(self):
-        vb, _verdict, _ceiling = _synthesize_verdict("red", "green", [])
+        vb, _verdict, _ceiling = _synthesize_verdict("red", "green", [], "full")
         self.assertEqual(vb, "RED")
 
     def test_synthesize_verdict_red_from_band(self):
-        vb, _verdict, _ceiling = _synthesize_verdict("green", "red", [])
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "red", [], "full")
         self.assertEqual(vb, "RED")
 
     def test_synthesize_verdict_red_from_non_recovery_flag(self):
         flags = [{"signal": "HRV", "severity": "red", "rule": "HRV below band 2d"}]
-        vb, _verdict, _ceiling = _synthesize_verdict("green", "green", flags)
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "green", flags, "full")
         self.assertEqual(vb, "RED")
 
     def test_synthesize_verdict_recovery_flag_excluded_from_gating(self):
         # A yellow "recovery" signal flag must NOT downgrade verdict beyond band
         flags = [{"signal": "recovery", "severity": "yellow",
                   "rule": "Recovery 34-66"}]
-        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-high", flags)
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-high", flags, "full")
         # band is yellow-high; recovery flag excluded → stays YELLOW-HIGH
         self.assertEqual(vb, "YELLOW-HIGH")
 
     def test_synthesize_verdict_yellow_low_from_band(self):
-        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-low", [])
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-low", [], "full")
         self.assertEqual(vb, "YELLOW-LOW")
 
     def test_synthesize_verdict_yellow_low_from_sleep(self):
-        vb, _verdict, _ceiling = _synthesize_verdict("yellow", "green", [])
+        vb, _verdict, _ceiling = _synthesize_verdict("yellow", "green", [], "full")
         self.assertEqual(vb, "YELLOW-LOW")
 
     def test_synthesize_verdict_yellow_low_from_yellow_flag(self):
         flags = [{"signal": "RHR", "severity": "yellow", "rule": "RHR +6bpm"}]
-        vb, _verdict, _ceiling = _synthesize_verdict("green", "green", flags)
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "green", flags, "full")
         self.assertEqual(vb, "YELLOW-LOW")
 
     def test_synthesize_verdict_yellow_high_from_band(self):
-        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-high", [])
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-high", [], "full")
         self.assertEqual(vb, "YELLOW-HIGH")
 
     def test_synthesize_verdict_insufficient_data(self):
         # band=None and sleep_status=green → INSUFFICIENT-DATA
-        vb, _verdict, _ceiling = _synthesize_verdict("green", None, [])
+        vb, _verdict, _ceiling = _synthesize_verdict("green", None, [], "full")
         self.assertEqual(vb, "INSUFFICIENT-DATA")
 
     def test_synthesize_verdict_red_dominates_yellow_band(self):
         # red flag + yellow-high band → RED wins
         flags = [{"signal": "HRV", "severity": "red", "rule": "HRV 2-day below band"}]
-        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-high", flags)
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-high", flags, "full")
         self.assertEqual(vb, "RED")
 
     # ------------------------------------------------------------------
@@ -1210,7 +1210,7 @@ class TestReadinessHelpers(unittest.TestCase):
     def test_synthesize_verdict_missing_sleep(self):
         # "missing" sleep is neither red nor yellow → falls through to the
         # band-driven branch; green band → GREEN verdict.
-        vb, _verdict, _ceiling = _synthesize_verdict("missing", "green", [])
+        vb, _verdict, _ceiling = _synthesize_verdict("missing", "green", [], "full")
         self.assertEqual(vb, "GREEN")
 
 
