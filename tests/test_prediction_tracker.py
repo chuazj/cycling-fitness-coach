@@ -372,7 +372,9 @@ class TestCLIRangeValidation(unittest.TestCase):
         Returns (exit_code, stderr_text) on SystemExit.
         """
         buf = io.StringIO()
-        with contextlib.redirect_stderr(buf):
+        # Redirect stdout too — main()'s success path prints result JSON, which
+        # would otherwise leak into the unittest-discover output as noise.
+        with contextlib.redirect_stderr(buf), contextlib.redirect_stdout(io.StringIO()):
             with patch.object(sys, "argv", argv):
                 try:
                     main()
