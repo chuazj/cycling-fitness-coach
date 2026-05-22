@@ -232,6 +232,20 @@ class TestLintModeledStats(unittest.TestCase):
         report = format_report("x.zwo", result["findings"], result["stats"])
         self.assertIn("Note:", report)
 
+    def test_format_report_ftptest_no_literal_none(self):
+        # ftptest workout: estimated_if/estimated_tss are None — the report must
+        # render placeholders, not the literal "None".
+        xml = ('<workout_file><name>x</name><workout ftptest="1">'
+               '<Warmup Duration="300" PowerLow="0.4" PowerHigh="0.75"/>'
+               '<FreeRide Duration="1200" show_avg="1"/>'
+               '<Cooldown Duration="300" PowerLow="0.5" PowerHigh="0.35"/>'
+               '</workout></workout_file>')
+        result = lint_file_for(xml)
+        self.assertIsNotNone(result["stats"])
+        report = format_report("x.zwo", result["findings"], result["stats"])
+        self.assertNotIn("None", report)
+        self.assertIn("unmodeled", report)
+
 
 def lint_file_for(xml):
     """Helper: write xml to a temp .zwo and lint it."""

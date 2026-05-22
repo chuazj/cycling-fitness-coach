@@ -276,9 +276,11 @@ def format_report(file_path: str, findings: list, stats) -> str:
         lines.append("  OK — no issues found.")
     if stats is not None:
         tss = stats["estimated_tss"]
-        tss_s = tss if tss is not None else "unmodeled"
+        tss_s = tss if tss is not None else "—"
+        if_val = stats["estimated_if"]
+        if_s = if_val if if_val is not None else "—"
         lines.append(f"  Modeled: {stats['total_duration_min']}min  "
-                     f"IF {stats['estimated_if']}  TSS {tss_s}  "
+                     f"IF {if_s}  TSS {tss_s}  "
                      f"({stats['tss_method']})")
         if stats.get("tss_warning"):
             lines.append(f"  Note: {stats['tss_warning']}")
