@@ -78,5 +78,13 @@
   {
     "query": "I'm training for a triathlon -- can you help with my swim pacing for the 1.5km open water leg?",
     "should_trigger": false
+  },
+  {
+    "query": "how many grams of carbs per hour for general weight loss if I sit at a desk most days",
+    "should_trigger": false
+  },
+  {
+    "query": "my resting HR jumped from 58 to 72 over the last few days, do I need to see a doctor or wait it out",
+    "should_trigger": false
   }
 ]
