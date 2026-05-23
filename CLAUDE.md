@@ -15,10 +15,30 @@ This is a **Claude Code skill** (not a standalone application). It provides cycl
 - **Modifying wellness/readiness/FTP-detection/analysis internals** → **read `references/internals.md` first.** It documents the schema invariants and signal-mode behaviour the Rules below assume.
 - **Coaching content (block templates, weekly adaptation, etc.)** → SKILL.md's Reference Files table is the authoritative router.
 
+## Committing
+
+- **Git identity is not configured globally.** Plain `git commit` fails with `Author identity unknown`. Use env vars per command:
+  ```bash
+  GIT_AUTHOR_NAME='chuazj' GIT_AUTHOR_EMAIL='zijian@hotmail.sg' \
+  GIT_COMMITTER_NAME='chuazj' GIT_COMMITTER_EMAIL='zijian@hotmail.sg' \
+  git commit -m "..."
+  ```
+  Do **NOT** run `git config --global user.*` to "fix" this — the unset state is intentional (per `~/.claude/CLAUDE.md` Git Safety Protocol).
+- **Push auth uses `gh` (HTTPS via stored token).** SSH is not configured (no GitHub-registered key). If `gh auth status` shows logged-out, the user must run `gh auth login` themselves — that flow is interactive.
+
 ## Wellness signal changes
 
 - **Test fixtures exclude today from baseline**: `wellness_summary()` uses `history = daily[:-1]`. To test an N-day baseline rule (CV-trend needs 14d, RHR/HRV band-check/respiration need 7d), provide **N+1 daily records** — sending N gives only N-1 history days and the rule silently won't fire.
 - **Signal-change sync list** (when adding/modifying a wellness rule, all 6 must update): code (`scripts/intervals_icu/wellness.py`, verdict layer in `readiness.py`) → tests (`tests/test_with_mocks.py`, `tests/test_internal_helpers.py`) → Fatigue Indicators (`references/training_zones.md`) → readiness template in `workflows/advise.md` AND `workflows/plan.md` → project `CLAUDE.md` Block-wide gating rules. Skip any → doc/code drift.
+
+## Eval harness limitations (skill-creator/run_eval.py)
+
+The `skill-creator` plugin's `run_eval.py` cannot reliably validate description changes for *this* skill once installed. Two failure modes:
+
+1. **Real-skill shadowing**: with `~/.claude/skills/cycling-fitness-coach/` in place, the harness's slash-command shim loses routing to the real skill — Claude invokes the real skill name (not the shim's UUID name), so every positive scores `triggered=False`. Workaround: `mv ~/.claude/skills/cycling-fitness-coach{,.disabled-by-eval}` before the run (always wrap in a `trap` to restore on exit).
+2. **First-tool-must-be-Skill/Read**: even with the install path isolated, the harness counts any first-tool-call other than `Skill`/`Read` as no-trigger. Substantive queries like "build me a training plan" route through `superpowers:brainstorming` first, which fails the check. Baseline scored 0/10 positives even on a clean description.
+
+Implication: for description changes, **ship on writing-skills rubric grounds** rather than blocking on an eval GREEN bar. Iron-Law discipline ("RED test before edit") only applies when the eval is a viable measurement instrument — for installed user-level skills, it isn't. See the audit Resolution at `<obsidian-vault>/🚴🏼cycling-fitness-coach/audits/cycling-coach-writing-skills-audit-2026-05-23.md` for the full trace.
 
 ## Architecture
 
@@ -81,7 +101,9 @@ tests/
   fixtures/                     ← Mock API responses (activity.json, intervals.json, power_curve.json)
 evals/
   evals.json                    ← Skill evaluation definitions
-  trigger_eval.json             ← Workflow trigger matching tests
+  README.md                     ← Eval set authoring notes
+  results/                      ← Per-iteration eval result JSON archive (gitignored)
+  trigger_eval.json             ← Workflow trigger matching tests (23 queries: 11 positive, 12 negative)
 assets/
   template_sweetspot.zwo        ← Example Zwift workout XML
 .env                            ← intervals.icu credentials (not committed)
