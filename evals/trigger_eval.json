@@ -86,5 +86,9 @@
   {
     "query": "my resting HR jumped from 58 to 72 over the last few days, do I need to see a doctor or wait it out",
     "should_trigger": false
+  },
+  {
+    "query": "i'm doing leg day tomorrow and a sweet spot workout the day after, is that ok",
+    "should_trigger": true
   }
 ]
