@@ -15,7 +15,7 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 
 **Step 2:** Present your athlete situation assessment and confirm before prescribing (Coaching Process Rule 1). Verify zone confidence — if zones are unvalidated, flag uncertainty before using power targets (Rule 2).
 
-**Step 3:** Reference zones and training blocks from `references/training_zones.md` and `references/periodization.md`.
+**Step 3:** Reference zones from `references/training_zones.md` and block templates / progressions from `references/block_templates.md`.
 
 **Step 4:** Prescribe with power targets as % FTP AND watts. Explain the "why" (Rule 3).
 
@@ -48,8 +48,8 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 | Moderate (RHR +5 bpm OR poor sleep 1 night OR HRV below 7-day band (single day) OR Recovery 34–66 OR HRV CV-trend rising +2pp over 14d OR respiration +1/min vs baseline) | Modify down one tier | SS → endurance Z2; threshold → SS; VO2max → threshold; cut duration 20% |
 | High (RHR ≥+10 bpm OR poor sleep 2+ nights, OR HRV below 7-day band 2 consecutive days, OR Recovery <34, OR respiration +2/min vs baseline, OR SpO2 <90%, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
 | Severe (RHR +10 bpm AND illness symptoms OR TSB <−30 OR Recovery <34 with red signals across HRV/RHR/respiration) | Full rest | No bike. Reassess next day. |
-| Sick (above-neck only) | Rest 1–2 days then Z1–Z2 only | Per `references/periodization.md` → Illness/Injury rules |
-| Sick (below-neck or systemic) | Full rest until 48h symptom-free | Per `references/periodization.md` → Illness/Injury rules |
+| Sick (above-neck only) | Rest 1–2 days then Z1–Z2 only | Per `references/weekly_adaptation.md` → Illness/Injury rules |
+| Sick (below-neck or systemic) | Full rest until 48h symptom-free | Per `references/weekly_adaptation.md` → Illness/Injury rules |
 
 **"Can I swap/skip a session?"** — Schedule adaptation:
 1. Identify what the session targets (energy system, training stimulus)
@@ -190,7 +190,7 @@ When user mentions a target event ("I have a race on DATE", "peak for event", "t
 
 **Step 1:** Confirm event date and priority (A = primary event, B = secondary/fun).
 
-**Step 2:** Read `references/periodization.md` → Race/Event Peaking Protocol.
+**Step 2:** Read `references/race_taper.md` (taper protocols + TSB projection).
 
 **Step 3:** If `plans/active_plan.md` exists, read current PMC snapshot (CTL, ATL, TSB).
 Otherwise, bootstrap PMC:

@@ -172,7 +172,10 @@ references/
   zwo_format.md                 ← Zwift XML element spec and examples (local subset; canonical ref: h4l/zwift-workout-file-reference)
   intervals_icu_api.md          ← intervals.icu API endpoints, auth, data models
   setup.md                      ← Credentials, Zwift workout directory, Obsidian vault paths & folder structure
-  periodization.md              ← Block templates, TSS distribution, progressive overload, adaptation decision trees, durability
+  block_templates.md            ← Block templates, TSS distribution, progressive overload, warmup/cooldown, FTP test protocols, Block Selection Logic
+  weekly_adaptation.md          ← Weekly adaptation decision trees (load, ACWR, TSB, RPE, HR, illness/injury, rule priority)
+  race_taper.md                 ← Race / event peaking — 2-week and 1-week taper structures, TSB projection
+  durability_strength.md        ← Concurrent strength training, heat adaptation overlay, durability concept
   fueling.md                    ← Pre/during/post-ride nutrition, carb targets, gut training, GI troubleshooting
   menstrual_cycle_training.md   ← Female-athlete coaching — cycle/contraceptive autoregulation, symptom tiers, RED-S red flag
   plan_state_schema.md          ← Structure spec for plans/active_plan.md
@@ -203,7 +206,7 @@ assets/
 
 **Data flows:**
 - **Activity analysis:** intervals.icu link → `intervals_icu_api.py` extracts ID, authenticates via API key, fetches activity/intervals/streams/power-curve, computes metrics → JSON output → Claude provides coaching analysis using reference docs. Fallback for a ride that never synced to intervals.icu: `fit_ingest.py` parses a local `.fit` and emits the same JSON shape.
-- **Plan creation:** `pmc_calculator.py --bootstrap` → PMC baseline → Claude designs block using `periodization.md` rules → writes `plans/active_plan.md` → `batch_generate_zwo.py` generates week's .zwo files.
+- **Plan creation:** `pmc_calculator.py --bootstrap` → PMC baseline → Claude designs block using `block_templates.md` rules (and `durability_strength.md` if concurrent strength / heat / long-duration target applies) → writes `plans/active_plan.md` → `batch_generate_zwo.py` generates week's .zwo files.
 - **Weekly review:** `pmc_calculator.py --weekly-update` → planned vs actual comparison → Claude applies adaptation decision trees → updates `plans/active_plan.md` → generates next week's .zwo files.
 
 ## Key Conventions
@@ -222,9 +225,9 @@ assets/
 - **intervals.icu null handling**: API returns `None` for missing values, not absent keys. Use `a.get("field") or 0` only for fields where 0 is equivalent to missing (e.g., `moving_time`, `distance`, `elapsed_time`, `elevation_gain`). Use `x is not None` checks for fields where 0 is a valid distinct value (e.g., IF, TSS, average_watts, average_heartrate, icu_joules)
 - **intervals.icu wellness keys (Whoop-sourced)**: Field keys are camelCase as wire-formatted: `restingHR`, `hrv`, `sleepSecs`, `sleepScore`, `sleepQuality`, `readiness`, `respiration`, **`spO2`** (capital O — not `spo2`). `wellness_summary()` normalizes these to snake_case in its output (`spO2` → `spo2`). When reading raw wellness records via `client.get_wellness()`, use the camelCase keys.
 - **Metrics hierarchy**: NP → IF → TSS (each derived from the previous); prefer intervals.icu pre-computed values, fall back to stream computation
-- **Canonical references**: Zone boundaries in `references/training_zones.md`, PMC formulas in `pmc_calculator.py`, block templates in `references/periodization.md` — do not duplicate these values elsewhere
+- **Canonical references**: Zone boundaries in `references/training_zones.md`, PMC formulas in `pmc_calculator.py`, block templates in `references/block_templates.md`, weekly adaptation trees in `references/weekly_adaptation.md`, race taper in `references/race_taper.md`, overlays (strength/heat/durability) in `references/durability_strength.md` — do not duplicate these values elsewhere
 - **Plan state**: `plans/active_plan.md` is the single source of truth for active training plans; structure documented in `references/plan_state_schema.md`
-- **Adaptation requires approval**: Claude proposes adaptations based on decision trees in `references/periodization.md`, but waits for user confirmation before modifying the plan
+- **Adaptation requires approval**: Claude proposes adaptations based on decision trees in `references/weekly_adaptation.md`, but waits for user confirmation before modifying the plan
 - **Batch ZWO input**: JSON array where each item extends the `workout_from_dict()` schema with a `filename` field
 - **ZWO output directory**: Generated .zwo files go to the Zwift custom workouts folder (see `references/setup.md` → Zwift Workout Directory for path), NOT to `plans/workouts/` in the repo
 - **Obsidian vault**: See `references/setup.md` → Obsidian Integration for canonical paths and folder structure

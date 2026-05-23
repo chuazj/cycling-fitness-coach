@@ -3,7 +3,7 @@
 Reference for Claude-as-coach: **per-activity forward-cascade rules**. Runs after every workout analysis. Compares actual vs prescribed across 4 signals, classifies deviation, and proposes edits to the next 1–2 sessions in `plans/active_plan.md` → Current Week Schedule (or Week N+1 Schedule (Preview) if cascade lands in next week).
 
 **Scope — what this layer does NOT cover:**
-- Weekly trend / multi-session adaptation (ACWR, TSB, completion rate, RPE trends) → see `periodization.md` → Adaptation Decision Trees.
+- Weekly trend / multi-session adaptation (ACWR, TSB, completion rate, RPE trends) → see `weekly_adaptation.md`.
 - Block-level changes (phase transitions, FTP retest, block type switch) → weekly review workflow.
 - This layer proposes *immediate next-session* cascades. The weekly review may further adjust the block.
 
@@ -21,7 +21,7 @@ To compute deviation, resolve the prescribed targets for the analyzed session in
 
 ### Session-Type Defaults (fallback targets)
 
-> **Reading this table — Target IF is *session-level*, not work-interval %FTP.** A "Sweet Spot" session prescribed at 88–94% FTP for the work intervals will land at session IF ~0.82–0.88 because the session also includes warmup, cooldown, and inter-interval recovery — those drag the overall IF below the work-interval power. See `references/training_zones.md` for **work-interval %FTP prescription targets** and `references/periodization.md` for block-level workout structure. The two sets of numbers are not in conflict; they describe different parts of the same session.
+> **Reading this table — Target IF is *session-level*, not work-interval %FTP.** A "Sweet Spot" session prescribed at 88–94% FTP for the work intervals will land at session IF ~0.82–0.88 because the session also includes warmup, cooldown, and inter-interval recovery — those drag the overall IF below the work-interval power. See `references/training_zones.md` for **work-interval %FTP prescription targets** and `references/block_templates.md` for block-level workout structure. The two sets of numbers are not in conflict; they describe different parts of the same session.
 
 | Session type (name contains) | Target IF | Primary zone | Z2 % floor | Contaminating zones |
 |---|---|---|---|---|
@@ -108,7 +108,7 @@ These override the cascade matrix — apply them first.
 1. **Rest day next** — never override a planned REST with work, regardless of upside signals.
 2. **FTP test within next 3 days** — protect the test. Any cascade downgrade lands on the session **before** the test, not the test itself. Never demote the test.
 3. **Taper week** (Block W4 or any explicit taper phase) — only protective cascades allowed (downgrade). Never add load.
-4. **Illness already declared** (Severity 1 or 2 noted in `plans/active_plan.md` → Adaptation Log within the last 14 days) — skip this cascade entirely; `periodization.md` → Illness/Injury rules apply.
+4. **Illness already declared** (Severity 1 or 2 noted in `plans/active_plan.md` → Adaptation Log within the last 14 days) — skip this cascade entirely; `weekly_adaptation.md` → Illness/Injury rules apply.
 5. **Keystone session next** (schedule row flagged `KEYSTONE` in the `Session` or `Key Interval` column) — downgrade only on **red**. Yellow preserves the keystone; add readiness check instead.
 
 ---
@@ -228,6 +228,6 @@ Reproduces the manual decision made without this layer to verify rule correctnes
 
 ## 9. Integration with Weekly Review
 
-Per-activity cascades are immediate and local (next 1–2 sessions). The weekly review workflow (`periodization.md` → Adaptation Decision Trees) may further adjust the block based on trends: if yellow cascades have fired 3+ times in a week, the weekly review should consider broader load reduction or FTP re-evaluation regardless of any single session's cascade decision.
+Per-activity cascades are immediate and local (next 1–2 sessions). The weekly review workflow (`weekly_adaptation.md`) may further adjust the block based on trends: if yellow cascades have fired 3+ times in a week, the weekly review should consider broader load reduction or FTP re-evaluation regardless of any single session's cascade decision.
 
-**Rule of thumb**: this layer handles single-event deviations; `periodization.md` handles patterns.
+**Rule of thumb**: this layer handles single-event deviations; `weekly_adaptation.md` handles patterns.

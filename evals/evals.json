@@ -113,11 +113,11 @@
     {
       "id": 11,
       "prompt": "Create a 4-week FTP improvement plan",
-      "expected_output": "Runs pmc_calculator.py --bootstrap for PMC baseline, designs periodized block using periodization.md rules, writes active_plan.md, generates week 1 .zwo files via batch_generate_zwo.py",
+      "expected_output": "Runs pmc_calculator.py --bootstrap for PMC baseline, designs periodized block using block_templates.md rules, writes active_plan.md, generates week 1 .zwo files via batch_generate_zwo.py",
       "files": [],
       "expectations": [
         "Runs pmc_calculator.py --bootstrap for PMC baseline",
-        "Reads references/periodization.md for block design rules",
+        "Reads references/block_templates.md for block design rules",
         "Writes plans/active_plan.md with the plan structure",
         "Generates week 1 .zwo files via batch_generate_zwo.py"
       ]
@@ -125,12 +125,12 @@
     {
       "id": 12,
       "prompt": "How did week 1 go? Let's review my training week",
-      "expected_output": "Runs pmc_calculator.py --weekly-update with plan context, compares planned vs actual TSS, applies adaptation decision trees from periodization.md, proposes adjustments for next week",
+      "expected_output": "Runs pmc_calculator.py --weekly-update with plan context, compares planned vs actual TSS, applies adaptation decision trees from weekly_adaptation.md, proposes adjustments for next week",
       "files": [],
       "expectations": [
         "Runs pmc_calculator.py --weekly-update",
         "Compares planned vs actual TSS in a table",
-        "Applies adaptation decision trees from periodization.md",
+        "Applies adaptation decision trees from weekly_adaptation.md",
         "Proposes adjustments for the next week"
       ]
     },

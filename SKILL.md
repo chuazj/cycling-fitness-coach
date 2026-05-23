@@ -47,7 +47,7 @@ Do not just list workouts — coach the athlete through the reasoning.
 
 When an athlete lacks intervals.icu data OR has no recent FTP test (>8 weeks or never tested):
 - Include a zone-validation workout in Week 1 or Week 2 of any new plan
-- Use the protocol picked by `references/periodization.md` → FTP Test Protocols → Choosing a Protocol (20-minute, ramp, or intervals.icu CP/eFTP — the decision rule matches the protocol to the athlete's pacing history)
+- Use the protocol picked by `references/block_templates.md` → FTP Test Protocols → Choosing a Protocol (20-minute, ramp, or intervals.icu CP/eFTP — the decision rule matches the protocol to the athlete's pacing history)
 - Frame it as a "baseline assessment" not a "test" — reduce performance anxiety
 - Until the field test is completed, mark all power targets as **provisional** and note the uncertainty
 
@@ -88,8 +88,11 @@ Read these on demand based on the task:
 | `references/workout_analysis.md` | Analyzing completed workouts, diagnosing performance issues, rating execution quality, collecting session RPE. Has analysis framework, metrics interpretation, coaching response templates, RPE:Power mismatch detection. |
 | `references/zwo_format.md` | Generating or editing .zwo files. Has Zwift XML element spec. **Canonical external reference**: https://github.com/h4l/zwift-workout-file-reference/blob/master/zwift_workout_file_tag_reference.md — always consult for attribute validation when unsure. |
 | `references/intervals_icu_api.md` | Troubleshooting API issues or needing field/endpoint reference. Has API endpoints, auth details, data models. |
-| `references/periodization.md` | Creating a training plan, weekly adaptation, block selection, race peaking, strength integration. Has block templates, TSS distribution, progressive overload tables, adaptation decision trees (including ACWR), concurrent strength training, race taper protocols, flexible block lengths, durability concept. |
-| `references/adaptation_rules.md` | **Read after every workout analysis (Step 7 of `workflows/analyze.md`).** Per-activity forward-cascade rules: 4 signals (TSS/IF/zone/drift) → severity → next-session edits. Covers off-plan activities, protection overrides, symmetric upside. Complements `periodization.md` (weekly trends) — this layer is single-event, next 1–2 sessions. |
+| `references/block_templates.md` | Creating a training plan or rolling over a block. Has block templates (FTP Builder, VO2max, Endurance, Polarized), TSS distribution, progressive overload tables, warmup/cooldown standards, FTP test protocols, goal-based block selection logic. |
+| `references/weekly_adaptation.md` | Weekly review / Mid-Week Check-In — applying adaptation decision trees. IF/THEN rules for training load, ACWR, TSB, RPE trend escalation (incl. FOR/NFOR/OTS tiering), HR indicators, session execution, illness/injury gates, rule-priority conflict resolution. |
+| `references/race_taper.md` | Race / event peaking. 2-week and 1-week taper structures, TSB projection for taper planning. |
+| `references/durability_strength.md` | Plan includes concurrent strength, a hot-weather event, a tropical-climate athlete, or a long-duration target event. Concurrent training scheduling/exercises/periodization, heat adaptation protocol + monitoring, durability concept. |
+| `references/adaptation_rules.md` | **Read after every workout analysis (Step 7 of `workflows/analyze.md`).** Per-activity forward-cascade rules: 4 signals (TSS/IF/zone/drift) → severity → next-session edits. Covers off-plan activities, protection overrides, symmetric upside. Complements `weekly_adaptation.md` (weekly trends) — this layer is single-event, next 1–2 sessions. |
 | `references/fueling.md` | Prescribing fueling strategies, diagnosing GI issues, pre/during/post-ride nutrition. **Quick-Reference subsection** maps duration × intensity → one-line `Fuel:` cue used in all workflow output templates. Also has carb targets by session duration, gut training protocol, GI troubleshooting, hydration guidelines, fasted training evidence. |
 | `references/menstrual_cycle_training.md` | Coaching a female athlete — menstrual cycle and hormonal contraceptives. Evidence stance (cycle phase is a weak periodization basis), individualized symptom-based autoregulation, symptom management, hormonal-contraceptive notes, and the amenorrhea / RED-S red-flag gate. |
 | `references/plan_state_schema.md` | Reading or updating `plans/active_plan.md`. Has section definitions, column types, valid values, update operation rules. |

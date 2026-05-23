@@ -1,22 +1,21 @@
-# Periodization Rules
+# Block Templates, Progressions, and Plan Design
 
-Reference for Claude-as-coach: block templates, TSS distribution, progressive overload, and adaptation decision trees for FTP improvement training.
+Reference for Claude-as-coach: block templates, TSS distribution, interval progressions, warmup/cooldown standards, FTP test protocols, and goal-based block selection logic. This is the primary file for Create Plan and for any block-rollover decision.
 
-> **Citation currency** — physiology citations in this doc last verified **2026-05-20** (VO2max short-vs-long interval evidence, heat adaptation, durability, concurrent strength). Re-verify against current literature at every skill audit; interval-format and fuelling evidence move fastest, so treat anything older than ~12 months as provisional.
+- For weekly adaptation decision trees (load, ACWR, TSB, RPE, illness/injury, peak-power deltas) → `references/weekly_adaptation.md`.
+- For race / event taper protocols → `references/race_taper.md`.
+- For concurrent strength training, heat adaptation, and durability → `references/durability_strength.md`.
+
+> **Citation currency** — physiology citations in this doc last verified **2026-05-20** (VO2max short-vs-long interval evidence, VLaMax framework). Re-verify against current literature at every skill audit; interval-format and fuelling evidence move fastest, so treat anything older than ~12 months as provisional.
 
 ## Table of Contents
 
 - [Training Blocks](#training-blocks) — FTP Builder, VO2max, Endurance Base, Polarized block templates
 - [TSS Distribution (4-Day Week)](#tss-distribution-4-day-week) — Per-session TSS allocation rules
 - [Progressive Overload Tables](#progressive-overload-tables) — Interval progression by type and level
-- [Adaptation Decision Trees](#adaptation-decision-trees) — IF/THEN rules for load, fatigue, performance, HR, execution
 - [Warmup and Cooldown Standards](#warmup-and-cooldown-standards) — Standard ramp protocols
-- [Concurrent Training (Strength + Cycling)](#concurrent-training-strength--cycling) — Scheduling and integration rules
-- [FTP Test Protocols](#ftp-test-protocols) — 20-min and ramp test procedures
-- [Race/Event Peaking Protocol](#raceevent-peaking-protocol) — Taper timing and TSB targeting
+- [FTP Test Protocols](#ftp-test-protocols) — 20-min, ramp, and CP/eFTP procedures
 - [Block Selection Logic](#block-selection-logic) — Goal-based block type selection
-- [Heat Adaptation (Optional Block)](#heat-adaptation-optional-block) — Plasma volume expansion, hot-weather performance, partial cool-weather transfer
-- [Durability (Emerging Concept)](#durability-emerging-concept) — Fatigue resistance as trainable metric
 
 ## Training Blocks
 
@@ -184,7 +183,7 @@ When creating a plan, baseline weekly TSS = athlete's recent 4-week average week
 
 ### Weekly Ramp Rate
 
-Block templates step weekly TSS up by ~10% on consecutive build weeks. **+10%/week is the aggressive end** — classic guidance is a ~5–8%/week CTL ramp, and a +10% TSS step on an already-elevated base can push ACWR into the >1.3 caution zone (see Adaptation Decision Trees → Workload Ratio). Treat +10% as a ceiling, not a default: for athletes with CTL <30, an inconsistent training history, or any ACWR/RPE/HRV yellow flag, ramp **5–8%/week** instead. The ACWR tree is the backstop — but prefer not to design a block that needs the backstop every week.
+Block templates step weekly TSS up by ~10% on consecutive build weeks. **+10%/week is the aggressive end** — classic guidance is a ~5–8%/week CTL ramp, and a +10% TSS step on an already-elevated base can push ACWR into the >1.3 caution zone (see `references/weekly_adaptation.md` → Workload Ratio). Treat +10% as a ceiling, not a default: for athletes with CTL <30, an inconsistent training history, or any ACWR/RPE/HRV yellow flag, ramp **5–8%/week** instead. The ACWR tree is the backstop — but prefer not to design a block that needs the backstop every week.
 
 ---
 
@@ -301,7 +300,7 @@ Over = 105-110% FTP. Under = 90-95% FTP.
 
 ### Neuromuscular Sprints (Optional)
 
-Neuromuscular work develops peak power output and recruits Type II fibers without significant cardiovascular cost. Heavy strength training (see Concurrent Training section) is the primary neuromuscular driver; on-bike sprints supplement and translate strength to cycling-specific recruitment patterns.
+Neuromuscular work develops peak power output and recruits Type II fibers without significant cardiovascular cost. Heavy strength training (see `references/durability_strength.md` → Concurrent Training) is the primary neuromuscular driver; on-bike sprints supplement and translate strength to cycling-specific recruitment patterns.
 
 **When to include:**
 - Race preparation for events with sprints, attacks, or punchy climbs
@@ -331,169 +330,6 @@ Neuromuscular work develops peak power output and recruits Type II fibers withou
 
 ---
 
-## Adaptation Decision Trees
-
-Claude follows these IF/THEN rules after each weekly review. Multiple rules may trigger simultaneously — apply all that match.
-
-### Training Load Adaptation
-
-**IF** actual weekly TSS < 80% of planned for 2+ sessions:
-- **THEN** reduce next week's target TSS by 5-10%
-- **WHY** athlete may be struggling with prescribed load; avoid accumulating fatigue from incomplete sessions
-- **ACTION** adjust interval duration down one progression level
-
-**IF** actual weekly TSS > 110% of planned consistently (2+ weeks):
-- **THEN** flag for FTP retest — athlete may be training below actual ability
-- **ACTION** suggest scheduling FTP test within next 1-2 weeks
-
-**IF** completion rate < 60% for a week (fewer than 3 of 4 sessions completed):
-- **THEN** reassess plan difficulty; consider dropping one intensity day
-- **ACTION** reduce next week to 3 sessions; add the 4th only if athlete confirms availability
-
-**IF** 2+ sessions skipped in a week:
-- **THEN** compress remaining week — do NOT try to "catch up" missed sessions
-- **ACTION** prioritize the most important remaining session; drop or shorten others
-- **EXAMPLES**:
-  - 1 session skipped: mark as `skipped`, no compensation. Continue next scheduled session as planned.
-  - 2 sessions skipped: keep the highest-priority remaining session at full TSS, reduce others by 20%. Never double up sessions on a single day.
-  - 3+ sessions skipped: treat the week as partial recovery; do not attempt to compress all missed work into remaining days.
-
-**IF** 3+ sessions skipped in a single week:
-- **THEN** treat as involuntary rest week — do NOT attempt catch-up
-- **ACWR CHECK** after the missed week: if ACWR < 0.8, ease back at 50% volume for 3 days before resuming structured training
-- **ACTION** shift remaining block schedule forward by 1 week; do not compress
-- **WHY** cramming missed work risks injury and immune suppression, especially if the reason for missing was illness or life stress
-
-### Workload Ratio (ACWR)
-
-ACWR (Acute:Chronic Workload Ratio) = ATL ÷ CTL. Measures training load spikes relative to fitness. Reference: Gabbett (2016).
-
-> **Caveat**: ACWR thresholds (0.8-1.3 safe zone) originate from team sport injury research (rugby, cricket, football) and have been challenged for mathematical coupling artifacts (Lolli et al., 2019) and weak evidence for the U-shaped risk curve in endurance sports (Impellizzeri et al., 2020). Treat these as directional guidelines, not hard rules. Always interpret ACWR alongside TSB, RPE trends, and HR indicators — not as a sole decision-maker.
-
-**IF** ACWR > 1.5:
-- **THEN** dangerous training load spike — mandatory recovery before next hard session
-- **WHY** rapid load increase relative to fitness is the strongest predictor of injury/overtraining
-- **ACTION** insert 2-3 days of Z1-Z2 only; reduce next week's planned TSS by 20%
-
-**IF** ACWR > 1.3 (but ≤ 1.5):
-- **THEN** elevated injury/overtraining risk — caution
-- **ACTION** reduce next week's target TSS by 10%; avoid adding sessions or volume
-
-**IF** ACWR < 0.8:
-- **THEN** underprepared — training stimulus insufficient relative to recent fitness
-- **ACTION** increase next week's TSS by max 10%; do not spike by more than 10%/week
-
-**IF** ACWR 0.8-1.3:
-- **THEN** safe zone — no intervention needed from ACWR perspective
-
-### Fatigue Management
-
-**IF** TSB < -30:
-- **THEN** recommend extra recovery day or reduced session intensity
-- **WHY** high negative TSB indicates accumulated fatigue; injury/burnout risk
-- **ACTION** insert easy day before next hard session; consider moving next rest week earlier
-
-**IF** TSB < -40:
-- **THEN** enforce recovery — replace next hard session with Z1-Z2 endurance
-- **ACTION** no intensity work until TSB > -25
-
-**IF** TSB > +15 (not in a taper):
-- **THEN** athlete is detraining; increase training stimulus
-- **ACTION** bump next week's TSS by 10% or add one session
-
-### Performance Indicators
-
-**IF** 20-minute peak power increases >3% week-over-week:
-- **THEN** flag FTP update — current FTP likely underestimates actual threshold
-- **ACTION** suggest mid-block FTP retest or apply new FTP estimate (20min peak × 0.95)
-
-**IF** 5-minute peak power increases >5% week-over-week:
-- **THEN** VO2max responding well — maintain or progress VO2max work
-- **ACTION** continue current VO2max progression level
-
-**IF** peak powers stagnant or declining for 3+ weeks:
-- **THEN** plateau detected — consider changing stimulus
-- **ACTION** suggest block change (e.g., switch from SS-focused to VO2max block)
-
-### Heart Rate Indicators
-
-**IF** average HR elevated >5% at same power output vs. prior weeks:
-- **THEN** flag fatigue concern — possible overreaching, illness, or environmental factor
-- **ACTION** ask athlete about sleep, stress, hydration; recommend extra recovery if no clear cause
-
-**IF** cardiac drift >8% in endurance sessions (see `workout_analysis.md` for 3-tier scale: <5% good, 5-8% acceptable, >8% flag):
-- **THEN** aerobic fitness needs work or session fueling was inadequate
-- **ACTION** add more Z2 volume; check nutrition/hydration habits
-
-**IF** HR fails to reach expected levels during high-intensity work:
-- **THEN** possible deep fatigue or overtraining
-- **ACTION** recommend 3-5 days easy before resuming intensity
-
-### Session Execution Quality
-
-**IF** power fade >10% across intervals within a session:
-- **THEN** pacing issue or insufficient recovery
-- **ACTION** coach on even pacing strategy; check recovery between sessions
-
-**IF** power consistently 5%+ above targets:
-- **THEN** FTP may be set too low
-- **ACTION** flag for retest; do NOT simply raise targets without testing
-
-**IF** power consistently 5%+ below targets:
-- **THEN** FTP may be set too high, or fatigue accumulation
-- **ACTION** check recent TSB; if TSB > -20, consider FTP reduction
-
-### Illness / Injury
-
-**IF** athlete reports illness symptoms:
-- **Severity 1 (above-neck only — e.g., head cold, mild congestion)**:
-  - Reduce intensity to Z1-Z2 only, maintain 50% of planned volume for 3-5 days
-  - Resume structured work only when symptoms fully resolve
-- **Severity 2 (below-neck or systemic — e.g., chest congestion, fever, body aches, GI distress)**:
-  - Full rest. No training until 48 hours symptom-free.
-  - Resume at 50% volume and intensity for the first week back
-- **ACTION** shift remaining block schedule forward (do not compress missed weeks)
-- **WHY** training while ill delays recovery, risks myocarditis (viral + high-intensity), and suppresses immune function
-
-**IF** athlete reports injury:
-- **THEN** stop all training involving the affected area. Recommend medical evaluation.
-- **IF** cleared for modified training: substitute with unaffected-area work (e.g., upper body if knee injury; easy spinning if shoulder injury)
-- **NEVER** prescribe "push through" for injury or illness — this is a hard safety gate
-
-### RPE Trend Escalation
-
-**IF** session RPE ≥ 8 for all sessions for 2+ consecutive weeks at same or lower IF:
-- **THEN** functional overreaching signal — recovery needed before breakdown occurs
-- **ACTION** prescribe 5 days of Z1-only riding (active recovery), then reassess
-- **WHY** rising RPE at constant intensity is the earliest reliable indicator of overreaching; PMC/TSB alone cannot detect this because TSS is RPE-blind
-
-**IF** performance is still depressed after a full FOR de-load (the 5-day Z1 block above) — power targets unreachable, peak powers down, RPE still elevated at low IF for another 1–2 weeks:
-- **THEN** this is **non-functional overreaching (NFOR)**, not FOR — the de-load did not restore performance, so the load exceeded the supercompensation window
-- **ACTION** extend recovery to a full **easy week (or two)**: Z1–Z2 only, ~40–50% normal volume; no intensity until peak powers AND RPE-at-IF both recover. Re-baseline FTP downward if targets still miss after recovery.
-- **IF symptoms persist beyond ~3 weeks of genuine rest** (chronic fatigue, mood disturbance, sustained performance decrement, elevated resting HR) → treat as suspected **overtraining syndrome (OTS)**: stop structured training and advise a medical review. OTS recovery is measured in months, not weeks.
-- **WHY** FOR resolves in days and is followed by supercompensation; NFOR needs weeks and yields no supercompensation; OTS needs months. Naming the tier early stops a weeks-long problem becoming a months-long one.
-
-**IF** session RPE consistently declining at same IF for 2+ weeks:
-- **THEN** positive adaptation — fitness is improving
-- **ACTION** note as confirmation that current plan is working; consider progressing to next intensity level
-
-**IF** RPE:IF mismatch detected on a single session (see `references/workout_analysis.md` → RPE:Power Mismatch Detection):
-- **THEN** flag in weekly review but do not trigger plan-level changes from a single data point
-- **ACTION** track trend; only act when pattern persists across 2+ weeks
-
-### Rule Priority
-
-When multiple adaptation rules fire simultaneously, apply the most conservative (protective) action. Priority order:
-
-1. **Safety** (always wins): Illness/injury stop, TSB < -40 enforcement, ACWR > 1.5, HR fails to reach expected levels, can't complete sessions → enforce recovery before any other action
-2. **Fatigue management** (overrides performance): RPE trend escalation (≥8 for 2+ weeks), TSB < -30, ACWR > 1.3, elevated HR +5-10%, 3+ missed sessions → reduce load even if performance indicators are positive
-3. **Performance indicators** (informational): FTP retest flags, peak power improvements, positive RPE trends → note and schedule testing, but do not override fatigue-driven decisions
-4. **Load & session execution** (lowest): pacing adjustments, progression level changes → apply only after safety and fatigue rules are satisfied
-
-Example conflict: "ACWR > 1.3 → reduce load" + "20min peak +3% → flag FTP retest" → reduce load first; note FTP retest for after load normalizes.
-
----
-
 ## Warmup and Cooldown Standards
 
 ### Standard Warmup (10 minutes)
@@ -514,49 +350,6 @@ Example conflict: "ACWR > 1.3 → reduce load" + "20min peak +3% → flag FTP re
 - Between Threshold intervals: 5min @ 50-55% FTP
 - Between VO2max intervals: equal to work duration @ 40-50% FTP
 - Between Over-Under sets: 5min @ 50-55% FTP
-
----
-
-## Concurrent Training (Strength + Cycling)
-
-Integrating heavy strength training with cycling improves economy, time-to-exhaustion, and sprint power without compromising aerobic capacity. Reference: Llanos-Lagos, Ramírez-Campillo & Sáez de Villarreal (2025, *Eur J Appl Physiol*, [PMID 40632222](https://pubmed.ncbi.nlm.nih.gov/40632222/)) — first cycling-specific systematic review with meta-analysis (low certainty of evidence per GRADE); Rønnestad et al. (2010, 2015); Beattie et al. (2014).
-
-### Scheduling Rules
-
-| Rule | Guideline |
-|------|-----------|
-| **Frequency** | 2×/week during base/build phases; 1×/week during peak/taper |
-| **Placement** | On easy/rest days OR same day as a hard cycling session (strength first, then cycling 6+ hours later) |
-| **Never** | Day before a key cycling session (legs need to be fresh for intervals) |
-| **Volume reduction** | Reduce cycling volume by 10-15% when adding strength (total training load stays similar) |
-| **Phase out** | Drop to 1×/week maintenance 3 weeks before target event; stop completely during taper |
-
-### Recommended Exercises (Cycling-Specific)
-
-**Primary (compound):**
-- Back squat: 3-5 sets × 3-6 reps @ 80-90% 1RM (heavy, low rep)
-- Deadlift or Romanian deadlift: 3-4 sets × 4-6 reps
-- Leg press (alternative to squat): 3-4 sets × 5-8 reps
-
-**Supporting:**
-- Single-leg step-ups: 3 sets × 6-8 per leg
-- Nordic hamstring curls: 3 sets × 4-6 reps (injury prevention)
-- Calf raises: 3 sets × 10-12 reps
-
-**Core (cycling stability):**
-- Plank variations: 3 × 30-60s
-- Dead bug: 3 × 8-10 per side
-
-### Strength Periodization (Aligned with Cycling Blocks)
-
-| Cycling Phase | Strength Phase | Sets × Reps | Intensity |
-|--------------|----------------|-------------|-----------|
-| Base/Endurance block | Hypertrophy/adaptation | 3×10-12 | 60-70% 1RM |
-| Build/FTP block | Max strength | 4×4-6 | 80-90% 1RM |
-| Peak/VO2max block | Power maintenance | 3×3-5 | 85-90% 1RM |
-| Taper/Race week | Suspended or 1× light | 2×5 | 70% 1RM |
-
-**Key principle**: Heavy strength (low rep, high weight) is more beneficial for cycling than high-rep endurance-style lifting. The goal is neuromuscular recruitment, not muscle hypertrophy.
 
 ---
 
@@ -609,59 +402,6 @@ When an FTP test occurs mid-plan (e.g., scheduled Week 4 test, or user does an a
 
 ---
 
-## Race/Event Peaking Protocol
-
-When an athlete has a target event, reverse-engineer the taper from the event date to achieve optimal freshness (TSB +5 to +20 on race day).
-
-### 2-Week Taper (Standard)
-
-Use for A-priority events or when CTL > 50.
-
-| Week | Volume vs. Build | Intensity | Key Sessions |
-|------|-----------------|-----------|--------------|
-| Race -2 | -30% volume | Maintain intensity (2 hard sessions) | 1× race-pace intervals + 1× short VO2max/openers |
-| Race -1 | -50% volume | Reduce intensity (1 hard session) | 1× openers (3×2min @ 105%) + easy rides only |
-| Race day | — | — | TSB target: +5 to +20 |
-
-**Week -2 detail:**
-- Tue: Race-pace intervals — 3×8min @ 100-105% FTP, 5min recovery (maintain sharpness)
-- Thu: Short VO2max openers — 4×2min @ 115%, 2min recovery (neuromuscular activation)
-- Sat: Z2 endurance — 60min (reduced from typical long ride)
-- Flex: Rest or very easy 30min spin
-
-**Week -1 detail:**
-- Tue: Openers — 30min easy + 3×2min @ 105% FTP with 2min recovery
-- Thu: Rest or 20min very easy spin
-- Sat (Race day -1): 20min easy spin + 2×30s @ race pace (activation only)
-
-### 1-Week Mini-Taper
-
-Use for B-priority events, shorter races, or when CTL < 50.
-
-| Week | Volume vs. Build | Intensity | Key Sessions |
-|------|-----------------|-----------|--------------|
-| Race -1 | -40% volume | 1 opener session mid-week | 1× openers (3×2min @ 105%) + easy rides |
-
-**Detail:**
-- Mon: Rest
-- Tue/Wed: Openers — 30min easy + 3×2min @ 105% FTP
-- Thu: Rest or 20min easy spin
-- Fri: 20min easy spin + 2×30s race-pace activation
-- Sat/Sun: Race day
-
-### TSB Projection for Taper Planning
-
-To determine when to start tapering, project forward from current PMC:
-1. Current TSB = CTL - ATL
-2. Each rest day: ATL decays faster than CTL → TSB rises ~2-4 points/day initially
-3. Rule of thumb: ~1 week of reduced load raises TSB by 15-25 points
-4. If current TSB = -15 and target = +10, need ~7-10 days of taper
-5. If current TSB = -30 and target = +10, need ~14+ days of taper (use 2-week protocol)
-
-**Watch out for**: Tapering too early → detraining (CTL drops, performance suffers). Tapering too late → still fatigued on race day. When in doubt, err toward slightly shorter taper.
-
----
-
 ## Block Selection Logic
 
 When creating a plan, Claude routes on the athlete's **goal** first, then applies fitness-state modifiers (CTL, TSB, FTP test recency).
@@ -699,7 +439,7 @@ These adjust the block volume/intensity once the block type is picked.
    - TSB -20 to +10: normal start
    - TSB > +10: can start at slightly elevated TSS
 5. **Block-history rotation**: check the last 2–3 completed blocks in `plans/block_history.md`. If the athlete has done **2+ consecutive FTP Builder (or otherwise sweet-spot-dominant) blocks**, do NOT auto-route `ftp_improvement` → another FTP Builder. After ~8–12 weeks of the same stimulus the higher-yield move is a **stimulus rotation** — a VO2max block (raise the aerobic ceiling) or a Polarized block, then return to FTP Builder to convert the raised ceiling. Present the rotation option to the athlete with the rationale. A stalled FTP across consecutive same-shaped blocks is a stimulus-monotony signal, not a reason to build a fourth identical block.
-6. **Tropical / indoor-climate athletes**: for an athlete who trains primarily indoors in a hot-humid climate (Singapore, SE Asia), proactively offer a **Heat Adaptation overlay** (see Heat Adaptation section) at plan creation — air-conditioned indoor training "loses" the free climate stimulus, and the plasma-volume gain transfers partially to cool-condition performance. Surface it as a standing option; don't wait for the athlete to ask.
+6. **Tropical / indoor-climate athletes**: for an athlete who trains primarily indoors in a hot-humid climate (Singapore, SE Asia), proactively offer a **Heat Adaptation overlay** (see `references/durability_strength.md` → Heat Adaptation) at plan creation — air-conditioned indoor training "loses" the free climate stimulus, and the plasma-volume gain transfers partially to cool-condition performance. Surface it as a standing option; don't wait for the athlete to ask.
 
 ### Flexible Block Lengths
 
@@ -716,89 +456,3 @@ Default block length is 4 weeks (3 build + 1 recovery). Adjust based on athlete 
 - After completing two 4-week blocks at >95% completion: offer 5-week block option
 - If athlete explicitly reports feeling run down by Week 3 in multiple blocks: switch to 3-week
 - 3-week blocks have faster recovery cycles but slower total progression; 5-week blocks offer more stimulus per cycle but higher fatigue risk
-
----
-
-## Heat Adaptation (Optional Block)
-
-Heat adaptation is a low-cost, high-ROI adaptation that drives plasma volume expansion (+5–15%), reduces resting and exercise core temperature, improves sweat response, and reduces cardiovascular drift. Particularly relevant for:
-
-- Athletes with a target event in hot/humid conditions (gran fondos, summer races, tropical destinations)
-- Tropical-climate riders (Singapore, SE Asia, equatorial latitudes) who train primarily in air-conditioned indoor environments — the climate stimulus is "lost" via climate control
-- Pre-outdoor-event preparation when transitioning from indoor Zwift to outdoor riding
-
-**Evidence**:
-- McDonald et al. (2025, *Comprehensive Physiology* 15(3):e70017, [PMC12122934](https://pmc.ncbi.nlm.nih.gov/articles/PMC12122934/)): Bayesian meta-regression of heat-acclimation protocols — improves exercise capacity in heat (effect size ~0.7), reduces resting core temperature (ES −0.6), reduces resting HR (ES −0.5). Short protocols (4–5 days) effective; medium protocols (8–14 days) most common format.
-- Sotiridis et al. (2024, *J Sci Sport Exerc*): cool-weather transfer ~6% via plasma-volume mechanism (variable across studies); no aerobic impairment in cool conditions following heat acclimation.
-- Périard et al. (2023): foundational review of physiological mechanisms — sweat onset, sweat rate, electrolyte conservation, plasma volume.
-
-> **Evidence confidence**: ESTABLISHED for heat-in-heat performance benefits and plasma-volume expansion; CONTESTED for cool-weather transfer magnitude (signal real but smaller than heat-in-heat).
-
-### Protocol — Indoor Z2 Heat Block (Singapore-Optimised)
-
-| Parameter | Target | Notes |
-|---|---|---|
-| **Frequency** | 2 sessions/week × 5–14 consecutive days | 5 days = minimum; 10–14 days = strong plasma-volume response |
-| **Duration per session** | 30–60 min | Z2 only — never combine with hard intervals |
-| **Intensity** | <75% FTP (Z2-low to Z2-high) | Strict — RPE must remain ≤4 |
-| **Ambient temperature** | 27–30°C indoor | Reduce fan speed; close room windows; consider long-sleeve layer |
-| **Relative humidity** | Whatever ambient delivers | Singapore default ~70–90% is sufficient; no humidifier needed |
-| **Hydration target** | 400–800 mL/h | Higher end if sweat rate >1.5 L/h |
-| **Electrolyte target** | Na⁺ 500–1000 mg/L of fluid | Critical — heat-block dehydration risk is the primary safety concern |
-| **Pre-session** | 250–500 mL fluid 1–2 h before | Start session euhydrated |
-| **Post-session** | Replace fluid losses + electrolytes; 0.8–1.2g/kg carb within 60 min | Standard recovery (see `references/fueling.md`) |
-
-### Heat Block Scheduling Within a Training Plan
-
-- **Best fit**: Saturday Z2 long ride is the ideal candidate — low intensity, long duration = strong plasma-volume stimulus without compounding hard-session load.
-- **Block placement**: Insert as a 5–14 day overlay during a base/endurance block, or as a pre-event mini-block 2–3 weeks before a hot-weather event.
-- **Do NOT pair with**: VO2max blocks, FTP test weeks, illness recovery, or weeks with ACWR >1.3.
-- **Block frequency**: Once every 8–12 weeks maintains adaptation; more frequent provides diminishing returns once initial expansion is achieved.
-
-### Monitoring & Abort Criteria
-
-Stop the heat block if any of the following occur:
-- HR drift >10 bpm at matched power across consecutive sessions
-- RPE elevation >2 points at matched power (e.g., RPE 4 → RPE 6+)
-- Visible recovery impairment: poor sleep, persistent fatigue, declining HRV
-- Body weight drop >2% pre-to-post-session despite hydration target met (true dehydration)
-- Heat-exhaustion symptoms: nausea, dizziness, cessation of sweating, mental confusion → immediately stop, cool, hydrate, seek medical help if symptoms persist
-
-### What This Block Does NOT Do
-
-- **Does NOT replace VO2max or threshold work** — it's an adaptation overlay, not a fitness-building block
-- **Does NOT substitute for outdoor heat exposure** — outdoor rides in tropical conditions deliver a stronger stimulus naturally
-- **Does NOT confer "altitude-doping" levels of erythropoietic gain** — plasma-volume expansion improves cardiac output, not red-cell mass; the cool-weather transfer is real but modest (~6%)
-
-### Singapore-Specific Note
-
-Year-round 28–32°C / 70–90% RH means **outdoor riding already delivers heat stimulus** — partial heat acclimation is "free" if the rider does any outdoor work. This block is most valuable for **purely indoor athletes** who want the plasma-volume benefit, or for athletes who occasionally race in even hotter conditions (Malaysia, Thailand events at midday).
-
----
-
-## Durability (Emerging Concept)
-
-**Durability** is the capacity to resist performance decline after prolonged exercise. It is emerging as a distinct, trainable metric that is independent of VO2max, FTP, or other traditional lab measures (Lievens et al., 2025, *BMC Sports Science*).
-
-### Key Findings (2023-2025)
-
-- Enhanced durability predicts success in amateur road cycling (Valenzuela et al., 2025, *Frontiers in Sports*)
-- Durability is improved by both low-intensity and high-intensity endurance training (Spragg et al., 2023, *Frontiers in Physiology*)
-- High-intensity work above critical power causes greater acute power output reductions than equivalent work at lower intensities (Spragg et al., 2025, *Eur J Appl Physiol*)
-- Accumulated Zone 1 volume appears to be the primary driver of durability improvements
-
-### When Durability Matters
-
-| Training Context | Relevance | Action |
-|-----------------|-----------|--------|
-| Sessions <90 min, no events planned | Low | Current approach sufficient |
-| Targeting events 2-4 hours | Moderate | Increase Z2 volume; add longer Saturday rides |
-| Targeting events >4 hours (gran fondos, sportives) | High | Dedicated endurance block; progressive long-ride extension |
-| Training volume >8 hrs/week | Moderate | Z2 volume already building durability; monitor with long-ride power consistency |
-
-### Practical Application
-
-Durability is not a separate training block — it develops as a byproduct of aerobic volume. For athletes targeting longer events:
-1. Extend the Saturday long ride by 15-30 min per week during endurance/build phases
-2. Monitor power consistency in the final third of long rides (>90 min) — declining NP relative to first third indicates durability limiter
-3. Fueling during long rides directly affects durability — underfueling accelerates performance decline (see `references/fueling.md`)

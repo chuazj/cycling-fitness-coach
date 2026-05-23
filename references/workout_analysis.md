@@ -354,7 +354,7 @@ For FTP estimation formulas and individual variation ranges, see `references/tra
 
 ## Weekly Load Analysis
 
-For CTL/ATL/TSB definitions, PMC formulas, and ACWR thresholds, see `references/periodization.md` → Adaptation Decision Trees.
+For CTL/ATL/TSB definitions, PMC formulas, and ACWR thresholds, see `references/weekly_adaptation.md` → Workload Ratio.
 
 ### Load Recommendations
 

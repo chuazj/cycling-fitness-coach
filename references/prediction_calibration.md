@@ -38,7 +38,7 @@ Correction terms: `post_3pm: +2`. The athlete-calibrated instance lives in
 ### FTP-gain rate
 
 Expected FTP %-gain per training block. Generic default: the 2–4%/block range in
-`references/periodization.md` → FTP Builder → Block-level coaching notes. The
+`references/block_templates.md` → FTP Builder → Block-level coaching notes. The
 athlete-calibrated rate lives in `plans/athlete_calibration.md`.
 
 ## Recalibration triggers

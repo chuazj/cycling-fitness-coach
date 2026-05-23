@@ -6,9 +6,9 @@ Scans Obsidian workout-review markdown files, extracts (date, session_type, IF, 
 tuples from YAML frontmatter, and compares the last `--weeks` weeks to the prior
 `--weeks` weeks (symmetric windows) to detect rising-RPE-at-constant-IF trends.
 
-Detects the "rising RPE at constant IF" pattern that periodization.md flags as a
-functional-overreaching signal — earlier than PMC/TSB can detect, because TSS is
-RPE-blind.
+Detects the "rising RPE at constant IF" pattern that weekly_adaptation.md flags
+as a functional-overreaching signal — earlier than PMC/TSB can detect, because
+TSS is RPE-blind.
 
 No third-party dependencies — uses a minimal flat-frontmatter parser.
 
@@ -261,7 +261,7 @@ def summarize(reviews, vault_path, weeks=4):
         "flagged_session_types": overall_flags,
         "interpretation": (
             "Functional overreaching signal — rising RPE at same IF detected in: "
-            f"{', '.join(overall_flags)}. See `references/periodization.md` "
+            f"{', '.join(overall_flags)}. See `references/weekly_adaptation.md` "
             "→ RPE Trend Escalation for action."
             if overall_flags else "No overreaching signal detected."
         ),

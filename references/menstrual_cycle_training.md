@@ -14,7 +14,7 @@ The headline is counterintuitive: **the menstrual cycle is a weak basis for *per
 - **Phase-based periodization is not evidence-supported.** Reviews through 2025 (*Strength & Conditioning Journal* 2025) find no benefit to periodizing strength or endurance training by cycle phase over standard periodization; acute strength and resistance-training adaptations show no consistent phase effect. The confirmatory trial (IMPACT) is still in progress — treat phase-periodization as **unproven**, not recommended.
 - **What does matter: symptoms and the individual's own pattern.** Menstrual symptoms — especially period pain (dysmenorrhea) — are a documented cause of missed and degraded training. The actionable signal is *this athlete's* symptoms and her own performance response, tracked over several cycles.
 
-**Coaching implication:** do not restructure a plan around cycle phase. Keep standard periodization (`periodization.md`) and autoregulate to symptoms and wellness — the same reactive logic the skill already applies to readiness.
+**Coaching implication:** do not restructure a plan around cycle phase. Keep standard periodization (`block_templates.md`) and autoregulate to symptoms and wellness — the same reactive logic the skill already applies to readiness.
 
 **Evidence confidence:** ESTABLISHED that phase has at most a trivial average performance effect, and that symptoms disrupt training. UNPROVEN that phase-based periodization helps.
 
@@ -33,7 +33,7 @@ Cycle length varies between women and between cycles. The **luteal phase is rela
 
 For most athletes, most of the time:
 
-1. **Keep standard periodization.** Build the plan as `periodization.md` prescribes. Do not pre-emptively schedule hard work into one phase or easy work into another.
+1. **Keep standard periodization.** Build the plan as `block_templates.md` prescribes. Do not pre-emptively schedule hard work into one phase or easy work into another.
 2. **Autoregulate to wellness + symptoms, not to the calendar.** The readiness system (`--readiness-check`) and the adaptation rules already do reactive load management — menstrual symptoms are just another input.
 3. **Account for the luteal hormonal baseline when reading wellness data.** Progesterone elevates resting HR and core temperature and can nudge HRV down. A modest luteal-phase RHR rise or HRV dip is partly hormonal — do not automatically read it as fatigue. Compare against the athlete's *own* luteal-phase baseline once a few cycles are logged.
 4. **Expect individual variation.** Some athletes report meaningful symptom-driven dips (often during menstruation, or late luteal); many report none. The plan adapts to *her* pattern, established from tracking — not from a population template.
@@ -63,7 +63,7 @@ Training accommodation only — for medical management, refer to a doctor.
 - **Dysmenorrhea (period pain):** very common. Light exercise often *reduces* cramping; many athletes train well on days 1–2 with mild cramps. If pain is limiting, see the severe row in §4. Persistent severe dysmenorrhea, or pain that is new or worsening, warrants a medical review — it can have treatable underlying causes.
 - **Heavy menstrual bleeding:** can cause iron deficiency, which degrades endurance directly (low ferritin impairs oxygen transport even before anemia). If the athlete reports heavy bleeding *and* unexplained fatigue or declining performance, recommend she ask her doctor for an iron / ferritin check. Iron status is a genuine, fixable performance limiter — flag it.
 - **Premenstrual symptoms (PMS):** mood, fatigue, bloating, sleep disruption in the late luteal phase. Manage by autoregulation (§4); if symptoms are severe enough to disrupt daily function, refer to a doctor.
-- **Hydration / heat:** the luteal core-temperature rise modestly raises heat strain. For a hot-climate or indoor athlete, apply the existing heat guidance (`periodization.md` → Heat Adaptation; the Evening Workout Energy Playbook) a little more conservatively in the luteal phase.
+- **Hydration / heat:** the luteal core-temperature rise modestly raises heat strain. For a hot-climate or indoor athlete, apply the existing heat guidance (`durability_strength.md` → Heat Adaptation; the Evening Workout Energy Playbook) a little more conservatively in the luteal phase.
 
 ## 6. Hormonal contraceptives
 
@@ -88,7 +88,7 @@ An athlete on a hormonal contraceptive (HC) — combined pill, progestogen-only 
 1. **Do not** prescribe a training fix and move on. Do not increase load.
 2. **Refer her to a sports physician / doctor** for evaluation, and ideally a sports dietitian for an energy-availability assessment. State this plainly and supportively.
 3. Until she has medical guidance, **hold intensity and volume at maintenance, not progression** — adding load to an athlete in energy deficit deepens the problem.
-4. Treat it as any other medical red flag in the skill (`periodization.md` → Illness / Injury): a hard safety gate, never "push through."
+4. Treat it as any other medical red flag in the skill (`weekly_adaptation.md` → Illness / Injury): a hard safety gate, never "push through."
 
 This applies **regardless of the athlete's body size or weight** — RED-S occurs across all body types.
 

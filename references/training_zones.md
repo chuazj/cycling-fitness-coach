@@ -82,7 +82,7 @@ Both approaches produce FTP gains. The FTP Builder block is pyramidal by design 
 
 ### Build Phase (4-Day Default)
 
-The canonical training week uses 4 days (matching `periodization.md` TSS distribution). Athletes with more availability can add sessions; this is the minimum effective structure.
+The canonical training week uses 4 days (matching `block_templates.md` TSS distribution). Athletes with more availability can add sessions; this is the minimum effective structure.
 
 | Day | Session Type | Duration | Key Metric | TSS Share |
 |-----|--------------|----------|------------|-----------|
@@ -153,4 +153,4 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 3. **8-minute Test**: FTP = 8min avg power × 0.90 (range 0.86-0.92; Carmichael / Time-Crunched Cyclist protocol — useful when 20min is too long for the available session window)
 4. **Hour of Power**: FTP = 60min avg power (gold standard)
 
-For block templates, progression tables, and common prescriptions: see `references/periodization.md` → Training Blocks.
+For block templates, progression tables, and common prescriptions: see `references/block_templates.md` → Training Blocks.

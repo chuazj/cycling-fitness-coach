@@ -152,7 +152,10 @@ references/
   workout_analysis.md           <- Analysis framework, coaching response templates
   zwo_format.md                 <- Zwift XML element spec, ERG design constraints, and examples
   intervals_icu_api.md          <- intervals.icu API endpoints, data models, and dependency notes
-  periodization.md              <- Block templates, TSS distribution, adaptation decision trees
+  block_templates.md            <- Block templates, TSS distribution, progressive overload, FTP test protocols, Block Selection Logic
+  weekly_adaptation.md          <- Weekly adaptation decision trees (load, ACWR, TSB, RPE, illness/injury)
+  race_taper.md                 <- Race / event peaking — taper structures and TSB projection
+  durability_strength.md        <- Concurrent strength training, heat adaptation, durability concept
   fueling.md                    <- Pre/during/post-ride nutrition, carb targets, GI troubleshooting
   adaptation_rules.md           <- Per-activity forward-cascade adaptation rules (signals -> severity -> next-session)
   plan_state_schema.md          <- Structure spec for active training plan state

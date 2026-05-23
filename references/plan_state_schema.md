@@ -26,7 +26,7 @@ Static athlete data. Set at plan creation; updated only if athlete reports chang
 | Weight | `{value}kg` | `70kg` | |
 | FTP Last Tested | `YYYY-MM-DD` | `2026-03-01` | Updated after FTP test completion |
 | Training Days | comma-separated | `Tue, Thu, Sat, +1 flex` | |
-| Goal | enum | `ftp_improvement` | One of: `ftp_improvement`, `gravel_endurance`, `criterium`, `tt`, `base`. See `references/periodization.md` → Block Selection Logic → Goal taxonomy. Free-text supplement allowed for context (e.g., `gravel_endurance — Tour de Bintan 25 Oct`). |
+| Goal | enum | `ftp_improvement` | One of: `ftp_improvement`, `gravel_endurance`, `criterium`, `tt`, `base`. See `references/block_templates.md` → Block Selection Logic → Goal taxonomy. Free-text supplement allowed for context (e.g., `gravel_endurance — Tour de Bintan 25 Oct`). |
 
 ### `## Plan Overview`
 
@@ -34,7 +34,7 @@ High-level plan metadata. Updated when advancing weeks or changing phase.
 
 | Field | Format | Valid Values | Notes |
 |-------|--------|-------------|-------|
-| Plan Type | string | `FTP Builder`, `VO2max Block`, `Endurance Block`, `Polarized Block` | From `references/periodization.md` |
+| Plan Type | string | `FTP Builder`, `VO2max Block`, `Endurance Block`, `Polarized Block` | From `references/block_templates.md` |
 | Start Date | `YYYY-MM-DD` | any date | Monday of first training week |
 | End Date | `YYYY-MM-DD` | any date | Sunday of last training week |
 | Total Weeks | integer | 3-8 | |

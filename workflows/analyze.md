@@ -134,7 +134,7 @@ When the analysis script detects an FTP test, propagate the new FTP into the act
 
    Confirm new FTP, or override? (e.g., "set 200W" / "yes" / "keep current")
    ```
-   - If ramp test: use `estimated_ftp_ramp` (1min × 0.75) instead. The 0.75 multiplier is a population average — the true range is 0.72–0.80, and athletes with a high VO2max relative to FTP can be overestimated 5–15% (`references/periodization.md` → FTP Test Protocols → Ramp Test). Cross-check the estimate against session RPE before locking it in.
+   - If ramp test: use `estimated_ftp_ramp` (1min × 0.75) instead. The 0.75 multiplier is a population average — the true range is 0.72–0.80, and athletes with a high VO2max relative to FTP can be overestimated 5–15% (`references/block_templates.md` → FTP Test Protocols → Ramp Test). Cross-check the estimate against session RPE before locking it in.
    - If athlete overrides (e.g., rounds up based on training data), use their value
    - If athlete says "keep current" → skip all updates below
 
@@ -253,9 +253,9 @@ If API unavailable, request screenshots or copy-paste of stats.
 
 **Checks applied — surface in the analysis (and the Step 7 cascade) when the trigger fires** (registry: `references/rule_registry.md`):
 
-- **VO2max session — RPE/HR gate?** — if RPE ≥9 on the work intervals OR HR fails to reach the expected VO2max range, the next VO2max session drops one progression level rather than pushing through (`references/periodization.md` → VO2max Block).
-- **Long ride (>90 min) — durability?** — compare NP of the final third against the first third; a meaningful decline flags a durability limiter (`references/periodization.md` → Durability). Track especially for `gravel_endurance` goal athletes.
-- **Heat-adaptation block active — abort criteria?** — if the athlete is mid Heat Adaptation overlay, check the abort triggers: HR drift >10 bpm at matched power across consecutive sessions, RPE +2 at matched power, or body-weight drop >2% despite hydration (`references/periodization.md` → Heat Adaptation → Monitoring & Abort Criteria).
+- **VO2max session — RPE/HR gate?** — if RPE ≥9 on the work intervals OR HR fails to reach the expected VO2max range, the next VO2max session drops one progression level rather than pushing through (`references/block_templates.md` → VO2max Block).
+- **Long ride (>90 min) — durability?** — compare NP of the final third against the first third; a meaningful decline flags a durability limiter (`references/durability_strength.md` → Durability). Track especially for `gravel_endurance` goal athletes.
+- **Heat-adaptation block active — abort criteria?** — if the athlete is mid Heat Adaptation overlay, check the abort triggers: HR drift >10 bpm at matched power across consecutive sessions, RPE +2 at matched power, or body-weight drop >2% despite hydration (`references/durability_strength.md` → Heat Adaptation → Monitoring & Abort Criteria).
 
 For the full analysis framework including session rating, common issues, and load analysis, see `references/workout_analysis.md`.
 
