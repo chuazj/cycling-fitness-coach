@@ -170,56 +170,18 @@ When the analysis script detects an FTP test, propagate the new FTP into the act
 
 **IMPORTANT:** Do NOT skip confirmation. The athlete may want to round up/down based on training context, or keep the current FTP if the test was compromised.
 
-**Step 7:** Adapt Forward — per-activity cascade check (propose-and-confirm):
+**Step 7:** Adapt Forward — per-activity cascade (propose-and-confirm). Full rules, signal thresholds, output template, and worked example live in `references/adaptation_rules.md` — read it now.
 
-After Step 5 (tracker updated with this session) and Step 6 (FTP propagation, if triggered), run the per-activity adaptation check against the next 1–2 training sessions. Full rules, thresholds, and worked example: `references/adaptation_rules.md`.
+After Step 5 (tracker updated) and Step 6 (FTP propagation, if triggered):
 
-1. **Resolve prescribed targets** for the analyzed session (layered source — see `adaptation_rules.md` §1):
-   - Prefer `plans/active_plan.md` → Current Week Schedule row (`Target TSS` + `Key Interval` %FTP range).
-   - Fall back to session-type defaults if plan file is stale/missing.
-   - Off-plan / unplanned → switch to day-intent branch (`adaptation_rules.md` §5).
+1. Resolve prescribed targets and classify the deviation across the 4 signals (`adaptation_rules.md` §1–2). Off-plan / unplanned → use the day-intent branch (§5).
+2. Apply protection overrides FIRST, then the cascade matrix (`adaptation_rules.md` §3–4).
+3. Run the upside check on 2+ consecutive on-plan sessions at power ≥ prescribed (`adaptation_rules.md` §6) — never on a single session.
+4. Present the proposal using the output template in `adaptation_rules.md` §7 and wait for `yes` / `no` / `modify`.
+5. On `yes` / `modify` → edit the next 1–2 session rows in `plans/active_plan.md` → `## Current Week Schedule` (or `## Week N+1 Schedule (Preview)` if the cascade lands in next week) and append one entry to `## Adaptation Log` per the §7 format. On `no` → no schedule edits; note in session review: "Adaptation proposed but declined."
+6. **Overall Green → skip presentation.** Append one line to the session review: "Adaptation check: all signals green, no cascade needed."
 
-2. **Classify the deviation** across 4 signals (TSS, IF, zone distribution, cardiac drift) — green/yellow/red per `adaptation_rules.md` §2. Roll up to an overall severity (worst-of-signals; TSS-red and zone-violation-red always dominate).
-
-3. **Apply protection overrides FIRST** (`adaptation_rules.md` §4):
-   - Rest day next → never override with work.
-   - FTP test within 3 days → downgrade the preceding session, never the test.
-   - Taper week → protective cascades only.
-   - Illness already declared → skip cascade; periodization rules apply.
-   - Keystone next → yellow preserves keystone (add readiness check); red downgrades.
-
-4. **Apply cascade matrix** (`adaptation_rules.md` §3) after protection overrides resolve:
-   - Green → no change. Skip to step 6 below.
-   - Yellow/Red → generate proposed edits for the next 1–2 training rows in `plans/active_plan.md` → Current Week Schedule.
-
-5. **Upside check** (`adaptation_rules.md` §6) — only fires on 2+ consecutive on-plan sessions at power ≥ prescribed; never on a single session. Propose FTP retest window or next-keystone progression level.
-
-6. **Present proposal** using the output format in `adaptation_rules.md` §7:
-
-   ```
-   ### Adaptation Check
-
-   **Signal review:** [4-row + Overall severity table]
-   **Protection checks:** [applicable overrides or "None triggered"]
-   **Proposed cascade:** [Date | Session | Current | Proposed | Reason table]
-
-   **Apply changes? (yes / no / modify)**
-   ```
-
-7. **On user response:**
-   - `yes` → edit the matching session rows in `plans/active_plan.md` → `## Current Week Schedule` (or `## Week N+1 Schedule (Preview)` if cascade lands in next week). Append one line to `plans/active_plan.md` → `## Adaptation Log`:
-     ```
-     <!-- {date} (per-activity cascade) -->
-     - **Trigger**: {severity + signal e.g. "Red zone violation: 14.4% Z5+ on Z2 day"}
-     - **Action**: {what was changed in the schedule}
-     - **Rationale**: {one-line reason referencing protection rules if applied}
-     ```
-   - `no` → no schedule edits. Note in session review body: "Adaptation proposed but declined."
-   - `modify [instructions]` → apply the modified proposal; still log to Adaptation Log.
-
-8. **Overall Green → skip presentation.** Instead append one line to the session review: "Adaptation check: all signals green, no cascade needed."
-
-**IMPORTANT:** This step is separate from Step 5 (which records the completed session) and Step 6 (which handles FTP changes). Step 7 modifies FUTURE sessions only. Never edit past schedule rows here.
+**IMPORTANT:** Step 7 modifies FUTURE sessions only — never edit past schedule rows here. Separate from Step 5 (records the completed session) and Step 6 (FTP changes).
 
 **Plan-Aware Analysis:** If `plans/active_plan.md` exists, cross-reference the analyzed activity against the current week schedule:
 - Was this session on-plan? Match by day/date and session type.
