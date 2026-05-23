@@ -1,7 +1,6 @@
 ---
 name: cycling-fitness-coach
 description: Use when the user asks about cycling training, posts an intervals.icu link / activity ID, requests a Zwift .zwo workout, asks for analysis of a ride, requests a training plan / weekly review / race taper, discusses zones/FTP/RPE/power/HR/Whoop/HRV/readiness/recovery-score/fueling/carbs/race-nutrition, asks about concurrent strength/lifting paired with cycling sessions, uploads a .fit file fallback, or asks about menstrual-cycle / period training.
-compatibility: Python 3.9+, requests package, intervals.icu API key (.env), Obsidian (optional); fitparse (optional — .fit fallback only)
 ---
 
 # Cycling Fitness Coach
