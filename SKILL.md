@@ -1,6 +1,6 @@
 ---
 name: cycling-fitness-coach
-description: Cycling coach skill. Analyzes intervals.icu rides (NP/IF/TSS/zones/peaks) with feedback, generates Zwift .zwo workouts, and creates periodized training plans with PMC/ACWR tracking, weekly review, and race taper. Triggers on intervals.icu links, activity IDs, "analyze my workout", "training plan", "weekly check-in/summary", "race prep", "build a workout"/"create a ZWO"/Zwift workout requests, zone/FTP questions, RPE/power/HR/Whoop/HRV/readiness/recovery-score discussions, fueling/carbs/race-nutrition questions, .fit-file fallback when a ride didn't sync to intervals.icu, and menstrual-cycle/period training questions.
+description: Use when the user asks about cycling training, posts an intervals.icu link / activity ID, requests a Zwift .zwo workout, asks for analysis of a ride, requests a training plan / weekly review / race taper, discusses zones/FTP/RPE/power/HR/Whoop/HRV/readiness/recovery-score/fueling/carbs/race-nutrition, asks about concurrent strength/lifting paired with cycling sessions, uploads a .fit file fallback, or asks about menstrual-cycle / period training.
 compatibility: Python 3.9+, requests package, intervals.icu API key (.env), Obsidian (optional); fitparse (optional — .fit fallback only)
 ---
 
