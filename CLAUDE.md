@@ -38,7 +38,7 @@ The `skill-creator` plugin's `run_eval.py` cannot reliably validate description 
 1. **Real-skill shadowing**: with `~/.claude/skills/cycling-fitness-coach/` in place, the harness's slash-command shim loses routing to the real skill — Claude invokes the real skill name (not the shim's UUID name), so every positive scores `triggered=False`. Workaround: `mv ~/.claude/skills/cycling-fitness-coach{,.disabled-by-eval}` before the run (always wrap in a `trap` to restore on exit).
 2. **First-tool-must-be-Skill/Read**: even with the install path isolated, the harness counts any first-tool-call other than `Skill`/`Read` as no-trigger. Substantive queries like "build me a training plan" route through `superpowers:brainstorming` first, which fails the check. Baseline scored 0/10 positives even on a clean description.
 
-Implication: for description changes, **ship on writing-skills rubric grounds** rather than blocking on an eval GREEN bar. Iron-Law discipline ("RED test before edit") only applies when the eval is a viable measurement instrument — for installed user-level skills, it isn't. See the audit Resolution at `<obsidian-vault>/🚴🏼cycling-fitness-coach/audits/cycling-coach-writing-skills-audit-2026-05-23.md` for the full trace.
+Implication: for description changes, **ship on writing-skills rubric grounds** rather than blocking on an eval GREEN bar. Iron-Law discipline ("RED test before edit") only applies when the eval is a viable measurement instrument — for installed user-level skills, it isn't. Full trace: commits `86dacdd` (F3 probe) → `8a90a81` (F1+F2+F3 description rewrite) → `8e539d5` (F4 frontmatter cleanup) on master.
 
 ## Architecture
 
