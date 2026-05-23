@@ -40,7 +40,7 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 
 > HRV framing uses **Plews/Buchheit 7-day rolling band** (μ ± 0.5σ) — the operational rule shipped in `--readiness-check`. Single-day below band = yellow; 2 consecutive days below band = red (de-load trigger). The legacy "% drop" framing is deprecated.
 
-> **Signal-mode scope:** the Recovery-score band cells (Recovery ≥67, 34–66, <34) apply in **`full` signal mode only** — when WHOOP Recovery is present. In `reduced` or `minimal` mode there is no Recovery score; use the RHR, sleep, and HRV signals in each row instead. See the wearable dependency — signal-mode contract in the Mid-Week Check-In section below.
+> **Signal-mode scope:** the Recovery-score band cells (Recovery ≥67, 34–66, <34) apply in **`full` signal mode only** — when WHOOP Recovery is present. In `reduced` or `minimal` mode there is no Recovery score; use the RHR, sleep, and HRV signals in each row instead. Full mode→bands contract: `references/cli_reference.md` → Readiness Check → Signal-mode contract.
 
 | Fatigue signal | Action | Session adjustment |
 |---|---|---|
@@ -84,7 +84,7 @@ When user asks about plan status ("check my plan", "what's next", "plan status")
 ```bash
 python scripts/intervals_icu_api.py --readiness-check -o readiness.json
 ```
-Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type ceiling, plus all underlying signals (see the signal-mode contract below for how the bands vary by mode):
+Returns a single GREEN / YELLOW-HIGH / YELLOW-LOW / RED verdict + session-type ceiling, plus all underlying signals (band scale varies by mode — see `references/cli_reference.md` → Readiness Check → Signal-mode contract):
 
 | Signal | Rule | Gating? |
 |---|---|---|
@@ -104,16 +104,7 @@ Deviation flags (RHR/HRV/respiration/SpO2) are auto-suppressed when per-metric s
 
 **Subjective override (within YELLOW-HIGH only):** the verdict above is driven by Recovery/HRV/sleep/SpO2; the intervals.icu subjective fields (fatigue/soreness/stress/mood, 1=best…4=worst) are otherwise only a data-quality check. When the verdict lands **YELLOW-HIGH** and the athlete logs subjective fields, apply this tiebreaker: if **soreness ≥3 OR fatigue ≥3 OR mood ≥3**, step the session ceiling down to **YELLOW-LOW** (Sweet Spot, not Threshold/VO2max). The athlete logs all six fields daily — genuine signal, not noise — so let it subdivide the borderline band. Does not apply to GREEN (subjective alone doesn't veto a clear day) or to YELLOW-LOW/RED (already conservative).
 
-**Wearable dependency — signal-mode contract.** `--readiness-check` classifies the available signals into a mode and adapts the verdict; `signal_mode` is on both `--readiness-check` and `--wellness` output:
-
-| Mode | Available signals | Verdict bands | Banner |
-|---|---|---|---|
-| `full` | WHOOP Recovery present | GREEN / YELLOW-HIGH / YELLOW-LOW / RED | none |
-| `reduced` | HRV and/or RHR, no Recovery | GREEN / YELLOW-LOW / RED | reduced-signal |
-| `minimal` | sleep / subjective only | GREEN / YELLOW-LOW / RED | minimal-signal |
-| `insufficient` | nothing usable | INSUFFICIENT-DATA | — |
-
-A non-WHOOP athlete still gets a valid verdict — `reduced` mode green-lights all session types on a clean HRV + RHR + sleep day, with an explicit reduced-signal banner in the output. There is no YELLOW-HIGH band outside `full` mode (it is a WHOOP-Recovery subdivision). **The subjective override above applies in `full` mode only** — `reduced`/`minimal` have no YELLOW-HIGH band to subdivide.
+**Wearable dependency — signal-mode contract.** The full mode→bands table lives in `references/cli_reference.md` → Readiness Check → Signal-mode contract. Key fact for this workflow: **the subjective override above applies in `full` mode only** — `reduced`/`minimal` have no YELLOW-HIGH band to subdivide.
 
 **Step 3:** Present current status:
 ```

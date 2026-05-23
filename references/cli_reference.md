@@ -94,7 +94,20 @@ Returns `error` field if athlete doesn't log wellness in intervals.icu (or no we
 # Wraps wellness_summary, adds sleep-score tiebreaker, recovery slope, baseline-maturity guard
 python scripts/intervals_icu_api.py --readiness-check -o readiness.json
 ```
-Used by the Mid-Week Check-In workflow. Deviation flags (RHR/HRV/respiration) auto-suppressed when sample size <7 to avoid noise. The verdict adapts to `signal_mode`: `full` (WHOOP Recovery present → 4-band cascade), `reduced` (HRV/RHR only, no Recovery → coarser 3-band), `minimal`/`insufficient` (degrades gracefully with a banner — never an error). See `references/training_zones.md` → Fatigue Indicators for thresholds.
+Used by the Mid-Week Check-In workflow. Deviation flags (RHR/HRV/respiration) auto-suppressed when sample size <7 to avoid noise. See `references/training_zones.md` → Fatigue Indicators for thresholds.
+
+### Signal-mode contract (canonical)
+
+`--readiness-check` classifies the available signals into a mode and adapts the verdict; `signal_mode` is on both `--readiness-check` and `--wellness` output:
+
+| Mode | Available signals | Verdict bands | Banner |
+|---|---|---|---|
+| `full` | WHOOP Recovery present | GREEN / YELLOW-HIGH / YELLOW-LOW / RED | none |
+| `reduced` | HRV and/or RHR, no Recovery | GREEN / YELLOW-LOW / RED | reduced-signal |
+| `minimal` | sleep / subjective only | GREEN / YELLOW-LOW / RED | minimal-signal |
+| `insufficient` | nothing usable | INSUFFICIENT-DATA | — |
+
+A non-WHOOP athlete still gets a valid verdict — `reduced` mode green-lights all session types on a clean HRV + RHR + sleep day, with an explicit reduced-signal banner in the output. There is no YELLOW-HIGH band outside `full` mode (it is a WHOOP-Recovery subdivision). Subjective-override tiebreakers (Mid-Week Check-In) apply in `full` mode only — `reduced`/`minimal` have no YELLOW-HIGH band to subdivide.
 
 ## Sparkline (Peak Power Trends visualization)
 ```bash
