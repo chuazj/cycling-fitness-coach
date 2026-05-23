@@ -6,11 +6,20 @@ Reference for writing cycling coaching notes to the Obsidian vault.
 
 ## File Naming Convention
 
+Workout reviews use a **three-bucket category convention**: `YYYY-MM-DD <Category> - <Description>.md`. The `<Category>` slot is one of `Outdoor`, `AdHoc`, or **empty** (for structured block sessions, where the description begins with the structured marker like `W1 D1` or `RTN D2`). The ` - ` separator (space-dash-space) is always present.
+
 | Type | Pattern | Example |
 |------|---------|---------|
-| Workout review | `YYYY-MM-DD {Activity Name}.md` | `2026-04-03 W1 D3 Threshold 2x18.md` |
+| Workout review — structured block | `YYYY-MM-DD - <W#D# or RTN D#> <Session Name>.md` | `2026-04-03 - W1 D3 Threshold 2x18.md` |
+| Workout review — outdoor (unplanned) | `YYYY-MM-DD Outdoor - <Ride Name>.md` | `2026-05-23 Outdoor - WCH Thomson Mandai Group Ride.md` |
+| Workout review — ad-hoc / maintenance | `YYYY-MM-DD AdHoc - <Session Name>.md` | `2026-05-21 AdHoc - Sweet Spot 2x20.md` |
 | Training plan | `YYYY-MM-DD {Plan Name}.md` | `2026-03-31 Block 3 FTP Builder.md` |
 | Weekly review | `YYYY-MM-DD Week {N} Review.md` | `2026-04-06 Week 1 Review.md` |
+
+**Category-selection rules** (workout reviews):
+- **Structured block** — empty category — when the activity belongs to an active block week (`W#D#`) or a return-to-training week (`RTN D#`). This applies even if the session happened outdoors (e.g., `2026-03-22 - W4 D1 Holland x Mandai.md` — planned outdoor block session).
+- **Outdoor** — when the ride is outdoor **and** not part of a structured block (free ride, group ride, social ride). Maintenance-dose outdoor rides also use `Outdoor`, not `AdHoc`.
+- **AdHoc** — when the ride is an indoor/trainer maintenance session outside a structured block (Block paused → ad-hoc weekly quality + Z2 days).
 
 ## Frontmatter Templates
 

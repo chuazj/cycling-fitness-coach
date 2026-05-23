@@ -96,13 +96,16 @@ python scripts/intervals_icu_api.py --wellness 3 -o /tmp/wellness.json
 
 Pick the `daily[]` entry whose `date` matches the ride's `start_date_local` date. Extract `readiness`, `sleep_hours`, `hrv` (round to 1 dp). These map to `whoop_recovery`, `whoop_sleep_h`, `whoop_hrv` in the frontmatter. If any field is null (WHOOP not synced for that date), set it to `null` in the YAML.
 
-**4b. Write the full coaching analysis** (frontmatter + markdown) to:
-`{vault}/cycling-fitness-coach/workout-reviews/YYYY-MM-DD {Activity Name}.md`
+**4b. Write the full coaching analysis** (frontmatter + markdown) to the vault under `cycling-fitness-coach/workout-reviews/`.
 
+- **File naming**: `YYYY-MM-DD <Category> - <Description>.md` per `references/obsidian_templates.md` → File Naming Convention. The `<Category>` slot is `Outdoor`, `AdHoc`, or **empty** (structured block sessions). The ` - ` separator (space-dash-space) is always present. Examples:
+  - Structured block → `2026-04-03 - W1 D3 Threshold 2x18.md`
+  - Unplanned outdoor → `2026-05-23 Outdoor - WCH Thomson Mandai Group Ride.md`
+  - Ad-hoc maintenance → `2026-05-21 AdHoc - Sweet Spot 2x20.md`
 - Frontmatter spec: `references/obsidian_templates.md` → Workout Reviews. All 11 canonical fields must be populated when data exists. `rpe:` is the only field allowed to be blank in the initial write (filled when the athlete responds to the Session RPE prompt).
 - Mention the pre-ride WHOOP state in the body's Context line (recovery score, sleep hours, HRV) — standard pattern across reviews.
 - Use the `Write` tool (direct file write to vault folder).
-- Open in Obsidian: `obsidian open path="cycling-fitness-coach/workout-reviews/YYYY-MM-DD {Activity Name}.md"`
+- Open in Obsidian: `obsidian open path="cycling-fitness-coach/workout-reviews/<filename>.md"`
 
 **IMPORTANT:** Shipping a review with empty `whoop_*` fields when the wellness API has the data is a hard-fail — it forces a follow-up edit and breaks downstream trending (`scripts/rpe_trend.py` and cross-session "response given recovery state" queries). Always fetch first, write once.
 
