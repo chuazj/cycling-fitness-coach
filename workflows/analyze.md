@@ -86,11 +86,25 @@ Power data is estimated (no power meter). All power metrics (NP, IF, TSS, zones)
 **Session RPE (1-10)?** — especially important when power is estimated
 ```
 
-**Step 4:** Save analysis to Obsidian vault:
-- Write the full coaching analysis (frontmatter + markdown) to:
-  `{vault}/cycling-fitness-coach/workout-reviews/YYYY-MM-DD {Activity Name}.md`
-- Use the `Write` tool (direct file write to vault folder)
+**Step 4:** Save analysis to Obsidian vault.
+
+**4a. Fetch pre-ride wellness BEFORE writing the file** — required so the frontmatter ships complete on first write, not empty pending follow-up:
+
+```bash
+python scripts/intervals_icu_api.py --wellness 3 -o /tmp/wellness.json
+```
+
+Pick the `daily[]` entry whose `date` matches the ride's `start_date_local` date. Extract `readiness`, `sleep_hours`, `hrv` (round to 1 dp). These map to `whoop_recovery`, `whoop_sleep_h`, `whoop_hrv` in the frontmatter. If any field is null (WHOOP not synced for that date), set it to `null` in the YAML.
+
+**4b. Write the full coaching analysis** (frontmatter + markdown) to:
+`{vault}/cycling-fitness-coach/workout-reviews/YYYY-MM-DD {Activity Name}.md`
+
+- Frontmatter spec: `references/obsidian_templates.md` → Workout Reviews. All 11 canonical fields must be populated when data exists. `rpe:` is the only field allowed to be blank in the initial write (filled when the athlete responds to the Session RPE prompt).
+- Mention the pre-ride WHOOP state in the body's Context line (recovery score, sleep hours, HRV) — standard pattern across reviews.
+- Use the `Write` tool (direct file write to vault folder).
 - Open in Obsidian: `obsidian open path="cycling-fitness-coach/workout-reviews/YYYY-MM-DD {Activity Name}.md"`
+
+**IMPORTANT:** Shipping a review with empty `whoop_*` fields when the wellness API has the data is a hard-fail — it forces a follow-up edit and breaks downstream trending (`scripts/rpe_trend.py` and cross-session "response given recovery state" queries). Always fetch first, write once.
 
 **Step 5:** Update the active plan with this session's result:
 - Read `plans/active_plan.md` → `## Current Week Schedule` table
