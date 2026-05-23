@@ -135,33 +135,10 @@ A non-WHOOP athlete still gets a valid verdict — `reduced` mode green-lights a
 ### Readiness (from --readiness-check)
 **Verdict:** {verdict_band} — {verdict text}
 **Ceiling:** {ceiling}
-{If `data_age_days` > 0, lead the section with: **⚠ Latest wellness record is {N} day(s) old — readings below are not today's.** Treat as historical, not current state.}
-{If `baseline_maturity` is "preliminary" or "insufficient", surface the `baseline_note` so the athlete understands deviation flags may be suppressed.}
 
-**Recovery lag interpretation:** Whoop Recovery is computed from last night's sleep, which primarily processed *yesterday's* training. A yellow Recovery today usually reflects yesterday's hard session — read it alongside yesterday's training, not today's plan. See `references/training_zones.md` → Recovery Score (Whoop / Wearable) for the full caveat.
+Render the per-metric body (Recovery / Sleep / HRV / RHR / Respiration / SpO2 / TSB / Subjective / Active flags / Progression signal) using `references/readiness_template.md` — map `--readiness-check` field paths (`recovery.score`, `hrv.today`, `resting_hr.today`, `respiration.today`, `spo2.today`, `tsb.tsb`, etc.) to the canonical line skeletons. The shared interpretation footnotes (Recovery lag, Reading priority, Baseline-maturity caveat, Data freshness) also live there.
 
-- Recovery: {recovery.score} → {recovery.band} {if `recovery.slope_3day.alarm`: ⚠ slope {three_days_ago}→{today} ({delta:+}pt over 3 days)}
-- Sleep: {sleep.hours}h, score {sleep.score}/100 → {sleep.status}{if `sleep.note`: ({sleep.note})}
-- HRV: {hrv.today}ms vs {hrv.sample_size}d baseline {hrv.baseline}ms ({delta:+}ms){if `hrv.band_mean_7d` and `hrv.band_sd_7d`: | 7d band μ{band_mean_7d}±{band_sd_7d*0.5} (Plews/Buchheit)}{if `hrv.cv_pct`: | CV {cv_pct}%} — *deviation flags inactive if sample_size <7; CV-trend needs ≥14d*
-  {If `hrv.cv_trend.rising` is true:} └─ ⚠ CV trend: {cv_trend.prior_cv_pct}% → {cv_trend.recent_cv_pct}% ({delta_pp:+}pp over 14d) — widening variability, early autonomic-strain signal
-- RHR: {resting_hr.today}bpm vs {resting_hr.sample_size}d baseline {resting_hr.baseline}bpm ({delta:+}bpm) — *same baseline-maturity guard*
-{If `respiration.today` is non-null:}
-- Respiration: {respiration.today:.1f}/min vs {respiration.sample_size}d baseline {respiration.baseline:.1f}/min ({delta:+}/min) — *yellow at +1.0, red at +2.0 (illness early-warning)*
-{If `spo2.today` is non-null:}
-- SpO2: {spo2.today}% {OK/WARN/FAIL tag — WARN if ≥2pp below baseline, FAIL if <90%} — *if WARN/FAIL, apply Apple Watch cross-check (see below) before holding the flag*
-- TSB context: {tsb.tsb:+} (CTL {tsb.ctl} / ATL {tsb.atl}) — {fresh/neutral/productive/overreached}
-{If at least one of fatigue/soreness/stress/mood is non-null, render:}
-- Subjective: {join only non-null fields, e.g. "fatigue=2, mood=3"}{if `subjective.stale_warning`: ⚠ all filled=1, athlete may not be updating manually}
-{Otherwise omit the Subjective row entirely.}
-
-**Active flags:** {list flags by severity, or "None — all clear"}
-
-{If `progression_signal` is non-null:}
-**Progression signal (positive):** {progression_signal.rule} — green-lights +5-10% TSS on the next quality session if athlete is in build phase. Skip during maintenance unless deliberately ramping back up.
-
-Recovery score (when present) is the single best summary signal — Whoop has baseline-calibrated HRV+RHR+sleep+respiration into it. Use the individual lines below it as drill-down explanations of *why* Recovery is what it is. If Recovery is absent (athlete not on a wearable that pushes it), fall back to HRV+RHR+sleep — but with sample-size confidence in mind.
-
-If verdict is YELLOW-LOW or RED, apply the verdict's ceiling to the planned session (downgrade hard sessions per Recovery Prescription table — Training Advice section above) before showing the session.
+**Mid-Week-specific addendum:** if verdict is YELLOW-LOW or RED, apply the verdict's ceiling to the planned session (downgrade hard sessions per Recovery Prescription table — Training Advice section above) before showing the session.
 
 ### SpO2 cross-check (Apple Watch tiebreaker)
 

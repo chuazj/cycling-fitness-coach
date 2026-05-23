@@ -62,6 +62,7 @@ references/
   menstrual_cycle_training.md   ← Female-athlete coaching — cycle/contraceptive autoregulation, symptom tiers, RED-S red flag
   plan_state_schema.md          ← Structure spec for plans/active_plan.md
   obsidian_templates.md         ← Frontmatter templates for workout reviews, plans, weekly reviews
+  readiness_template.md         ← Shared per-metric rendering for wellness/readiness blocks (used by advise.md + plan.md)
   adaptation_rules.md           ← Per-activity forward-cascade adaptation rules (signals → severity → next-session adjustments)
   prediction_calibration.md     ← W5 predict→measure→calibrate loop: models, ledger, recalibration triggers
   rule_registry.md              ← Orphan-prevention catalogue of standing coaching rules (W4)

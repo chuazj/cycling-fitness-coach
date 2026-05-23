@@ -79,37 +79,39 @@ Read the workflow file for the matched trigger before proceeding. Each file cont
 
 ## Reference Files
 
-Read these on demand based on the task:
+Each ref's own preamble documents its full contents. The taglines below are routing hints — read a file on demand based on the task.
 
-| File | Read when... |
+| File | Read when… |
 |------|-------------|
-| `references/setup.md` | **Read once at start** of any session that needs to invoke a script or write notes. Has intervals.icu credentials, URL → activity-ID extraction regex, `CYCLING_VAULT_PATH` and `ZWIFT_WORKOUT_DIR` conventions, default Zwift workout-folder paths per OS. |
-| `references/training_zones.md` | Prescribing workouts, discussing zones, planning periodization. Has zone boundaries, cadence targets, weekly structure. |
-| `references/workout_analysis.md` | Analyzing completed workouts, diagnosing performance issues, rating execution quality, collecting session RPE. Has analysis framework, metrics interpretation, coaching response templates, RPE:Power mismatch detection. |
-| `references/zwo_format.md` | Generating or editing .zwo files. Has Zwift XML element spec. **Canonical external reference**: https://github.com/h4l/zwift-workout-file-reference/blob/master/zwift_workout_file_tag_reference.md — always consult for attribute validation when unsure. |
-| `references/intervals_icu_api.md` | Troubleshooting API issues or needing field/endpoint reference. Has API endpoints, auth details, data models. |
-| `references/block_templates.md` | Creating a training plan or rolling over a block. Has block templates (FTP Builder, VO2max, Endurance, Polarized), TSS distribution, progressive overload tables, warmup/cooldown standards, FTP test protocols, goal-based block selection logic. |
-| `references/weekly_adaptation.md` | Weekly review / Mid-Week Check-In — applying adaptation decision trees. IF/THEN rules for training load, ACWR, TSB, RPE trend escalation (incl. FOR/NFOR/OTS tiering), HR indicators, session execution, illness/injury gates, rule-priority conflict resolution. |
-| `references/race_taper.md` | Race / event peaking. 2-week and 1-week taper structures, TSB projection for taper planning. |
-| `references/durability_strength.md` | Plan includes concurrent strength, a hot-weather event, a tropical-climate athlete, or a long-duration target event. Concurrent training scheduling/exercises/periodization, heat adaptation protocol + monitoring, durability concept. |
-| `references/adaptation_rules.md` | **Read after every workout analysis (Step 7 of `workflows/analyze.md`).** Per-activity forward-cascade rules: 4 signals (TSS/IF/zone/drift) → severity → next-session edits. Covers off-plan activities, protection overrides, symmetric upside. Complements `weekly_adaptation.md` (weekly trends) — this layer is single-event, next 1–2 sessions. |
-| `references/fueling.md` | Prescribing fueling strategies, diagnosing GI issues, pre/during/post-ride nutrition. **Quick-Reference subsection** maps duration × intensity → one-line `Fuel:` cue used in all workflow output templates. Also has carb targets by session duration, gut training protocol, GI troubleshooting, hydration guidelines, fasted training evidence. |
-| `references/menstrual_cycle_training.md` | Coaching a female athlete — menstrual cycle and hormonal contraceptives. Evidence stance (cycle phase is a weak periodization basis), individualized symptom-based autoregulation, symptom management, hormonal-contraceptive notes, and the amenorrhea / RED-S red-flag gate. |
-| `references/plan_state_schema.md` | Reading or updating `plans/active_plan.md`. Has section definitions, column types, valid values, update operation rules. |
-| `references/obsidian_templates.md` | Writing notes to Obsidian vault. Has frontmatter templates and CLI commands. |
-| `references/rule_registry.md` | Adding or auditing a standing coaching rule. Catalogues every orphan-prone reference-doc rule and the workflow that surfaces it; defines the "new rule → registry row + surface point" maintenance convention. |
-| `references/prediction_calibration.md` | The W5 predict→measure→calibrate loop — the two forecasting models, the prediction ledger, and the recalibration triggers. Read when logging or reconciling a forecast, or when a recalibration flag fires. |
+| `references/setup.md` | Session start — credentials, vault path, Zwift workout dir |
+| `references/training_zones.md` | Zones, cadence, TID model, Fatigue Indicator thresholds |
+| `references/workout_analysis.md` | Analysing a ride, RPE collection, RPE:Power mismatch |
+| `references/zwo_format.md` | Writing or linting a `.zwo` file |
+| `references/intervals_icu_api.md` | API troubleshooting, endpoint or field lookup |
+| `references/block_templates.md` | Creating a plan, block design, FTP test protocols, Block Selection Logic |
+| `references/weekly_adaptation.md` | Weekly review / Mid-Week — IF/THEN trees, ACWR, RPE escalation, illness gates |
+| `references/race_taper.md` | Race peaking — 2-wk / 1-wk taper, TSB projection |
+| `references/durability_strength.md` | Concurrent strength, heat adaptation, durability concept |
+| `references/adaptation_rules.md` | **After every workout analysis** (Step 7 of `analyze.md`) — per-activity cascades |
+| `references/fueling.md` | Fuelling cues, carb targets, gut training, GI issues |
+| `references/menstrual_cycle_training.md` | Female athlete — cycle / contraceptive autoregulation, RED-S gate |
+| `references/plan_state_schema.md` | Reading or updating `plans/active_plan.md` |
+| `references/obsidian_templates.md` | Writing notes to the Obsidian vault |
+| `references/readiness_template.md` | Rendering the wellness/readiness output block (shared by Mid-Week and Weekly Review) |
+| `references/rule_registry.md` | Adding or auditing a standing coaching rule |
+| `references/prediction_calibration.md` | Logging/reconciling a W5 forecast; recalibration triggers |
+| `references/cli_reference.md` | Canonical CLI examples for every script |
+| `references/internals.md` | Modifying scripts — wellness/FTP-detection/analysis implementation notes |
 
-**Scripts and assets:**
-- `scripts/intervals_icu_api.py` — intervals.icu API client with metrics computation. Modes: `--activity` (single ride), `--latest`, `--list-recent N`, `--weekly-summary [N]` (training summary), `--wellness [N]` (RHR/HRV/sleep + Whoop Recovery/respiration/SpO2 readiness summary with Yellow/Red flag detection), `--readiness-check` (pre-ride GREEN/YELLOW-HIGH/YELLOW-LOW/RED verdict + session-type ceiling — used by Mid-Week Check-In)
-- `scripts/fit_ingest.py` — analyze a local `.fit` file when an activity has not synced to intervals.icu (emits the same analysis JSON; `source: "fit_file"`). Requires `pip install fitparse`.
-- `scripts/generate_zwo.py` — Programmatic ZWO generation (single workout)
-- `scripts/pmc_calculator.py` — PMC bootstrap (90-day history) and weekly update (planned vs actual, CTL/ATL/TSB, peak powers)
-- `scripts/batch_generate_zwo.py` — Batch ZWO generation from JSON array (full week of workouts)
-- `scripts/zwo_lint.py` — Validates an existing .zwo file against the canonical element reference + project hygiene rules. Collects all findings; reports NP-based modeled stats. Exit 0/1/2.
-- `scripts/sparkline.py` — Pure-Python ASCII sparkline helper (no extra deps). Used by Weekly Review to render Peak Power Trends visually in `plans/active_plan.md`.
-- `scripts/rpe_trend.py` — RPE trend aggregator. Scans Obsidian workout-review frontmatter; computes 2-wk-vs-prior-2-wk RPE-at-IF deltas; flags functional-overreaching pattern (rising RPE at constant IF). Pure Python, no extra deps.
-- `scripts/prediction_tracker.py` — W5 validation loop. Logs forecasts (RPE-at-IF, FTP-gain) to `plans/prediction_ledger.jsonl`, reconciles them against actuals, and flags recalibration. Modes: `--mode seed-baseline` / `--mode predict` / `--mode reconcile`. Pure Python, no extra deps.
-- `assets/template_sweetspot.zwo` — Example workout template
-- `plans/active_plan.md` — Active training plan state (created by Create Plan workflow; gitignored — local-only)
-- `plans/block_history.md` — Athlete-specific archive of completed training blocks (created on first block rollover; gitignored — local-only)
+**Scripts** (see `references/cli_reference.md` for full invocations):
+
+- `intervals_icu_api.py` — activity / weekly-summary / wellness / readiness-check modes
+- `fit_ingest.py` — local `.fit` fallback when a ride hasn't synced to intervals.icu (needs `fitparse`)
+- `generate_zwo.py`, `batch_generate_zwo.py` — `.zwo` generation (single, batch)
+- `zwo_lint.py` — validate a `.zwo` (exit 0/1/2)
+- `pmc_calculator.py` — PMC bootstrap (90-day) + weekly update
+- `sparkline.py` — ASCII sparkline for Peak Power Trends
+- `rpe_trend.py` — Obsidian frontmatter scan for rising-RPE-at-IF
+- `prediction_tracker.py` — W5 forecast log / reconcile / seed-baseline
+
+**Plan files** (created by workflows; gitignored): `plans/active_plan.md`, `plans/block_history.md`. Example workout: `assets/template_sweetspot.zwo`.

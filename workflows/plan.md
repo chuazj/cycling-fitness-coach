@@ -199,25 +199,10 @@ ACWR Zone: {safe/caution/danger/underprepared}
 ### Readiness (from --wellness, if available)
 **Overall:** {green/yellow/red — from `overall_status`}
 **Baseline maturity:** {baseline_maturity} (n={smallest sample size}) — {if `baseline_note` present, paste verbatim; the note explains which flags are active vs suppressed}
-{If `latest_date_age_days` > 0, lead the section with: **⚠ Latest wellness record is {N} day(s) old ({latest_date}) — treat as historical, not current state.** This can happen when the athlete missed wellness logging or wearable sync.}
 
-**Recovery lag interpretation:** Whoop Recovery is computed from last night's sleep, which primarily processed *yesterday's* training. When reviewing the week's Recovery trend, align each day's score with the *previous* day's session, not the same day's. See `references/training_zones.md` → Recovery Score (Whoop / Wearable).
+Render the per-metric body (Recovery / Sleep / HRV / RHR / Respiration / SpO2 / TSB / Subjective / Active flags / Progression signal) using `references/readiness_template.md` — map `--wellness 14` field paths (latest day from the daily array; `recovery_slope_3day.alarm`, `hrv.band_mean_7d`, etc.) to the canonical line skeletons. The shared interpretation footnotes (Recovery lag, Reading priority, Baseline-maturity caveat, Data freshness) also live there.
 
-- Recovery: latest {X} → {band} (Whoop bands: red <34, yellow 34-66, green ≥67) {if `recovery_slope_3day.alarm`: ⚠ 3-day slope {three_days_ago}→{today} ({delta:+}pt)}
-- RHR trend: latest {X} bpm vs {n}d baseline {Y} bpm ({delta:+} bpm) — *yellow at +5, red at +10; suppressed if n<7*
-- HRV trend: latest {X}ms vs {n}d baseline {Y}ms ({delta:+}ms){if `hrv.band_mean_7d` and `hrv.band_sd_7d`: | 7d band μ{band_mean_7d}±{band_sd_7d*0.5} (Plews/Buchheit)}{if `hrv.cv_pct`: | CV {cv_pct}%} — *yellow below band single day, red 2 consecutive days; suppressed if n<7*
-  {If `hrv.cv_trend.rising` is true:} └─ ⚠ CV trend: {cv_trend.prior_cv_pct}% → {cv_trend.recent_cv_pct}% ({delta_pp:+}pp over 14d) — widening variability, early autonomic-strain signal
-- Sleep: avg {X}h over week (target ≥7h); sleep_score {X}/100 if present
-- Respiration: latest {X}/min vs {n}d baseline {Y}/min ({delta:+}/min) — *yellow at +1.0 (early illness onset), red at +2.0 (likely active illness); suppressed if n<7*
-{If `spo2.today` is non-null:}
-- SpO2: {spo2.today}% (14d baseline {spo2.baseline}%) — *yellow ≥2pp below baseline (needs ≥7d history), red <90% absolute floor. If yellow/red, apply Apple Watch tiebreaker (see `workflows/advise.md` → SpO2 cross-check)*
-- Training load (from wellness): CTL {ctl} | ATL {atl} | TSB {tsb:+}
-{If `subjective_stale_warning: true`: ⚠ subjective fields all=1 across 3+ filled — verify athlete is updating manually, otherwise treat as default/unset}
-- Flags: {list of yellow/red flags from wellness_summary `flags` array, or "None"}
-{If `progression_signal` is non-null:}
-- **Progression signal (positive):** {progression_signal.rule} — green-lights +5-10% TSS on the next quality session if athlete is in build phase. Mostly dormant in maintenance.
-
-Recovery score (when present) is the single best summary signal; treat the individual HRV/RHR/sleep lines as drill-down explanations of *why* Recovery is what it is. If yellow/red flags present, weight the adaptation recommendation toward recovery (Rule Priority 1-2 in `references/weekly_adaptation.md` → Rule Priority). When `baseline_maturity` is "preliminary" or "insufficient", deviation flags are intentionally suppressed — fall back to Recovery + sleep + subjective fields for fatigue calls.
+**Weekly Review framing:** render Sleep as **avg {X}h over week** (not latest) — this is a trend view. No verdict band (the trend view is informational, not a single-day call). When yellow/red flags present, weight the adaptation recommendation toward recovery (Rule Priority 1-2 in `references/weekly_adaptation.md` → Rule Priority).
 
 ### RPE Trend (from rpe_trend.py, if Obsidian reviews exist)
 **Overall flag:** {none / rising_rpe_at_constant_if}
