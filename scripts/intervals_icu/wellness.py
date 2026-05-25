@@ -1,4 +1,5 @@
 """Wellness aggregation — RHR/HRV/sleep/recovery baselines and flag detection."""
+import sys
 from datetime import datetime, timedelta
 
 from .metrics import _stdev
@@ -417,7 +418,12 @@ def _latest_date_age_days(latest):
             latest_dt = datetime.strptime(latest["date"], "%Y-%m-%d").date()
             latest_date_age_days = (datetime.now().date() - latest_dt).days
         except ValueError:
-            pass
+            # Surface malformed dates rather than silently returning None —
+            # a "Latest wellness record is — day(s) old" line looks identical
+            # to a missing-date case, hiding actual data corruption.
+            print(f"WARNING: wellness record has malformed date "
+                  f"{latest['date']!r}; age computation skipped.",
+                  file=sys.stderr)
     return latest_date_age_days
 
 
@@ -603,8 +609,17 @@ def wellness_summary(client, days=14):
           - `progression_signal`: dict (HRV-above-band 3 days + CTL rising → green-light
             a 5-10% TSS bump), or None when the criteria are not met
     """
-    newest = datetime.now().strftime("%Y-%m-%d")
-    oldest = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    # Naive local-time date. `id` from intervals.icu is the wake-date in the
+    # athlete's timezone, so running this from the athlete's local box is
+    # correct; running on a UTC server with the athlete in another timezone
+    # can shift the window by ±1 day around midnight. Right after midnight,
+    # today's WHOOP entry may not have synced yet AND the (today - days) entry
+    # has just rolled off the bottom — the window can lose its bottom entry
+    # without gaining a top one. Acceptable here: the script runs on the
+    # athlete's local machine and is invoked during the day, not at 00:05.
+    today = datetime.now().date()
+    newest = today.strftime("%Y-%m-%d")
+    oldest = (today - timedelta(days=days)).strftime("%Y-%m-%d")
 
     try:
         wellness = client.get_wellness(oldest, newest)
@@ -619,8 +634,16 @@ def wellness_summary(client, days=14):
             "days_with_data": 0,
         }
 
-    # Sort by date ascending; intervals.icu uses "id" = "YYYY-MM-DD"
-    wellness = sorted(wellness, key=lambda w: w.get("id", ""))
+    # Sort by date ascending; intervals.icu uses "id" = "YYYY-MM-DD".
+    # Drop records with no id rather than letting an empty-string default
+    # sort them to the head and contaminate the chronological baseline.
+    skipped_no_id = sum(1 for w in wellness if not w.get("id"))
+    if skipped_no_id:
+        print(f"WARNING: dropped {skipped_no_id} wellness record(s) missing 'id' "
+              f"(chronology cannot be established).", file=sys.stderr)
+    wellness = sorted(
+        (w for w in wellness if w.get("id")), key=lambda w: w["id"]
+    )
 
     daily = _build_daily(wellness)
     history, value_lists, sizes, partial_baseline = _history_value_lists(daily)

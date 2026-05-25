@@ -75,15 +75,18 @@ class IntervalsIcuClient:
         return self._get(f"/athlete/{self.athlete_id}")
 
     def list_activities(self, oldest, newest=None, limit=None):
+        # Explicit None guards (not truthiness) so an empty-string `newest`
+        # doesn't silently drop the upper bound and expand the date range.
+        # Matches the project's null-handling convention.
         params = {"oldest": oldest}
-        if newest: params["newest"] = newest
-        if limit: params["limit"] = limit
+        if newest is not None: params["newest"] = newest
+        if limit is not None: params["limit"] = limit
         return self._get(f"/athlete/{self.athlete_id}/activities", params)
 
     def get_wellness(self, oldest, newest=None):
         """Fetch daily wellness records for date range (YYYY-MM-DD strings)."""
         params = {"oldest": oldest}
-        if newest: params["newest"] = newest
+        if newest is not None: params["newest"] = newest
         return self._get(f"/athlete/{self.athlete_id}/wellness", params)
 
 
