@@ -102,7 +102,7 @@ Pick the `daily[]` entry whose `date` matches the ride's `start_date_local` date
   - Structured block → `2026-04-03 - W1 D3 Threshold 2x18.md`
   - Unplanned outdoor → `2026-05-23 Outdoor - WCH Thomson Mandai Group Ride.md`
   - Ad-hoc maintenance → `2026-05-21 AdHoc - Sweet Spot 2x20.md`
-- Frontmatter spec: `references/obsidian_templates.md` → Workout Reviews. All 11 canonical fields must be populated when data exists. `rpe:` is the only field allowed to be blank in the initial write (filled when the athlete responds to the Session RPE prompt).
+- Frontmatter spec: `references/obsidian_templates.md` → Workout Reviews. Populate every key in the template (date, type, session, session_type, tss, if, rating, rpe, whoop_recovery, whoop_sleep_h, whoop_hrv, tags) when data exists. `rpe:` is the only key allowed to be blank in the initial write (filled when the athlete responds to the Session RPE prompt); WHOOP keys may be `null` only when WHOOP has not synced for that date.
 - Mention the pre-ride WHOOP state in the body's Context line (recovery score, sleep hours, HRV) — standard pattern across reviews.
 - Use the `Write` tool (direct file write to vault folder).
 - Open in Obsidian: `obsidian open path="cycling-fitness-coach/workout-reviews/<filename>.md"`
