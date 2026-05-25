@@ -22,6 +22,7 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 from datetime import datetime
 
 # Force UTF-8 on Windows (output and error messages may carry non-ASCII).
@@ -33,6 +34,13 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
 # scripts/ is on sys.path when run as `python scripts/prediction_tracker.py`
 # and in tests (which insert scripts/ on the path) — so rpe_trend imports directly.
 from rpe_trend import collect_reviews
+
+# Default ledger/calibration paths anchor to the skill root, not the current
+# working directory. Without this, running the script from any other cwd
+# silently creates a fresh empty ledger in <cwd>/plans/, hiding the real one.
+_SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_LEDGER_PATH = os.path.join(_SKILL_ROOT, "plans", "prediction_ledger.jsonl")
+DEFAULT_CALIBRATION_PATH = os.path.join(_SKILL_ROOT, "plans", "athlete_calibration.md")
 
 # Generic default forecasting model (the scaffold). The athlete-calibrated
 # instance lives in plans/athlete_calibration.md; --seed-baseline produces it.
@@ -104,10 +112,26 @@ def load_ledger(path):
 
 
 def save_ledger(path, records):
-    """Rewrite the JSONL ledger — one JSON object per line."""
-    with open(path, "w", encoding="utf-8") as f:
-        for rec in records:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    """Rewrite the JSONL ledger — one JSON object per line.
+
+    Atomic via tempfile + os.replace: an interrupt or crash mid-write leaves
+    the existing ledger untouched. The previous in-place rewrite could
+    truncate the file partway through and silently drop the un-flushed tail
+    on the next load_ledger.
+    """
+    dir_ = os.path.dirname(os.path.abspath(path)) or "."
+    fd, tmp = tempfile.mkstemp(prefix=".ledger-", suffix=".tmp", dir=dir_)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            for rec in records:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def next_id(records):
@@ -197,6 +221,13 @@ def reconcile(records, reviews, new_ftp=None, ftp_test_date=None):
     ftp_gain: reconciled only when new_ftp + ftp_test_date are supplied (the
         coach passes them from analyze.md Step 6's confirmed FTP test) and the
         test date is on or after the prediction's `made` date.
+
+    NOTE — rec["delta"] is a type union by `rec["type"]`:
+      - rpe_at_if: float (actual_rpe - predicted_rpe), e.g. 2.0
+      - ftp_gain : str, human-readable summary — "inside" or
+                   "outside (1.5pp below range)"
+    Consumers that aggregate delta must type-narrow on rec["type"] first.
+    check_ftp_trigger does this by string-matching the "outside" prefix.
     """
     today = datetime.now().strftime("%Y-%m-%d")
     just = []
@@ -322,8 +353,8 @@ def build_parser():
         description="Prediction tracker — log, reconcile, and calibrate forecasts")
     p.add_argument("--mode", required=True,
                    choices=["seed-baseline", "predict", "reconcile"])
-    p.add_argument("--ledger-path", default="plans/prediction_ledger.jsonl")
-    p.add_argument("--calibration-path", default="plans/athlete_calibration.md")
+    p.add_argument("--ledger-path", default=DEFAULT_LEDGER_PATH)
+    p.add_argument("--calibration-path", default=DEFAULT_CALIBRATION_PATH)
     p.add_argument("--vault-path",
                    help="Obsidian workout-reviews dir (seed-baseline, reconcile)")
     # predict
