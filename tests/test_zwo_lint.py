@@ -192,8 +192,77 @@ class TestLintWarnings(unittest.TestCase):
         self.assertEqual(len(w6), 1)
         self.assertIn("short rep", w6[0]["message"])
 
+    def test_w8_ftptest_freeride_missing_show_avg(self):
+        # FreeRide inside an ftptest workout MUST set show_avg="1" so the
+        # running-power-average HUD displays during the test.
+        self.assertIn("W8", self._codes(
+            '<workout_file><workout ftptest="1">'
+            '<Warmup Duration="300" PowerLow="0.4" PowerHigh="0.75"/>'
+            '<FreeRide Duration="1200"/>'
+            '<Cooldown Duration="300" PowerLow="0.5" PowerHigh="0.35"/>'
+            '</workout></workout_file>'))
+
+    def test_w8_not_flagged_when_show_avg_set(self):
+        self.assertNotIn("W8", self._codes(
+            '<workout_file><workout ftptest="1">'
+            '<FreeRide Duration="1200" show_avg="1"/>'
+            '</workout></workout_file>'))
+
+    def test_w8_not_flagged_on_non_ftptest_workout(self):
+        # show_avg is FTP-test specific; missing on a normal FreeRide is fine.
+        self.assertNotIn("W8", self._codes(
+            '<workout_file><workout>'
+            '<FreeRide Duration="600"/></workout></workout_file>'))
+
     def test_clean_file_no_warnings(self):
         self.assertEqual(self._codes(VALID_ZWO), set())
+
+
+class TestLintFuelCueW9(unittest.TestCase):
+    """W9 — fuel-cue accuracy on ≤60min Z2 rides (IF ≤ 0.75).
+
+    Runs in lint_file (needs computed stats), so test through lint_file.
+    """
+
+    def test_w9_flags_carb_cue_on_short_z2(self):
+        # 60min ride at 0.70 IF (Z2) with a "Fuel: 30g/hr carbs" cue should fire.
+        xml = ('<workout_file><name>x</name><workout>'
+               '<SteadyState Duration="3600" Power="0.70">'
+               '<textevent timeoffset="600" message="Fuel: 30g/hr carbs"/>'
+               '</SteadyState></workout></workout_file>')
+        result = lint_file_for(xml)
+        codes = {f["code"] for f in result["findings"]}
+        self.assertIn("W9", codes)
+
+    def test_w9_silent_on_long_ride(self):
+        # 90min Z2 — carb fueling is appropriate, no W9.
+        xml = ('<workout_file><name>x</name><workout>'
+               '<SteadyState Duration="5400" Power="0.70">'
+               '<textevent timeoffset="600" message="Fuel: 30g/hr carbs"/>'
+               '</SteadyState></workout></workout_file>')
+        result = lint_file_for(xml)
+        codes = {f["code"] for f in result["findings"]}
+        self.assertNotIn("W9", codes)
+
+    def test_w9_silent_on_high_intensity_short_ride(self):
+        # 45min Threshold — fueling is appropriate at this intensity, no W9.
+        xml = ('<workout_file><name>x</name><workout>'
+               '<SteadyState Duration="2700" Power="0.95">'
+               '<textevent timeoffset="600" message="Fuel: 30g/hr carbs"/>'
+               '</SteadyState></workout></workout_file>')
+        result = lint_file_for(xml)
+        codes = {f["code"] for f in result["findings"]}
+        self.assertNotIn("W9", codes)
+
+    def test_w9_silent_on_zero_grams_cue(self):
+        # "Fuel: water only" or "Fuel: 0g" — no carbs prescribed, no W9.
+        xml = ('<workout_file><name>x</name><workout>'
+               '<SteadyState Duration="3600" Power="0.70">'
+               '<textevent timeoffset="600" message="Fuel: water + electrolytes"/>'
+               '</SteadyState></workout></workout_file>')
+        result = lint_file_for(xml)
+        codes = {f["code"] for f in result["findings"]}
+        self.assertNotIn("W9", codes)
 
 
 class TestLintModeledStats(unittest.TestCase):

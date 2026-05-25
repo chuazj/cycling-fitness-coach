@@ -55,6 +55,11 @@ ERG_POWER_CUE = re.compile(
     r"\b(drop to|increase to|raise to|lower to)\b"
     r"|\b(?:to|at)\s+\d+\s?[Ww]\b", re.IGNORECASE)
 
+# Fuel-cue carb specifier — matches "Fuel: 30g" / "Fuel: 40g/hr carbs" / etc.
+# Used by W9 to flag carb-prescribing cues on ≤60min Z2 rides where
+# water/electrolyte only is the standard (fueling.md → Quick-Reference).
+FUEL_CUE_GRAMS = re.compile(r"fuel[:\s].*?(\d+)\s*g", re.IGNORECASE)
+
 
 def _finding(severity: str, code: str, message: str, location: str = "") -> dict:
     """Build one lint finding."""
@@ -227,7 +232,48 @@ def lint_xml(xml_string: str) -> list:
             'workout has ftptest="1" but no <FreeRide> segment — the FTP-test '
             'effort should be FreeRide, not SteadyState (ERG holds current FTP)'))
 
+    # W8 — ftptest <FreeRide> missing show_avg="1". Without it, the running
+    # power-average HUD doesn't display during the test — the athlete's
+    # primary pacing aid is invisible.
+    if workout_elem.get("ftptest") == "1":
+        for idx, elem in enumerate(workout_elem):
+            if elem.tag == "FreeRide" and elem.get("show_avg") != "1":
+                findings.append(_finding("warning", "W8",
+                    'FTP-test <FreeRide> is missing show_avg="1" — the '
+                    'running-power-average HUD will not display during the '
+                    'test, removing the pacing aid',
+                    f"FreeRide[{idx}]"))
+
     return findings
+
+
+def _check_fuel_cues(workout_elem, stats: dict, findings: list) -> None:
+    """W9 — fuel-cue accuracy. ≤60min at Z2 (IF ≤ 0.75) needs water/electrolyte
+    only; carb fueling at this duration/intensity is unnecessary and risks
+    gut distress per fueling.md → Quick-Reference. Catches the recurring drift
+    of prescribing 30-40g/hr carbs on short Z2 rides (CLAUDE.md → ZWO edit
+    hygiene). Needs `stats` for duration + IF, so it runs in lint_file after
+    calculate_workout_stats.
+    """
+    total_min = stats.get("total_duration_min") or 0
+    if_value = stats.get("estimated_if")
+    if if_value is None or total_min <= 0:
+        return
+    if not (total_min <= 60 and if_value <= 0.75):
+        return
+    for idx, elem in enumerate(workout_elem):
+        if elem.tag == "textevent":
+            continue
+        for te in elem.findall("textevent"):
+            msg = te.get("message", "")
+            m = FUEL_CUE_GRAMS.search(msg)
+            if m and int(m.group(1)) > 0:
+                findings.append(_finding("warning", "W9",
+                    f'fuel cue "{msg}" prescribes {m.group(1)}g carbs on a '
+                    f'{total_min:.0f}min Z2 ride (IF={if_value}) — '
+                    f'water/electrolyte only is standard for this '
+                    f'duration/intensity (fueling.md → Quick-Reference)',
+                    f"{elem.tag}[{idx}]/textevent"))
 
 
 def lint_file(path: str, ftp: int = 200) -> dict:
@@ -254,6 +300,17 @@ def lint_file(path: str, ftp: int = 200) -> dict:
             stats = calculate_workout_stats(workout, ftp=ftp)
         except Exception:
             stats = None
+
+    # W9 — fuel-cue accuracy. Needs computed stats for duration + IF, so the
+    # check runs here (after calculate_workout_stats) rather than in lint_xml.
+    if stats is not None:
+        try:
+            root = ET.fromstring(xml_string)
+            workout_elem = root.find("workout")
+            if workout_elem is not None:
+                _check_fuel_cues(workout_elem, stats, findings)
+        except ET.ParseError:
+            pass  # already reported as E1 by lint_xml
 
     return {
         "file": path,
