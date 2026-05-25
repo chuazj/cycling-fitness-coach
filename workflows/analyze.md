@@ -91,7 +91,7 @@ Power data is estimated (no power meter). All power metrics (NP, IF, TSS, zones)
 **4a. Fetch pre-ride wellness BEFORE writing the file** — required so the frontmatter ships complete on first write, not empty pending follow-up:
 
 ```bash
-python scripts/intervals_icu_api.py --wellness 3 -o /tmp/wellness.json
+python scripts/intervals_icu_api.py --wellness 3 -o wellness.json
 ```
 
 Pick the `daily[]` entry whose `date` matches the ride's `start_date_local` date. Extract `readiness`, `sleep_hours`, `hrv` (round to 1 dp). These map to `whoop_recovery`, `whoop_sleep_h`, `whoop_hrv` in the frontmatter. If any field is null (WHOOP not synced for that date), set it to `null` in the YAML.
