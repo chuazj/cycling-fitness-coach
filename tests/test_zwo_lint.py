@@ -264,6 +264,28 @@ class TestLintFuelCueW9(unittest.TestCase):
         codes = {f["code"] for f in result["findings"]}
         self.assertNotIn("W9", codes)
 
+    def test_w9_silent_on_conditional_grams_without_rate(self):
+        # Bare "30g" without /hr is a discretionary mention ("30g if fasted"),
+        # not a rate prescription — must not trip W9.
+        xml = ('<workout_file><name>x</name><workout>'
+               '<SteadyState Duration="3600" Power="0.70">'
+               '<textevent timeoffset="600" '
+               'message="Fuel: water/electrolyte is enough - 30g carb only if fasted"/>'
+               '</SteadyState></workout></workout_file>')
+        result = lint_file_for(xml)
+        codes = {f["code"] for f in result["findings"]}
+        self.assertNotIn("W9", codes)
+
+    def test_w9_matches_per_hour_phrasing(self):
+        # "30g per hour" should match too (not only /hr).
+        xml = ('<workout_file><name>x</name><workout>'
+               '<SteadyState Duration="3600" Power="0.70">'
+               '<textevent timeoffset="600" message="Fuel: 30g per hour"/>'
+               '</SteadyState></workout></workout_file>')
+        result = lint_file_for(xml)
+        codes = {f["code"] for f in result["findings"]}
+        self.assertIn("W9", codes)
+
 
 class TestLintModeledStats(unittest.TestCase):
     def test_clean_file_reports_stats(self):

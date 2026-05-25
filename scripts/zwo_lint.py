@@ -55,10 +55,14 @@ ERG_POWER_CUE = re.compile(
     r"\b(drop to|increase to|raise to|lower to)\b"
     r"|\b(?:to|at)\s+\d+\s?[Ww]\b", re.IGNORECASE)
 
-# Fuel-cue carb specifier — matches "Fuel: 30g" / "Fuel: 40g/hr carbs" / etc.
-# Used by W9 to flag carb-prescribing cues on ≤60min Z2 rides where
-# water/electrolyte only is the standard (fueling.md → Quick-Reference).
-FUEL_CUE_GRAMS = re.compile(r"fuel[:\s].*?(\d+)\s*g", re.IGNORECASE)
+# Fuel-cue carb-rate specifier — matches an explicit per-hour prescription
+# only ("30g/hr", "40g/hour", "30g per hour"). Bare "30g" mentions (e.g.
+# "30g carb only if fasted") are not prescriptions of a rate and must not
+# trip W9. The recurring drift CLAUDE.md flags is the "/hr" form.
+FUEL_CUE_GRAMS = re.compile(
+    r"fuel[:\s].*?(\d+)\s*g\s*(?:/\s*(?:hr|hour|h)\b|\s+per\s+(?:hr|hour|h)\b)",
+    re.IGNORECASE,
+)
 
 
 def _finding(severity: str, code: str, message: str, location: str = "") -> dict:
