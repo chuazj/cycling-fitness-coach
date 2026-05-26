@@ -5,7 +5,7 @@ type: audit
 audit_scope: [refactor-proposal, citation-currency, output-contract]
 skill: cycling-fitness-coach
 skill_version_start: 01b8e45
-skill_version_end: 3b30820
+skill_version_end: 53aa96d
 rubric: internal-methodology-audit
 status: actioned
 findings_count: 8
@@ -56,20 +56,30 @@ Seven changes proposed, prioritised P0–P2. Full rationale (with sports-science
 
 ## §4 Resolution
 
-P0 + P1 actioned on 2026-05-26 (skill versions `01b8e45` → `3b30820`).
+All seven changes (P0 + P1 + P2) actioned on 2026-05-26 (skill versions `01b8e45` → `53aa96d`).
 
-| Change | Commit | Note |
-|--------|--------|------|
-| C1 — bibliography | `59d56f4` | 208 ln; 7 framework authorities + 6 auxiliary; ASCII-only anchors; currency log; evidence-tier conventions. |
-| C2 — audit protocol + audits/ + writing-skills port + rule_registry pointer fix | `9880245` | Quarterly cadence with Weekly Review surfacing mechanism; 3 audit artifacts ported/created (README, 2026-05-23 writing-skills, this file); rule_registry.md:3 self-contained. |
-| C4 — citation cadence preambles (6 docs) | `3b30820` | New preambles on weekly_adaptation, race_taper, fueling, training_zones; existing preambles on block_templates, durability_strength, menstrual_cycle_training extended with bibliography anchors. |
-| C3 — sub-prompt contracts (4 docs) | `3b30820` | Additive Inputs / Outputs / Invocation headers on readiness_template, adaptation_rules, weekly_adaptation, block_templates → Block Selection Logic. |
-| SKILL.md + CLAUDE.md router sync | `3b30820` | Reference Files table and Architecture tree updated for new ref files + audits/ dir. |
+| Change | Priority | Commit | Note |
+|--------|---------:|--------|------|
+| C1 — bibliography | P0 | `59d56f4` | 208 ln; 7 framework authorities + 6 auxiliary; ASCII-only anchors; currency log; evidence-tier conventions. |
+| C2 — audit protocol + audits/ + writing-skills port + rule_registry pointer fix | P0 | `9880245` | Quarterly cadence with Weekly Review surfacing mechanism; 3 audit artifacts ported/created (README, 2026-05-23 writing-skills, this file); rule_registry.md:3 self-contained. |
+| C4 — citation cadence preambles (6 docs) | P1 | `3b30820` | New preambles on weekly_adaptation, race_taper, fueling, training_zones; existing preambles on block_templates, durability_strength, menstrual_cycle_training extended with bibliography anchors. |
+| C3 — sub-prompt contracts (4 docs) | P1 | `3b30820` | Additive Inputs / Outputs / Invocation headers on readiness_template, adaptation_rules, weekly_adaptation, block_templates → Block Selection Logic. |
+| SKILL.md + CLAUDE.md router sync (round 1) | P1 | `3b30820` | Reference Files table and Architecture tree updated for new ref files + audits/ dir. |
+| C5 — workflow checkpoint consistency + Weekly Review audit-due wire-up | P2 | `7857dfe` | Validation-gates tables on analyze/advise/generate; plan.md Weekly Review Step 4b + Step 5 Skill maintenance sub-section; §N pointer fixes. |
+| C6 — stable section anchors | P2 | `97643c4` | Anchor inventories added to block_templates.md and workout_analysis.md. Deviation noted: workflow cross-refs kept in `→ Section Name` style for consistency; anchor pinning achieved at the target side. |
+| C7 — output artifact index | P2 | `53aa96d` | references/artifacts.md (110 ln) — every emitted file's path, emitter, schema, gitignore status. Required reading for Scope 4 audit. SKILL.md + CLAUDE.md router updated. |
 
-**Tests:** `python -m unittest discover tests` → 646 OK (no regressions). No script code paths touched.
+**Tests:** `python -m unittest discover tests` → 646 OK across all three commits. No script code paths touched.
 
-**Not yet shipped (deliberate scope cut):**
+**Shipped operationally:**
 
-- Push to origin (`git push origin master`) and install-path sync — held for user confirmation per system / CLAUDE.md guidance on visible / shared actions.
-- P2 changes — C5 (workflow checkpoint consistency), C6 (section anchors), C7 (output artifact index) — queued in `references/audit_protocol.md` → Currently-queued actions for the 2026-Q3 / 2026-Q4 audits.
-- Weekly Review audit-due surfacing wire-up — proposed mechanism documented in audit_protocol.md but not yet wired into `workflows/plan.md`. Queued as a follow-up.
+- Push to origin (P0 + P1 chain shipped at HEAD `463a39f` per user instruction). P2 chain push pending user confirmation.
+- Install path sync — same cadence as push.
+- Weekly Review audit-due surfacing — wired in plan.md Step 4b (was previously queued as a P2 follow-up; folded into C5 commit `7857dfe`).
+
+**Currently-queued actions for 2026-Q3 audit** (now anchored in `references/audit_protocol.md` → Currently-queued actions):
+
+- Mujika anchor at the taper-structure paragraph in `race_taper.md`.
+- San Millán anchor at the Z2 paragraph in `training_zones.md` (with POPULAR-MEDIA tier flag).
+- Allen-Coggan anchor at `training_zones.md` and `plan_state_schema.md` (verify 3rd edition).
+- First quarterly methodology-currency audit (cadence kick-off).
