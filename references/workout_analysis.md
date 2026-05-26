@@ -12,7 +12,38 @@
 - [Common Issues & Coaching Feedback](#common-issues--coaching-feedback)
 - [Session Rating Framework](#session-rating-framework)
 - [Weekly Load Analysis](#weekly-load-analysis)
+- [Session RPE (Rate of Perceived Exertion)](#session-rpe-rate-of-perceived-exertion)
 - [Post-Workout Questions](#post-workout-questions)
+
+## Stable section anchors
+
+These are the canonical GitHub-flavoured-markdown slugs for every `##` and `###` heading in this file. Cross-references from workflows / other ref docs should pin against these slugs so heading-text edits don't silently break inbound links. If a heading is renamed, preserve the slug via an inline `<a id="old-slug"></a>` anchor before the renamed heading.
+
+| Section | Anchor | Used by |
+|---------|--------|---------|
+| Activity Data Extraction | `#activity-data-extraction` | (read on demand from `workflows/analyze.md`) |
+| Activity Data Extraction → From API Output | `#from-api-output-intervalsicu` | (internal subsection) |
+| Key Metrics to Analyze | `#key-metrics-to-analyze` | `workflows/analyze.md` (broad reference) |
+| Key Metrics → Variability Index (VI) Analysis | `#variability-index-vi-analysis` | (internal subsection) |
+| Power Data Confidence | `#power-data-confidence` | `workflows/analyze.md` (Analysis Checklist — estimated-power gate) |
+| Indoor vs. Outdoor Context → ERG Mode: Strengths & Limitations | `#erg-mode-strengths--limitations` | `references/block_templates.md` (ERG variety); `references/rule_registry.md` |
+| FTP Test Detection & Post-Test Workflow | `#ftp-test-detection--post-test-workflow` | `workflows/analyze.md` Step 6 |
+| Structured Workout Analysis → Interval Session Checklist | `#interval-session-checklist` | `workflows/analyze.md` Analysis Checklist |
+| Structured Workout Analysis → Endurance Ride Analysis | `#endurance-ride-analysis` | `workflows/analyze.md` (long-ride durability check) |
+| Structured Workout Analysis → Workout-Type-Specific Success Criteria | `#workout-type-specific-success-criteria` | (internal subsection) |
+| Common Issues & Coaching Feedback | `#common-issues--coaching-feedback` | `workflows/analyze.md` (post-analysis prescription) |
+| Common Issues → Issue: Power Fades in Later Intervals | `#issue-power-fades-in-later-intervals` | (internal pattern reference) |
+| Common Issues → Issue: HR Higher Than Expected at Power | `#issue-hr-higher-than-expected-at-power` | (internal pattern reference) |
+| Common Issues → Issue: Can't Reach Target Power | `#issue-cant-reach-target-power` | (internal pattern reference) |
+| Common Issues → Issue: High Variability Index | `#issue-high-variability-index` | (internal pattern reference) |
+| Session Rating Framework → Execution Score (1-5) | `#execution-score-1-5` | `workflows/analyze.md` Step 3 (output template `Execution Rating`) |
+| Session Rating Framework → Adaptation Signals | `#adaptation-signals` | `references/adaptation_rules.md` (composes with) |
+| Weekly Load Analysis | `#weekly-load-analysis` | `workflows/analyze.md` Weekly Summary section |
+| Session RPE (Rate of Perceived Exertion) | `#session-rpe-rate-of-perceived-exertion` | `workflows/analyze.md` Step 3 (Session RPE prompt) |
+| Session RPE → RPE:Power Mismatch Detection | `#rpepower-mismatch-detection` | `scripts/rpe_trend.py` (output rationale) |
+| Session RPE → RPE Trend Monitoring | `#rpe-trend-monitoring` | `references/weekly_adaptation.md` (RPE Trend Escalation) |
+| Session RPE → Obsidian Frontmatter Integration | `#obsidian-frontmatter-integration` | `references/obsidian_templates.md` (Workout Reviews) |
+| Post-Workout Questions | `#post-workout-questions` | `workflows/analyze.md` (Session RPE prompt) |
 
 ## Activity Data Extraction
 

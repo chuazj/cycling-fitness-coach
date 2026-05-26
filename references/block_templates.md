@@ -17,6 +17,28 @@ Reference for Claude-as-coach: block templates, TSS distribution, interval progr
 - [FTP Test Protocols](#ftp-test-protocols) — 20-min, ramp, and CP/eFTP procedures
 - [Block Selection Logic](#block-selection-logic) — Goal-based block type selection
 
+## Stable section anchors
+
+These are the canonical GitHub-flavoured-markdown slugs for every `##` and `###` heading in this file. Cross-references from workflows / other ref docs should pin against these slugs (not against quote-styled heading text), so heading-text edits don't silently break inbound links. If a heading is renamed, preserve the slug via an inline `<a id="old-slug"></a>` anchor before renaming the visible heading.
+
+| Section | Anchor | Used by |
+|---------|--------|---------|
+| Training Blocks → FTP Builder (4 weeks) | `#ftp-builder-4-weeks` | `workflows/generate.md` (Flex-day ERG variety); `workflows/plan.md` (Block-level coaching notes, aerobic base-squeeze check) |
+| Training Blocks → VO2max Block (3 weeks + 1 recovery) | `#vo2max-block-3-weeks--1-recovery` | `workflows/analyze.md` Step 7 (RPE/HR gate); `references/audit_protocol.md` |
+| Training Blocks → Endurance Block (4 weeks) | `#endurance-block-4-weeks` | (no external cross-ref yet) |
+| Training Blocks → Polarized Block (4 weeks) | `#polarized-block-4-weeks` | `workflows/plan.md` (Polarized volume gate) |
+| TSS Distribution (4-Day Week) | `#tss-distribution-4-day-week` | (no external cross-ref yet) |
+| Progressive Overload Tables | `#progressive-overload-tables` | `workflows/plan.md` (Progression cap check) |
+| Warmup and Cooldown Standards | `#warmup-and-cooldown-standards` | `workflows/generate.md` (Recovery intervals row) |
+| FTP Test Protocols | `#ftp-test-protocols` | `workflows/plan.md` Step 3 (insert field test) |
+| FTP Test Protocols → Ramp Test | `#ramp-test` | `workflows/analyze.md` Step 6 (ramp-test overestimation caveat) |
+| FTP Test Protocols → Mid-Plan FTP Update | `#mid-plan-ftp-update` | `workflows/plan.md` Step 5b (mid-plan FTP change) |
+| Block Selection Logic | `#block-selection-logic` | `workflows/plan.md` Step 2 (5-goal taxonomy) + Step 4 (block routing) |
+| Block Selection Logic → Goal taxonomy | `#goal-taxonomy-5-goals--pick-the-closest-match` | `workflows/plan.md` Step 4 |
+| Block Selection Logic → Fitness-state modifiers | `#fitness-state-modifiers-apply-after-goal-selection` | `workflows/plan.md` Step 4 (stimulus rotation, tropical/indoor) |
+| Block Selection Logic → Sub-prompt contract | `#sub-prompt-contract` | (C3 deliverable; internal reference) |
+| Block Selection Logic → Flexible Block Lengths | `#flexible-block-lengths` | (no external cross-ref yet) |
+
 ## Training Blocks
 
 ### FTP Builder (4 weeks)
