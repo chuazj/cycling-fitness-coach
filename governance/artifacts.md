@@ -2,7 +2,7 @@
 
 Single index of every file the skill writes. Read this when you need to know **where** something lands, **what** schema it uses, or **whether** it's gitignored — without grepping through `plan_state_schema.md` + `obsidian_templates.md` + `setup.md` + `CLAUDE.md` + the per-script source.
 
-This file is also the canonical reference for the quarterly audit's Scope 4 (output contract audit — see `references/audit_protocol.md` → Scope per audit). When a script starts emitting a new artifact or the path changes, **add a row here** in the same PR.
+This file is also the canonical reference for the quarterly audit's Scope 4 (output contract audit — see `governance/audit_protocol.md` → Scope per audit). When a script starts emitting a new artifact or the path changes, **add a row here** in the same PR.
 
 ## Table of contents
 
@@ -76,11 +76,11 @@ Vault root: `<CYCLING_VAULT_PATH>` — on Windows `C:/Users/zijia/OneDrive/obsid
 
 ## Audit artifacts (version-controlled)
 
-This is the **only** category of skill-generated artifact that is committed to git. See `references/audit_protocol.md` for the cadence + scope + frontmatter schema that drives it, and `audits/README.md` for the index + naming convention.
+This is the **only** category of skill-generated artifact that is committed to git. See `governance/audit_protocol.md` for the cadence + scope + frontmatter schema that drives it, and `audits/README.md` for the index + naming convention.
 
 | Artifact | Path | Emitter | Schema | Retention |
 |----------|------|---------|--------|-----------|
-| Audit artifact | `audits/cycling-coach-<topic>-YYYY-MM-DD.md` | Quarterly audit ritual (see `audit_protocol.md`) or ad-hoc rubric check | `references/audit_protocol.md` → Audit artifact format | Indefinite (historical diff target) |
+| Audit artifact | `audits/cycling-coach-<topic>-YYYY-MM-DD.md` | Quarterly audit ritual (see `audit_protocol.md`) or ad-hoc rubric check | `governance/audit_protocol.md` → Audit artifact format | Indefinite (historical diff target) |
 | Audit index | `audits/README.md` | Manual (update on every new audit) | Section structure in `audits/README.md` itself | Single canonical file |
 
 **PII inside audits:** see `audit_protocol.md` → Retention & PII. Audits *about the skill* (methodology, eval, output contract) contain no PII and commit normally. Audits *incorporating athlete data* (e.g., a calibration audit) gitignore the athlete-data section per-audit, or redact before commit. Use a `## Athlete data (gitignored)` collapsible section as the convention.

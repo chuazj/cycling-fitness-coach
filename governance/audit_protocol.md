@@ -36,7 +36,7 @@ Each quarterly audit covers four scopes. Each scope produces a section in the au
 
 ### Scope 1 — Citation currency
 
-For each authority in `references/bibliography.md`:
+For each authority in `governance/bibliography.md`:
 
 - Re-read primary source citation. Confirm volume/page/year if previously flagged **needs verification**.
 - Check for newer edition (books) or follow-on paper (RCTs).
@@ -60,12 +60,12 @@ Run the eval if the harness is operational — note CLAUDE.md "Eval harness limi
 For each methodology reference doc:
 
 - Has new peer-reviewed evidence emerged that supports, qualifies, or refutes a cited claim?
-- Has a claim that was practitioner consensus moved to peer-reviewed support (or vice versa)? Update the **Evidence tier** in `bibliography.md` (`references/bibliography.md` → Evidence-level conventions).
+- Has a claim that was practitioner consensus moved to peer-reviewed support (or vice versa)? Update the **Evidence tier** in `bibliography.md` (`governance/bibliography.md` → Evidence-level conventions).
 - Has any in-doc claim quietly drifted from its citation? (E.g., the doc says "X% gain expected" but the cited paper says Y% — flag for correction.)
 
 ### Scope 4 — Output contract audit
 
-Read `references/artifacts.md` (the canonical artifact index). For each emitted file:
+Read `governance/artifacts.md` (the canonical artifact index). For each emitted file:
 
 - Does the schema still match what the consuming workflow expects?
 - Has a script started emitting a field the schema doesn't document, or stopped emitting a field the schema requires?
@@ -77,7 +77,7 @@ Read `references/artifacts.md` (the canonical artifact index). For each emitted 
 
 A quarterly cadence doesn't happen by virtue of being documented. The audit-due signal surfaces through **Weekly Review**.
 
-**Where it fires:** `workflows/plan.md` → Weekly Review step where wellness/readiness is rendered. At the same step, check the Currency log in `references/bibliography.md`:
+**Where it fires:** `workflows/plan.md` → Weekly Review step where wellness/readiness is rendered. At the same step, check the Currency log in `governance/bibliography.md`:
 
 ```
 For each row in bibliography.md → Currency log:
@@ -144,7 +144,7 @@ These are gaps identified in the 2026-05-26 refactor proposal and committed to a
 | Sub-prompt contract headers on 4 docs (C3) | 2026-Q3 if not shipped sooner | Inputs / Outputs / Invocation contract headers, additive only. |
 | ~~Workflow checkpoint consistency (C5)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**: validation-gate tables added to `analyze.md`, `advise.md`, `generate.md`. |
 | ~~Section anchors for large refs (C6)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**: "Stable section anchors" inventory added to `block_templates.md` and `workout_analysis.md`; §N-style cross-refs in `plan.md` rewritten to named-item pointers. |
-| ~~Output artifact index `references/artifacts.md` (C7)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**. Now required reading for Scope 4 (output contract audit). |
+| ~~Output artifact index `governance/artifacts.md` (C7)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**. Now required reading for Scope 4 (output contract audit). |
 | ~~Weekly Review audit-due surfacing wire-up~~ | ~~2026-Q3~~ | **Shipped 2026-05-26**: `workflows/plan.md` → Weekly Review Step 4b + Step 5 `### Skill maintenance` sub-section. |
 
 ---

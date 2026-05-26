@@ -2,7 +2,7 @@
 
 Version-controlled audit log for the cycling-fitness-coach skill. Each audit is a dated markdown file produced by a quarterly review or an ad-hoc rubric check.
 
-**Protocol:** see `references/audit_protocol.md` for cadence, scope, and frontmatter schema.
+**Protocol:** see `governance/audit_protocol.md` for cadence, scope, and frontmatter schema.
 
 **Naming convention:** `cycling-coach-<topic>-YYYY-MM-DD.md`
 
@@ -29,7 +29,7 @@ A single audit can cover multiple scopes; the topic slug reflects the dominant o
 
 ## How to add a new audit
 
-1. Read `references/audit_protocol.md` end-to-end.
+1. Read `governance/audit_protocol.md` end-to-end.
 2. Create a new file: `audits/cycling-coach-<topic>-YYYY-MM-DD.md`.
 3. Copy the frontmatter schema from `audit_protocol.md` → Audit artifact format.
 4. Body: §1 Audit table, §2 Action plan, §3 Out of scope, §4 Resolution (filled in after actioning).

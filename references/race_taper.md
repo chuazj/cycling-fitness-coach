@@ -8,7 +8,7 @@ When an athlete has a target event, reverse-engineer the taper from the event da
 - For block design and progressive overload → `references/block_templates.md`.
 - For concurrent-strength frequency tapering → `references/durability_strength.md` → Concurrent Training.
 
-> **Citation currency** — taper citations last verified **2026-05-26** (first inclusion — Mujika anchor pending per `references/audit_protocol.md` → Currently-queued actions). Re-verify against current literature at every skill audit. Anchor authorities: `references/bibliography.md#mujika-inigo` (taper structure, volume-decay with intensity-preservation, "sharpening" principle).
+> **Citation currency** — taper citations last verified **2026-05-26** (first inclusion — Mujika anchor pending per `governance/audit_protocol.md` → Currently-queued actions). Re-verify against current literature at every skill audit. Anchor authorities: `governance/bibliography.md#mujika-inigo` (taper structure, volume-decay with intensity-preservation, "sharpening" principle).
 
 ---
 

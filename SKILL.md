@@ -80,6 +80,8 @@ Read the workflow file for the matched trigger before proceeding. Each file cont
 
 Each ref's own preamble documents its full contents. The taglines below are routing hints — read a file on demand based on the task.
 
+**Coaching refs** (`references/`) are for athlete-facing work — zones, plans, fueling, adaptation. **Governance docs** (`governance/`) are skill-meta — bibliography, audit cadence, output contract — load only when auditing or adding citations.
+
 | File | Read when… |
 |------|-------------|
 | `references/setup.md` | Session start — credentials, vault path, Zwift workout dir |
@@ -101,9 +103,9 @@ Each ref's own preamble documents its full contents. The taglines below are rout
 | `references/prediction_calibration.md` | Logging/reconciling a W5 forecast; recalibration triggers |
 | `references/cli_reference.md` | Canonical CLI examples for every script |
 | `references/internals.md` | Modifying scripts — wellness/FTP-detection/analysis implementation notes |
-| `references/bibliography.md` | Citation lookup — methodology authorities (Seiler, Rønnestad, Mujika, San Millán, Coggan, Allen-Coggan), evidence-tier conventions, currency log |
-| `references/audit_protocol.md` | Quarterly audit cadence — scope, triggering mechanism (Weekly Review surface), artifact format, currently-queued actions |
-| `references/artifacts.md` | Output artifact index — every file the skill writes, its schema, gitignore status, emitter (workflow/script) |
+| `governance/bibliography.md` | Citation lookup — methodology authorities (Seiler, Rønnestad, Mujika, San Millán, Coggan, Allen-Coggan), evidence-tier conventions, currency log |
+| `governance/audit_protocol.md` | Quarterly audit cadence — scope, triggering mechanism (Weekly Review surface), artifact format, currently-queued actions |
+| `governance/artifacts.md` | Output artifact index — every file the skill writes, its schema, gitignore status, emitter (workflow/script) |
 
 **Scripts** (see `references/cli_reference.md` for full invocations):
 

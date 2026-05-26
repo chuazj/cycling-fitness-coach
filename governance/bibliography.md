@@ -1,6 +1,6 @@
 # Bibliography — Methodology Authorities
 
-Central index of the sports-science authorities this skill grounds its recommendations on. Per-authority entries list primary works, what they ground in this skill, where currently cited, and the date the citation was last verified. The quarterly audit (`references/audit_protocol.md`) refreshes the verification dates and flags new editions / refuting evidence.
+Central index of the sports-science authorities this skill grounds its recommendations on. Per-authority entries list primary works, what they ground in this skill, where currently cited, and the date the citation was last verified. The quarterly audit (`governance/audit_protocol.md`) refreshes the verification dates and flags new editions / refuting evidence.
 
 **How to use this file:**
 - A methodology reference doc cites an authority inline (short form, e.g., `Seiler (2010)`), then links here for full provenance via `→ bibliography.md#seiler-stephen`.
@@ -179,7 +179,7 @@ Peer-reviewed papers cited in this skill but not in the framework-authority set.
 
 ## Currency log
 
-A single row per authority. The quarterly audit (`references/audit_protocol.md`) reads this table and refreshes the "Last verified" column.
+A single row per authority. The quarterly audit (`governance/audit_protocol.md`) reads this table and refreshes the "Last verified" column.
 
 | Authority | Last verified | Verifier | Next due | Notes |
 |-----------|--------------:|----------|----------|-------|

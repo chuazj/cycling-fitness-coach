@@ -179,7 +179,7 @@ Matches this week's completed workout reviews to their logged RPE-at-IF predicti
 - [ ] **3+ missed sessions** — 3 or more sessions skipped this week → treat as involuntary rest: shift the remaining block forward by one week, do NOT compress. If post-week ACWR <0.8, ease back at 50% volume for 3 days before resuming (`references/weekly_adaptation.md` → Training Load Adaptation).
 - [ ] **ACWR safe zone** — when ACWR lands 0.8-1.3, state "safe zone, no load intervention needed" explicitly so the athlete isn't left guessing (`references/weekly_adaptation.md` → Workload Ratio).
 
-**Step 4b (Skill maintenance check — coach-internal):** Read `references/bibliography.md` → Currency log. For each authority row, compare current date against the `Next due` quarter (2026-Q1 = January, Q2 = April, Q3 = July, Q4 = October). If any row's `Next due` has passed, surface a single-line item in the Step 5 review output under a `### Skill maintenance` sub-section: list the authorities whose quarterly audit is due, propose running the audit per `references/audit_protocol.md`. This is the cadence-surfacing mechanism documented in `audit_protocol.md` → Triggering mechanism — it fires weekly until the audit lands and the Currency log rolls forward. Skip the sub-section entirely if no rows triggered.
+**Step 4b (Skill maintenance check — coach-internal):** Read `governance/bibliography.md` → Currency log. For each authority row, compare current date against the `Next due` quarter (2026-Q1 = January, Q2 = April, Q3 = July, Q4 = October). If any row's `Next due` has passed, surface a single-line item in the Step 5 review output under a `### Skill maintenance` sub-section: list the authorities whose quarterly audit is due, propose running the audit per `governance/audit_protocol.md`. This is the cadence-surfacing mechanism documented in `audit_protocol.md` → Triggering mechanism — it fires weekly until the audit lands and the Currency log rolls forward. Skip the sub-section entirely if no rows triggered.
 
 **Step 5:** Present review summary:
 ```
@@ -252,8 +252,8 @@ For each recommendation, explain (Coaching Process Rule 3):
 
 ### Skill maintenance
 
-- **Quarterly audit due:** {list of authorities/scopes from `references/bibliography.md` Currency log past their next-due quarter}.
-- Action: run a methodology-currency audit per `references/audit_protocol.md` → Scope per audit. Produces a new artifact in `audits/` and rolls the Currency log dates forward.
+- **Quarterly audit due:** {list of authorities/scopes from `governance/bibliography.md` Currency log past their next-due quarter}.
+- Action: run a methodology-currency audit per `governance/audit_protocol.md` → Scope per audit. Produces a new artifact in `audits/` and rolls the Currency log dates forward.
 - Surfaces weekly until actioned — this is not an athlete-facing prescription, just a maintenance reminder for the skill itself.
 ```
 

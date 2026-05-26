@@ -7,7 +7,7 @@ Reference for Claude-as-coach: IF/THEN rules applied after each weekly review to
 - For **per-activity forward cascades** (single-session signals → next 1–2 sessions) → `references/adaptation_rules.md`.
 - For **block templates, progressions, and block selection** → `references/block_templates.md`.
 
-> **Citation currency** — adaptation-rule citations last verified **2026-05-26**. Re-verify against current literature at every skill audit; ACWR methodology is contested (Lolli 2019, Impellizzeri 2020) — treat thresholds as directional, not as hard rules. Anchor authorities: `references/bibliography.md#coggan-andrew` (PMC framework); auxiliary critiques at `references/bibliography.md#auxiliary-citations`.
+> **Citation currency** — adaptation-rule citations last verified **2026-05-26**. Re-verify against current literature at every skill audit; ACWR methodology is contested (Lolli 2019, Impellizzeri 2020) — treat thresholds as directional, not as hard rules. Anchor authorities: `governance/bibliography.md#coggan-andrew` (PMC framework); auxiliary critiques at `governance/bibliography.md#auxiliary-citations`.
 
 ## Sub-prompt contract
 

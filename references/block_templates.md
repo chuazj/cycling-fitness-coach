@@ -6,7 +6,7 @@ Reference for Claude-as-coach: block templates, TSS distribution, interval progr
 - For race / event taper protocols → `references/race_taper.md`.
 - For concurrent strength training, heat adaptation, and durability → `references/durability_strength.md`.
 
-> **Citation currency** — physiology citations in this doc last verified **2026-05-20** (VO2max short-vs-long interval evidence, VLaMax framework). Re-verify against current literature at every skill audit; interval-format and fuelling evidence move fastest, so treat anything older than ~12 months as provisional. Anchor authorities: `references/bibliography.md#seiler-stephen` and `references/bibliography.md#stoggl-thomas--sperlich-billy` (polarized basis); `references/bibliography.md#ronnestad-bent` (VO2max short intervals, 30/15s); auxiliary VLaMax citations at `references/bibliography.md#auxiliary-citations`.
+> **Citation currency** — physiology citations in this doc last verified **2026-05-20** (VO2max short-vs-long interval evidence, VLaMax framework). Re-verify against current literature at every skill audit; interval-format and fuelling evidence move fastest, so treat anything older than ~12 months as provisional. Anchor authorities: `governance/bibliography.md#seiler-stephen` and `governance/bibliography.md#stoggl-thomas--sperlich-billy` (polarized basis); `governance/bibliography.md#ronnestad-bent` (VO2max short intervals, 30/15s); auxiliary VLaMax citations at `governance/bibliography.md#auxiliary-citations`.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ These are the canonical GitHub-flavoured-markdown slugs for every `##` and `###`
 | Section | Anchor | Used by |
 |---------|--------|---------|
 | Training Blocks → FTP Builder (4 weeks) | `#ftp-builder-4-weeks` | `workflows/generate.md` (Flex-day ERG variety); `workflows/plan.md` (Block-level coaching notes, aerobic base-squeeze check) |
-| Training Blocks → VO2max Block (3 weeks + 1 recovery) | `#vo2max-block-3-weeks--1-recovery` | `workflows/analyze.md` Step 7 (RPE/HR gate); `references/audit_protocol.md` |
+| Training Blocks → VO2max Block (3 weeks + 1 recovery) | `#vo2max-block-3-weeks--1-recovery` | `workflows/analyze.md` Step 7 (RPE/HR gate); `governance/audit_protocol.md` |
 | Training Blocks → Endurance Block (4 weeks) | `#endurance-block-4-weeks` | (no external cross-ref yet) |
 | Training Blocks → Polarized Block (4 weeks) | `#polarized-block-4-weeks` | `workflows/plan.md` (Polarized volume gate) |
 | TSS Distribution (4-Day Week) | `#tss-distribution-4-day-week` | (no external cross-ref yet) |

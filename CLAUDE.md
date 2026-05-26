@@ -86,6 +86,7 @@ references/
   adaptation_rules.md           ← Per-activity forward-cascade adaptation rules (signals → severity → next-session adjustments)
   prediction_calibration.md     ← W5 predict→measure→calibrate loop: models, ledger, recalibration triggers
   rule_registry.md              ← Orphan-prevention catalogue of standing coaching rules (W4)
+governance/
   bibliography.md               ← Methodology authorities + auxiliary citations + currency log + evidence tiers
   audit_protocol.md             ← Quarterly audit cadence, scope, triggering mechanism, currently-queued actions
   artifacts.md                  ← Output artifact index — every file the skill writes, schema, gitignore status, emitter
