@@ -2,6 +2,16 @@
 
 Covers **Activity Analysis** (single ride) and **Weekly Training Summary**. The SKILL.md → Workflow Dispatch table is the authoritative router.
 
+**Validation gates in this workflow** (Coaching Process Rule 1 — Validate Before Prescribing):
+
+| Step | Gate | What gets confirmed |
+|------|------|---------------------|
+| Step 3 | (read-only) | Coaching analysis is presented. No prescription yet — no gate fires. |
+| Step 6 | **FTP Change Gate** | When `ftp_test` is detected, athlete confirms or overrides the proposed new FTP before `plans/active_plan.md` is edited. Hard gate — never skip. |
+| Step 7 | **Forward-Cascade Gate** | When a cascade is proposed (per `references/adaptation_rules.md`), athlete confirms `yes` / `no` / `modify` before the next 1–2 session rows are edited. Overall-green analyses skip this gate (no change proposed). |
+
+Both Step 6 and Step 7 modify FUTURE state (plan FTP / next sessions) — neither acts silently. Coaching Process Rule 2 (Establish Zones First) is upstream: if zones are unvalidated at the time the activity was generated, the analysis flags the uncertainty rather than silently rating execution against unreliable targets.
+
 ---
 
 ## Activity Analysis (API-First)

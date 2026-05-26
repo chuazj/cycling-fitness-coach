@@ -2,6 +2,14 @@
 
 Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. The SKILL.md → Workflow Dispatch table is the authoritative router.
 
+**Validation gates in this workflow** (Coaching Process Rule 1 — Validate Before Prescribing):
+
+| Sub-workflow | Gate | What gets confirmed |
+|--------------|------|---------------------|
+| Training Advice | **Step 2 Validation Gate** | Present athlete assessment (FTP, block phase, recent load, fatigue signals); confirm zone confidence (Rule 2); wait for athlete confirmation before prescribing. |
+| Mid-Week Check-In | (read-only) | Reports plan status + readiness verdict + ceiling. No plan edits — Rule 1 is satisfied by the assessment-then-ceiling presentation. If the athlete asks to *swap* a session, the gate engages: re-confirm before the session table is edited. |
+| Race / Event Peaking | **Step 5 → Step 6 Validation Gate** | Taper schedule is presented in Step 5; athlete confirms before Step 6 generates `.zwo` files and updates `plans/active_plan.md`. |
+
 ---
 
 ## Training Advice

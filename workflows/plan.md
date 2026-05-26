@@ -67,9 +67,9 @@ If zone confidence is not `validated`, insert a field test session into Week 1 (
 
 **Checks applied — block design** (registry: `references/rule_registry.md`):
 
-- [ ] **Stimulus rotation** — check the last 2-3 blocks in `plans/block_history.md`. 2+ consecutive FTP Builder (or sweet-spot-dominant) blocks → do NOT auto-route to another; present a VO2max or Polarized rotation option with rationale (`references/block_templates.md` → Block Selection Logic §5).
+- [ ] **Stimulus rotation** — check the last 2-3 blocks in `plans/block_history.md`. 2+ consecutive FTP Builder (or sweet-spot-dominant) blocks → do NOT auto-route to another; present a VO2max or Polarized rotation option with rationale (`references/block_templates.md` → Block Selection Logic → Fitness-state modifiers → Block-history rotation).
 - [ ] **Polarized volume gate** — a Polarized block needs ≥6 h/week; below that the Z2 sessions are too short to adapt — use an FTP Builder block instead (`references/block_templates.md` → Polarized Block).
-- [ ] **Tropical / indoor athlete** — athlete trains primarily indoors in a hot-humid climate → proactively offer a Heat Adaptation overlay, and surface the offer in the Step 9 plan summary (`references/block_templates.md` → Block Selection Logic §6; protocol detail in `references/durability_strength.md` → Heat Adaptation).
+- [ ] **Tropical / indoor athlete** — athlete trains primarily indoors in a hot-humid climate → proactively offer a Heat Adaptation overlay, and surface the offer in the Step 9 plan summary (`references/block_templates.md` → Block Selection Logic → Fitness-state modifiers → Tropical / indoor-climate athletes; protocol detail in `references/durability_strength.md` → Heat Adaptation).
 - [ ] **ERG variety** — at least one Flex-day session this block is scheduled as sim-mode or free-ride, not ERG (`references/block_templates.md` → FTP Builder block notes).
 - [ ] **Progression cap** — no interval type advances more than one progression level versus the prior week; no level-skipping (`references/block_templates.md` → Progressive Overload Tables).
 
@@ -179,6 +179,8 @@ Matches this week's completed workout reviews to their logged RPE-at-IF predicti
 - [ ] **3+ missed sessions** — 3 or more sessions skipped this week → treat as involuntary rest: shift the remaining block forward by one week, do NOT compress. If post-week ACWR <0.8, ease back at 50% volume for 3 days before resuming (`references/weekly_adaptation.md` → Training Load Adaptation).
 - [ ] **ACWR safe zone** — when ACWR lands 0.8-1.3, state "safe zone, no load intervention needed" explicitly so the athlete isn't left guessing (`references/weekly_adaptation.md` → Workload Ratio).
 
+**Step 4b (Skill maintenance check — coach-internal):** Read `references/bibliography.md` → Currency log. For each authority row, compare current date against the `Next due` quarter (2026-Q1 = January, Q2 = April, Q3 = July, Q4 = October). If any row's `Next due` has passed, surface a single-line item in the Step 5 review output under a `### Skill maintenance` sub-section: list the authorities whose quarterly audit is due, propose running the audit per `references/audit_protocol.md`. This is the cadence-surfacing mechanism documented in `audit_protocol.md` → Triggering mechanism — it fires weekly until the audit lands and the Currency log rolls forward. Skip the sub-section entirely if no rows triggered.
+
 **Step 5:** Present review summary:
 ```
 ## Week {N} Review
@@ -245,6 +247,14 @@ For each recommendation, explain (Coaching Process Rule 3):
 | Day | Session | Key Interval | Target TSS | Fuel |
 |-----|---------|--------------|------------|------|
 | ... | ...     | ...          | ...        | {one-line cue from fueling.md → Quick-Reference} |
+
+{If Step 4b found one or more rows past their `Next due` quarter, append this block; otherwise omit entirely:}
+
+### Skill maintenance
+
+- **Quarterly audit due:** {list of authorities/scopes from `references/bibliography.md` Currency log past their next-due quarter}.
+- Action: run a methodology-currency audit per `references/audit_protocol.md` → Scope per audit. Produces a new artifact in `audits/` and rolls the Currency log dates forward.
+- Surfaces weekly until actioned — this is not an athlete-facing prescription, just a maintenance reminder for the skill itself.
 ```
 
 **Step 5b (Mid-Plan FTP Change):** If an FTP test was detected in any analyzed activity this week (via `ftp_test` in Activity Analysis output):

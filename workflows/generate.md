@@ -2,6 +2,8 @@
 
 Covers single and batch ZWO file generation. The SKILL.md → Workflow Dispatch table is the authoritative router.
 
+**Validation gate (abbreviated)** — Coaching Process Rule 1 applies in compact form for one-off workout generation: in Step 1, confirm the athlete's **FTP source** (intervals.icu profile vs explicit `--ftp`) and **zone confidence** (validated / stale / self-reported / unknown — see `references/training_zones.md`). If `self-reported` or `unknown`, flag the resulting `.zwo` power targets as **provisional** in the output template and recommend an FTP test before the next structured block (Rule 4). Full athlete-state assessment is not required for one-off generation — that lives in `workflows/plan.md` Step 2b.
+
 ---
 
 ## ZWO Generation

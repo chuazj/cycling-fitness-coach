@@ -65,13 +65,11 @@ For each methodology reference doc:
 
 ### Scope 4 — Output contract audit
 
-Read the artifact index (when `references/artifacts.md` lands — currently P2). For each emitted file:
+Read `references/artifacts.md` (the canonical artifact index). For each emitted file:
 
 - Does the schema still match what the consuming workflow expects?
 - Has a script started emitting a field the schema doesn't document, or stopped emitting a field the schema requires?
-- Is the gitignore still correct? (PII regressions — a script started writing to a path that isn't ignored.)
-
-For now (until C7 ships): walk through the file list in `CLAUDE.md` → "Script-output PII files are also gitignored" and verify each is still produced at the documented path.
+- Is the gitignore still correct? (PII regressions — a script started writing to a path that isn't ignored.) Cross-check against `artifacts.md` → Gitignore policy summary.
 
 ---
 
@@ -93,7 +91,7 @@ The surfacing is **once per week** until the audit lands and the Currency log da
 
 **Why not setup.md or a startup hook?** `setup.md` is only read at the start of sessions that need to invoke a script or write notes — not every session. Weekly Review is the closest thing to a guaranteed regular cadence. Surfacing at Weekly Review also pairs naturally with the user's existing review ritual.
 
-**Wire-up status:** This mechanism is **proposed but not yet wired** as of 2026-05-26 (this file is the C2 deliverable). Wiring task: add a one-liner to `workflows/plan.md` → Weekly Review step that reads `bibliography.md` Currency log and surfaces audit-due items. Tracked as a P2 follow-up to the C1/C2 PR.
+**Wire-up status:** **Wired** as of 2026-05-26 in `workflows/plan.md` → Weekly Review Step 4b (Skill maintenance check). The Step 5 output template includes a conditional `### Skill maintenance` sub-section that appears only when a Currency-log row's `Next due` has passed. Verified: the first surfacing will fire in any Weekly Review run after 2026-07-01 (first 2026-Q3 due date), and continue weekly until an audit lands and the Currency log dates roll forward.
 
 ---
 
@@ -144,10 +142,10 @@ These are gaps identified in the 2026-05-26 refactor proposal and committed to a
 | Allen-Coggan not anchored in `references/training_zones.md` or `references/plan_state_schema.md` | 2026-Q3 | Add footer cite to each; verify against 3rd edition (2019), update bibliography if the 2nd→3rd transition changed the cited framework. |
 | Methodology citation-currency preambles on 6 docs (C4) | 2026-Q3 if not shipped sooner | Per-doc preamble line; copy `block_templates.md` pattern. |
 | Sub-prompt contract headers on 4 docs (C3) | 2026-Q3 if not shipped sooner | Inputs / Outputs / Invocation contract headers, additive only. |
-| Workflow checkpoint consistency (C5) | 2026-Q4 | Add "Validation Gate" labelled step to `analyze.md`, `advise.md`, `generate.md`. |
-| Section anchors for large refs (C6) | 2026-Q4 | Stable IDs for `block_templates.md`, `workout_analysis.md`; update workflow cross-refs. |
-| Output artifact index `references/artifacts.md` (C7) | 2026-Q4 | Single index file; required for Scope 4 (output contract audit) to operate against a canonical list. |
-| Weekly Review audit-due surfacing wire-up | 2026-Q3 | One-liner addition to `workflows/plan.md` Weekly Review step. |
+| ~~Workflow checkpoint consistency (C5)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**: validation-gate tables added to `analyze.md`, `advise.md`, `generate.md`. |
+| ~~Section anchors for large refs (C6)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**: "Stable section anchors" inventory added to `block_templates.md` and `workout_analysis.md`; §N-style cross-refs in `plan.md` rewritten to named-item pointers. |
+| ~~Output artifact index `references/artifacts.md` (C7)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**. Now required reading for Scope 4 (output contract audit). |
+| ~~Weekly Review audit-due surfacing wire-up~~ | ~~2026-Q3~~ | **Shipped 2026-05-26**: `workflows/plan.md` → Weekly Review Step 4b + Step 5 `### Skill maintenance` sub-section. |
 
 ---
 
