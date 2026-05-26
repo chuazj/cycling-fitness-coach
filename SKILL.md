@@ -103,6 +103,7 @@ Each ref's own preamble documents its full contents. The taglines below are rout
 | `references/internals.md` | Modifying scripts — wellness/FTP-detection/analysis implementation notes |
 | `references/bibliography.md` | Citation lookup — methodology authorities (Seiler, Rønnestad, Mujika, San Millán, Coggan, Allen-Coggan), evidence-tier conventions, currency log |
 | `references/audit_protocol.md` | Quarterly audit cadence — scope, triggering mechanism (Weekly Review surface), artifact format, currently-queued actions |
+| `references/artifacts.md` | Output artifact index — every file the skill writes, its schema, gitignore status, emitter (workflow/script) |
 
 **Scripts** (see `references/cli_reference.md` for full invocations):
 

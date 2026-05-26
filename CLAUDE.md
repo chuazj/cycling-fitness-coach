@@ -88,6 +88,7 @@ references/
   rule_registry.md              ← Orphan-prevention catalogue of standing coaching rules (W4)
   bibliography.md               ← Methodology authorities + auxiliary citations + currency log + evidence tiers
   audit_protocol.md             ← Quarterly audit cadence, scope, triggering mechanism, currently-queued actions
+  artifacts.md                  ← Output artifact index — every file the skill writes, schema, gitignore status, emitter
 audits/
   README.md                     ← Index + naming convention
   cycling-coach-*.md            ← Dated audit artifacts (writing-skills, methodology-currency, eval-suite-refresh, output-contract, refactor-proposal)
