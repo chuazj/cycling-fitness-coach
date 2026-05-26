@@ -13,6 +13,7 @@ Version-controlled audit log for the cycling-fitness-coach skill. Each audit is 
 | `eval-suite-refresh` | Trigger-eval audit / new probe additions. |
 | `output-contract` | Walk-through of every emitted artifact's schema + gitignore status. |
 | `refactor-proposal` | Multi-scope proposal that drives a refactor PR series (not a single-scope finding). |
+| `program-summary` | Consolidated record of a multi-workstream improvement program (legacy slug; reserved for back-ports of pre-2026-05-26 Obsidian artifacts). |
 
 A single audit can cover multiple scopes; the topic slug reflects the dominant one. The frontmatter `audit_scope:` array captures the full set.
 
@@ -20,8 +21,9 @@ A single audit can cover multiple scopes; the topic slug reflects the dominant o
 
 | Date | Title | Status | Scope |
 |------|-------|--------|-------|
+| 2026-05-26 | [Refactor proposal — methodology, recurrence, sub-prompts](cycling-coach-refactor-proposal-2026-05-26.md) | actioned | refactor-proposal |
 | 2026-05-23 | [Writing-skills rubric audit](cycling-coach-writing-skills-2026-05-23.md) | actioned | writing-skills |
-| 2026-05-26 | [Refactor proposal — methodology, recurrence, sub-prompts](cycling-coach-refactor-proposal-2026-05-26.md) | open | refactor-proposal |
+| 2026-05-22 | [A+ program summary (W1–W8 consolidated record)](cycling-coach-a-plus-program-summary-2026-05-22.md) | complete | program-summary |
 
 (Update on every new audit. Sort newest first.)
 
