@@ -1,5 +1,7 @@
 # Cycling Training Zones Reference
 
+> **Citation currency** — zone-model citations last verified **2026-05-26**. Re-verify against current literature at every skill audit. Anchor authorities: `references/bibliography.md#coggan-andrew` (zone definitions Z1–Z7, PMC framework); `references/bibliography.md#seiler-stephen` and `references/bibliography.md#stoggl-thomas--sperlich-billy` (polarized distribution rationale). Z2 / mitochondrial framing — San Millán anchor pending per `references/audit_protocol.md` → Currently-queued actions.
+
 ## Power Zones (FTP-Based)
 
 | Zone | Name | % FTP | RPE | Description | Training Purpose |

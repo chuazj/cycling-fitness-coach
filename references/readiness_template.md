@@ -6,6 +6,12 @@ Canonical rendering rules for the wellness/readiness output block shared by the 
 
 The two workflows differ in *framing* (Mid-Week shows a single-day verdict + ceiling; Weekly Review shows a trend) and in the *script output schema* they consume (`--readiness-check` vs `--wellness 14`). Each workflow keeps its workflow-specific header section; both use this file for the per-metric body.
 
+## Sub-prompt contract
+
+- **Inputs:** script JSON output from `intervals_icu_api.py --readiness-check` (Mid-Week) **or** `--wellness 14` (Weekly Review). Both schemas documented in `references/cli_reference.md`; signal-mode contract authoritative in same file.
+- **Outputs:** rendered metric block matching the canonical per-metric skeletons below; active flags surfaced; baseline-maturity caveat and data-freshness warning emitted when conditions hold.
+- **Invocation:** `workflows/advise.md` → Mid-Week Check-In step; `workflows/plan.md` → Weekly Review wellness-rendering step. The workflow wraps the metric body with its workflow-specific framing (verdict + ceiling for Mid-Week; overall status + baseline maturity for Weekly Review).
+
 ---
 
 ## Per-metric line skeleton (canonical)

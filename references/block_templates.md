@@ -6,7 +6,7 @@ Reference for Claude-as-coach: block templates, TSS distribution, interval progr
 - For race / event taper protocols → `references/race_taper.md`.
 - For concurrent strength training, heat adaptation, and durability → `references/durability_strength.md`.
 
-> **Citation currency** — physiology citations in this doc last verified **2026-05-20** (VO2max short-vs-long interval evidence, VLaMax framework). Re-verify against current literature at every skill audit; interval-format and fuelling evidence move fastest, so treat anything older than ~12 months as provisional.
+> **Citation currency** — physiology citations in this doc last verified **2026-05-20** (VO2max short-vs-long interval evidence, VLaMax framework). Re-verify against current literature at every skill audit; interval-format and fuelling evidence move fastest, so treat anything older than ~12 months as provisional. Anchor authorities: `references/bibliography.md#seiler-stephen` and `references/bibliography.md#stoggl-thomas--sperlich-billy` (polarized basis); `references/bibliography.md#ronnestad-bent` (VO2max short intervals, 30/15s); auxiliary VLaMax citations at `references/bibliography.md#auxiliary-citations`.
 
 ## Table of Contents
 
@@ -403,6 +403,12 @@ When an FTP test occurs mid-plan (e.g., scheduled Week 4 test, or user does an a
 ---
 
 ## Block Selection Logic
+
+### Sub-prompt contract
+
+- **Inputs:** athlete goal (one of the 5-goal taxonomy below — `ftp_improvement`, `gravel_endurance`, `criterium`, `tt`, `base`); CTL/ATL/TSB from `pmc_calculator.py --bootstrap`; weeks since last FTP test (or `unknown`); recent training history (Z2-heavy vs intensity-heavy vs mixed); last 2–3 completed blocks from `plans/block_history.md` (if present); climate context (tropical / indoor — relevant for Heat Adaptation overlay).
+- **Outputs:** block type recommendation (primary block + any secondary work) + block length (3 / 4 / 5 weeks) + key metric to track + any overlays (Heat Adaptation, concurrent strength). Stimulus-rotation flag fires when last 2–3 blocks were sweet-spot-dominant; surfaces a VO2max or Polarized rotation option with rationale rather than auto-routing to another FTP Builder.
+- **Invocation:** `workflows/plan.md` → Create Plan Step 4 (Design block structure). Selection produces a *proposal*; athlete confirms before `plans/active_plan.md` is written (Coaching Process Rule 1 / Step 2b Validation Gate).
 
 When creating a plan, Claude routes on the athlete's **goal** first, then applies fitness-state modifiers (CTL, TSB, FTP test recency).
 

@@ -2,6 +2,8 @@
 
 Reference for Claude-as-coach: pre-ride, during-ride, and post-ride fueling protocols, gut training, and GI troubleshooting for structured cycling training.
 
+> **Citation currency** — fueling-protocol citations last verified **2026-05-26**. Re-verify against current literature at every skill audit; carbohydrate-target evidence is one of the fastest-moving domains (high-rate >120 g/hr protocols, dual-source ratios, hydrogel research evolve quickly) — treat anything older than ~12 months as provisional. Anchor authorities: see `references/bibliography.md#auxiliary-citations` for cited protocols; sports-nutrition authorities (Burke, Jeukendrup, Stellingwerff) are queued for 2026-Q3 bibliography inclusion per `references/audit_protocol.md`.
+
 ## Table of Contents
 
 - [Quick-Reference (use in workflow output templates)](#quick-reference-use-in-workflow-output-templates)

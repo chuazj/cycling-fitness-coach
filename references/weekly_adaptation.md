@@ -7,6 +7,14 @@ Reference for Claude-as-coach: IF/THEN rules applied after each weekly review to
 - For **per-activity forward cascades** (single-session signals → next 1–2 sessions) → `references/adaptation_rules.md`.
 - For **block templates, progressions, and block selection** → `references/block_templates.md`.
 
+> **Citation currency** — adaptation-rule citations last verified **2026-05-26**. Re-verify against current literature at every skill audit; ACWR methodology is contested (Lolli 2019, Impellizzeri 2020) — treat thresholds as directional, not as hard rules. Anchor authorities: `references/bibliography.md#coggan-andrew` (PMC framework); auxiliary critiques at `references/bibliography.md#auxiliary-citations`.
+
+## Sub-prompt contract
+
+- **Inputs:** weekly summary JSON from `intervals_icu_api.py --weekly-summary` (CTL/ATL/TSB, ACWR, completion rate, peak-power deltas) + wellness/readiness signal from `--wellness 14` (rendered via `references/readiness_template.md`) + RPE trend from `rpe_trend.py` (when frontmatter-scan available) + illness/injury flags surfaced by the athlete.
+- **Outputs:** adaptation decisions for **next week** — load delta, intensity adjustment, progression cap, abort criteria, illness/injury gates. Decisions are *proposed* in the Weekly Review output; the athlete confirms before `plans/active_plan.md` is edited (per SKILL.md Coaching Process Rule 1 / Validation Gate).
+- **Invocation:** `workflows/plan.md` → Weekly Review step. Multi-signal — multiple decision trees can fire simultaneously; rule-priority section below resolves conflicts.
+
 ---
 
 ## Adaptation Decision Trees

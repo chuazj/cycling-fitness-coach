@@ -9,6 +9,12 @@ Reference for Claude-as-coach: **per-activity forward-cascade rules**. Runs afte
 
 **Operating mode: propose-and-confirm.** Never edit the schedule silently. Always show the diff and wait for `yes` / `no` / `modify`.
 
+## Sub-prompt contract
+
+- **Inputs:** completed-activity analysis JSON from `intervals_icu_api.py --activity <id>` or `fit_ingest.py` fallback — fields used: `np`, `if`, `tss`, zone distribution, `duration_moving`, RPE (if collected from athlete this session). Prescribed targets resolved from `plans/active_plan.md` → Current Week Schedule, then session-type defaults, then day-intent branch (see §1).
+- **Outputs:** per-signal deviation classification (4 signals — TSS, IF, zone-distribution, RPE) + propose-and-confirm cascade edits to next 1–2 sessions in `plans/active_plan.md` → Current Week Schedule (or Week N+1 Schedule (Preview) if cascade lands in the next week).
+- **Invocation:** `workflows/analyze.md` → Step 7 (Adapt Forward) — fires after every workout analysis. NOT invoked by Weekly Review (that uses `weekly_adaptation.md`); the two layers compose without overlap.
+
 ---
 
 ## 1. Prescribed-Targets Source (layered)

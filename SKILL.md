@@ -101,6 +101,8 @@ Each ref's own preamble documents its full contents. The taglines below are rout
 | `references/prediction_calibration.md` | Logging/reconciling a W5 forecast; recalibration triggers |
 | `references/cli_reference.md` | Canonical CLI examples for every script |
 | `references/internals.md` | Modifying scripts — wellness/FTP-detection/analysis implementation notes |
+| `references/bibliography.md` | Citation lookup — methodology authorities (Seiler, Rønnestad, Mujika, San Millán, Coggan, Allen-Coggan), evidence-tier conventions, currency log |
+| `references/audit_protocol.md` | Quarterly audit cadence — scope, triggering mechanism (Weekly Review surface), artifact format, currently-queued actions |
 
 **Scripts** (see `references/cli_reference.md` for full invocations):
 

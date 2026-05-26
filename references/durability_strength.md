@@ -6,7 +6,7 @@ Reference for Claude-as-coach: overlay concepts that complement the core block t
 - For weekly adaptation decisions → `references/weekly_adaptation.md`.
 - For taper structure → `references/race_taper.md`.
 
-> **Citation currency** — heat-adaptation and concurrent-strength citations last verified **2026-05-20**. Re-verify against current literature at every skill audit.
+> **Citation currency** — heat-adaptation and concurrent-strength citations last verified **2026-05-20**. Re-verify against current literature at every skill audit. Anchor authorities: `references/bibliography.md#ronnestad-bent` (strength → cycling neuromuscular transfer); auxiliary citations (Llanos-Lagos 2025, Beattie 2014) at `references/bibliography.md#auxiliary-citations`.
 
 ---
 

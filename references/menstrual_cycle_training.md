@@ -2,7 +2,7 @@
 
 Reference for Claude-as-coach: how to handle the menstrual cycle and hormonal contraceptives when coaching a female athlete. Covers the evidence stance, individualized autoregulation, symptom management, and the amenorrhea / low-energy-availability red flag.
 
-> **Citation currency** — physiology citations last verified **2026-05-20**. Fast-moving field (the IMPACT phase-periodization trial reports ~2025–26); re-verify at every skill audit.
+> **Citation currency** — physiology citations last verified **2026-05-20**. Fast-moving field (the IMPACT phase-periodization trial reports ~2025–26); re-verify at every skill audit. Anchor authorities: McNulty et al. (2020) and *Strength & Conditioning Journal* 2025 reviews are cited inline (§1 Evidence stance); not yet routed through `references/bibliography.md` — adding female-athlete authorities is queued for the 2026-Q3 audit per `references/audit_protocol.md`.
 
 > **Scope** — this is *training* guidance, not medical advice. Where this doc says "refer to a doctor," that is a hard gate, not a suggestion.
 
