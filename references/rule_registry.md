@@ -1,6 +1,6 @@
 # Rule Registry — Orphan-Prevention Catalogue
 
-This registry catalogues every **orphan-prone standing rule** in the skill's reference docs and maps each to the workflow that surfaces it. It exists so no conditional coaching rule depends on the coach remembering a reference doc. Built by audit workstream W4 (`audits/cycling-coach-w4-orphaning-design-2026-05-21.md`).
+This registry catalogues every **orphan-prone standing rule** in the skill's reference docs and maps each to the workflow that surfaces it. It exists so no conditional coaching rule depends on the coach remembering a reference doc. Built by audit workstream W4 (2026-05-21) — this registry is the canonical artifact; no separate audit doc.
 
 ## What "orphan-prone" means
 
