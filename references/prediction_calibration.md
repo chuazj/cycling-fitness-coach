@@ -79,7 +79,7 @@ file is changed. The skill never edits the model autonomously.
 | `reconciled` | str or null | reconcile | Date the actual was matched in; `null` while open. |
 | `delta` | num or null | reconcile | Signed error (actual minus predicted); `null` while open. |
 
-A reconcile never rewrites prior rows' immutable fields (`id` / `type` / `made` / `predicted` / `inputs`) — it only fills the outcome fields and flips `status`. New fields, if ever added, must be tolerated as absent on old rows (append-only JSONL cannot be back-edited safely). *A `schema_version` key plus an explicit migration rule is queued as P2-1 (W9 #11) — not yet present.*
+A reconcile never rewrites prior rows' immutable fields (`id` / `type` / `made` / `predicted` / `inputs`) — it only fills the outcome fields and flips `status`. New fields, if ever added, must be tolerated as absent on old rows (append-only JSONL cannot be back-edited safely). Each row now carries a `schema_version` key (`LEDGER_SCHEMA_VERSION`, currently `1`); loaders are forward-tolerant — a row whose `schema_version` exceeds the supported constant is still read but warns that it was written by a newer `prediction_tracker`. **When you add or change a ledger field, bump `LEDGER_SCHEMA_VERSION` in `prediction_tracker.py`** (and `MODEL_SCHEMA_VERSION` for model-shape changes).
 
 ## Model artifacts
 
