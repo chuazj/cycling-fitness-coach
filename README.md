@@ -302,7 +302,7 @@ The skill follows strict coaching process rules:
 python -m unittest discover tests -v
 ```
 
-637 tests across 8 files: pure function unit tests, mocked HTTP responses, CLI argument parsing, PMC integration, .fit file ingestion, ZWO linting, and prediction tracker tests. Expected runtime ~0.1s.
+648 tests across 8 files: pure function unit tests, mocked HTTP responses, CLI argument parsing, PMC integration, .fit file ingestion, ZWO linting, and prediction tracker tests. Expected runtime ~0.1s.
 
 ## Customization
 

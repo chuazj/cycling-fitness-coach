@@ -41,7 +41,13 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
 
 # Import from sibling module
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from generate_zwo import workout_from_dict, create_zwo_xml, calculate_workout_stats
+from generate_zwo import (
+    workout_from_dict,
+    create_zwo_xml,
+    calculate_workout_stats,
+    check_erg_design,
+    resolve_ftp_arg,
+)
 
 
 def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
@@ -108,6 +114,7 @@ def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
                 "duration_min": stats["total_duration_min"],
                 "estimated_tss": stats["estimated_tss"],
                 "estimated_if": stats["estimated_if"],
+                "erg_warnings": check_erg_design(workout),
                 "path": filepath,
             })
         except Exception as e:
@@ -135,8 +142,10 @@ def build_parser():
                    help="JSON file with array of workout definitions")
     p.add_argument("--output-dir", "-d", required=True,
                    help="Output directory for .zwo files")
-    p.add_argument("--ftp", type=int, default=200,
-                   help="FTP for stats calculation (default: 200)")
+    p.add_argument("--ftp", type=int, default=None,
+                   help="FTP in watts for stats calculation (50-500). If omitted, "
+                        "defaults to 200 with a warning — pass the athlete's real FTP "
+                        "or the whole week's TSS/intensity estimates will be wrong.")
     p.add_argument("-o", "--output", help="Write summary JSON to file (default: stdout)")
     p.add_argument("--dry-run", action="store_true",
                    help="Validate and compute stats without writing .zwo files")
@@ -147,8 +156,12 @@ def main():
     p = build_parser()
     args = p.parse_args()
 
-    if not (50 <= args.ftp <= 500):
-        p.error(f"--ftp must be between 50 and 500 watts (got {args.ftp})")
+    args.ftp = resolve_ftp_arg(
+        args.ftp, p,
+        "WARNING: --ftp not supplied — using 200W for batch stats. The whole "
+        "week's TSS/IF estimates will be wrong unless 200W is the athlete's actual "
+        "FTP. Re-run with --ftp <actual> for accurate numbers.",
+    )
 
     try:
         with open(args.input, "r", encoding="utf-8") as f:
@@ -183,6 +196,11 @@ def main():
         tss_disp = w["estimated_tss"] if w["estimated_tss"] is not None else "n/a"
         print(f"  {w['filename']:40s} {w['duration_min']:>5.0f}min  TSS ~{tss_disp}", file=sys.stderr)
     print(f"  {'Total':40s} {result['total_duration_min']:>5.0f}min  TSS ~{result['total_estimated_tss']}", file=sys.stderr)
+
+    # Surface ERG-design warnings per workout (parity with generate_zwo.main).
+    for w in result["workouts"]:
+        for erg_warning in w.get("erg_warnings", []):
+            print(f"  ERG-design warning ({w['filename']}): {erg_warning}", file=sys.stderr)
 
     if result.get("errors"):
         print(f"  FAILED: {result['workouts_failed']} workout(s) had errors:", file=sys.stderr)

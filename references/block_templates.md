@@ -422,6 +422,8 @@ When an FTP test occurs mid-plan (e.g., scheduled Week 4 test, or user does an a
 
 > **FTP rounding**: Setting a working FTP slightly above or below the test-estimated value is a valid coaching decision (e.g., estimated 198W → set 200W to target next-block progression). Document the rationale in the Adaptation Log when rounding by more than 2W.
 
+> **Implausible-jump guardrail**: A single-step FTP increase greater than **~8%** is physiologically implausible for one block — the realistic per-block rate is 2–4% (intermediate) to 4–6% (novice/detrained); see FTP Builder → Block-level coaching notes. When a detected or estimated FTP jump exceeds ~8%, treat the number as **suspect** (a mislabeled max-effort lap, a power-meter spike, a stale prior FTP, or an unpaced training peak) and recommend a **dedicated field test to confirm before applying** — do not lock in the large value off a single detection. Never auto-apply a >8% jump silently; surface it and get explicit athlete confirmation or a clean retest first. A genuine large gain will reproduce on the confirming test; an artifact will not.
+
 ---
 
 ## Block Selection Logic

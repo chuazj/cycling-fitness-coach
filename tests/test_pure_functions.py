@@ -930,6 +930,30 @@ class TestBatchGenerate(unittest.TestCase):
             self.assertAlmostEqual(result["total_duration_min"], 20.0, places=1)
             self.assertGreater(result["total_estimated_tss"], 0)
 
+    def test_erg_warnings_surfaced_for_micro_reps(self):
+        # P1-1: a high-intensity micro-rep workout must surface ERG-design
+        # warnings in its per-workout result (parity with generate_zwo.main).
+        workouts = [{
+            "filename": "vo2.zwo",
+            "name": "VO2 micro",
+            "workout": [
+                {"type": "IntervalsT", "repeat": 8, "on_duration": 30,
+                 "off_duration": 15, "on_power": 1.2, "off_power": 0.5},
+            ],
+        }]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = batch_generate(workouts, tmpdir, ftp=200)
+            warns = result["workouts"][0]["erg_warnings"]
+            self.assertTrue(warns)
+            self.assertIn("ERG", warns[0])
+
+    def test_no_erg_warnings_for_sub_threshold_reps(self):
+        # A steady sweet-spot block (<1.05 FTP) is unaffected by ERG settling lag.
+        workouts = [self._make_workout("ss.zwo", power=0.88)]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = batch_generate(workouts, tmpdir, ftp=200)
+            self.assertEqual(result["workouts"][0]["erg_warnings"], [])
+
 
 # ===================================================================
 # Edge case tests (CQ-2)

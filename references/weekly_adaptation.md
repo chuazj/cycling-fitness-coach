@@ -90,8 +90,8 @@ ACWR (Acute:Chronic Workload Ratio) = ATL ÷ CTL. Measures training load spikes 
 ### Performance Indicators
 
 **IF** 20-minute peak power increases >3% week-over-week:
-- **THEN** flag FTP update — current FTP likely underestimates actual threshold
-- **ACTION** suggest mid-block FTP retest or apply new FTP estimate (20min peak × 0.95)
+- **THEN** flag FTP update — current FTP may underestimate actual threshold
+- **ACTION** **suggest a mid-block FTP retest** — do NOT derive a new FTP from the training peak. A 20-min *training* peak is an unpaced effort, not a maximal test, so converting it via ×0.95 sets zones off a number the athlete never rode to threshold. Confirm the gain with a dedicated test before changing FTP — aligns with `adaptation_rules.md` → Upside actions ("Do NOT silently raise FTP"). When a test does happen, apply the implausible-jump guardrail in `block_templates.md` → Mid-Plan FTP Update before locking in a large change.
 
 **IF** 5-minute peak power increases >5% week-over-week:
 - **THEN** VO2max responding well — maintain or progress VO2max work

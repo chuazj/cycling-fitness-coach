@@ -61,3 +61,36 @@ surfaces it in the Forecast Accuracy block. The coach proposes the specific edit
 to `plans/athlete_calibration.md` (a base-table value, a correction constant, or
 the FTP-gain rate) with the supporting deltas; the athlete confirms before the
 file is changed. The skill never edits the model autonomously.
+
+## Ledger schema
+
+`plans/prediction_ledger.jsonl` — append-only forecast log, one JSON object per line, gitignored (athlete PII). Each record is created open by `prediction_tracker.py --mode predict` and updated in place by `--mode reconcile`.
+
+| Field | Type | Set at | Notes |
+|-------|------|--------|-------|
+| `id` | int | predict | Monotonic, 1-based (next after the max existing id). |
+| `type` | str | predict | `"rpe_at_if"` or `"ftp_gain"`. |
+| `made` | str | predict | Date the prediction was logged (`YYYY-MM-DD`). |
+| `predicted` | int or object | predict | `rpe_at_if`: expected RPE (int). `ftp_gain`: `{pct_low, pct_high, watts_low, watts_high}`. |
+| `inputs` | object | predict | `rpe_at_if`: `{if, slot, session_type}`. `ftp_gain`: `{start_ftp, block}`. |
+| `reconcile_when` | str | predict | When the row becomes due (session date for RPE; block-end date for FTP gain). |
+| `status` | str | predict then reconcile | `"open"` until reconciled; reconciled rows mark complete in place. |
+| `actual` | num or null | reconcile | Measured outcome; `null` while open. |
+| `reconciled` | str or null | reconcile | Date the actual was matched in; `null` while open. |
+| `delta` | num or null | reconcile | Signed error (actual minus predicted); `null` while open. |
+
+A reconcile never rewrites prior rows' immutable fields (`id` / `type` / `made` / `predicted` / `inputs`) — it only fills the outcome fields and flips `status`. New fields, if ever added, must be tolerated as absent on old rows (append-only JSONL cannot be back-edited safely). *A `schema_version` key plus an explicit migration rule is queued as P2-1 (W9 #11) — not yet present.*
+
+## Model artifacts
+
+`plans/athlete_calibration.md` — the athlete's calibrated model (the two tables above, tuned), gitignored (athlete PII). It holds a single JSON model object with the same shape as the default scaffold in `prediction_tracker.py` (`DEFAULT_MODEL`):
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `if_rpe_base` | list of `[upper_exclusive_IF, expected_RPE]` | Ordered IF-to-RPE table; first row whose bound exceeds the IF wins. Final row's bound (`2.0`) is the upper sentinel. |
+| `corrections` | object | Additive RPE corrections, e.g. `{"post_3pm": 2}`. |
+| `ftp_gain_pct` | `[low_pct, high_pct]` | Expected per-block FTP-gain band (default `[2.0, 4.0]`). |
+
+`--mode seed-baseline` writes this file from the athlete's Obsidian reviews; recalibration triggers propose edits to it (propose-and-confirm, above).
+
+> **Gitignore and retention** for both artifacts: see `governance/artifacts.md` → Prediction ledger / Athlete calibration rows (that index owns the PII/retention policy; this doc owns the field-level schema).

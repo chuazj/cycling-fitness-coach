@@ -55,7 +55,7 @@ Catalogued for completeness. The 8 `wired` rows below are cheap one-line sharpen
 | Z2-strict RPE anchor | `training_zones.md` → Z2 Variability; `block_templates.md` → Polarized Block | coach-internal | Every Z2 endurance ride | `advise.md` Recovery Prescription mentions RPE — no explicit anchor rule | partial |
 | Individual Z2-ceiling offset (Meixner) | `training_zones.md` → Z2 Individual Variability Note | coach-internal | Calibrating an athlete's Z2 band | Stated in ref doc; absent from output templates | partial |
 | Back-to-back intensity enforcement | `block_templates.md` → TSS Distribution | coach-internal | Scheduling hard sessions within a week | Mentioned in `plan.md`; not a Step 5 validation check | partial |
-| FTP retest trigger (20-min peak +3% w/w) | `weekly_adaptation.md` → Performance Indicators | coach-internal | Weekly review; 20-min peak +3% week-over-week | `adaptation_rules.md` §6 has a stricter 2-session variant | partial |
+| FTP retest trigger (20-min peak +3% w/w) | `weekly_adaptation.md` → Performance Indicators | coach-internal | Weekly review; 20-min peak +3% week-over-week | Retest-only (no ×0.95 auto-apply) — now aligned with `adaptation_rules.md` → Upside actions; checked under `plan.md` Weekly Review Step 4 "all IF/THEN rules" | partial |
 | Concurrent strength frequency taper | `durability_strength.md` → Concurrent Training → Scheduling | coach-internal | Peaking/taper with concurrent strength | Stated in ref doc; absent from Race/Event Peaking workflow | partial |
 | Concurrent strength phase pairing | `durability_strength.md` → Concurrent Training → Strength Periodization | coach-internal | Athlete does concurrent strength; block transition | Table in ref doc; not referenced in `plan.md` | partial |
 | Cadence-glycolytic modulation | `block_templates.md` → VLaMax section | coach-internal | Prescribing VO2max / sweet-spot cadence | Cadence targets in zones table; rationale not surfaced | partial |
@@ -75,9 +75,11 @@ Standing rules added after the W4 audit and wired into a workflow in the same ch
 | ERG long-rep design rule | `references/zwo_format.md` → Design constraints (ERG) | coach-internal | Generating/linting a workout with high-intensity reps (≥1.05 FTP) ≤2 min long | `generate.md` Step 4 validation table (Lint pass) — enforced by `generate_zwo.py check_erg_design` + `zwo_lint.py` W6 | wired |
 | Signal-mode readiness contract | `references/cli_reference.md` → Readiness Check → Signal-mode contract (canonical); `references/training_zones.md` → Non-WHOOP degradation | coach-internal | Non-WHOOP wellness data present (no `readiness` field) | `workflows/advise.md` (Mid-Week Check-In references the contract) + `readiness.py` verdict | wired |
 | `.fit` ingest fallback | `references/intervals_icu_api.md` → Dependency Note; `workflows/analyze.md` → Fallback — activity not on intervals.icu | coach-internal | Activity not on intervals.icu | `workflows/analyze.md` → fallback path | wired |
+| Implausible FTP-jump guardrail | `references/block_templates.md` → Mid-Plan FTP Update | coach-internal | Detected/estimated single-step FTP increase >~8% | `analyze.md` Step 6 (FTP change confirmation) + `plan.md` Step 5b (Mid-Plan FTP Change) | wired |
 
 ---
 *Created by W4, 2026-05-21.*
 *W5 (2026-05-21) appended the Post-W4 rules section — the 2 recalibration triggers.*
 *W6 (2026-05-21) wired the ERG long-rep design rule into `generate_zwo.py` + `zwo_lint.py`.*
 *W7 (2026-05-22) registered the signal-mode readiness contract and the `.fit` ingest fallback.*
+*2026-05-30 comprehensive review (P1-2) registered the implausible FTP-jump guardrail and realigned the 20-min-peak retest trigger to retest-only.*

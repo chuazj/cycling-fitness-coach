@@ -111,9 +111,11 @@ class TestBatchGenerateZwoCli(unittest.TestCase):
         ns = self._parse(["--input", "w.json", "--output-dir", "out/", "--dry-run"])
         self.assertTrue(ns.dry_run)
 
-    def test_default_ftp(self):
+    def test_default_ftp_is_none(self):
+        # --ftp defaults to None so main() warns on fallback via resolve_ftp_arg
+        # (was a silent 200W default — see audit P1-1 / W9 D3-N3).
         ns = self._parse(["-i", "w.json", "-d", "out/"])
-        self.assertEqual(ns.ftp, 200)
+        self.assertIsNone(ns.ftp)
 
     def test_summary_output_path(self):
         ns = self._parse(["-i", "w.json", "-d", "out/", "-o", "summary.json"])

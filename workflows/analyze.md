@@ -146,6 +146,7 @@ When the analysis script detects an FTP test, propagate the new FTP into the act
    ```
    - If ramp test: use `estimated_ftp_ramp` (1min × 0.75) instead. The 0.75 multiplier is a population average — the true range is 0.72–0.80, and athletes with a high VO2max relative to FTP can be overestimated 5–15% (`references/block_templates.md` → FTP Test Protocols → Ramp Test). Cross-check the estimate against session RPE before locking it in.
    - If athlete overrides (e.g., rounds up based on training data), use their value
+   - **Implausible jump (>~8%)**: if the proposed change exceeds ~8%, flag it as suspect (mislabeled max effort, power spike, stale prior FTP) and recommend a dedicated confirming test before applying — do not lock in a large jump on a single detection (`references/block_templates.md` → Mid-Plan FTP Update → Implausible-jump guardrail).
    - If athlete says "keep current" → skip all updates below
 
 2. **After confirmation, update `plans/active_plan.md`:**

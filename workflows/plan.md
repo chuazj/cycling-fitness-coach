@@ -258,7 +258,7 @@ For each recommendation, explain (Coaching Process Rule 3):
 ```
 
 **Step 5b (Mid-Plan FTP Change):** If an FTP test was detected in any analyzed activity this week (via `ftp_test` in Activity Analysis output):
-1. Present the estimated new FTP and ask athlete to confirm
+1. Present the estimated new FTP and ask athlete to confirm — apply the **Implausible-jump guardrail** (`references/block_templates.md` → Mid-Plan FTP Update): a proposed jump >~8% is suspect; recommend a confirming test before locking it in
 2. Follow `references/block_templates.md` → Mid-Plan FTP Update rules:
    - Update `active_plan.md` Athlete Profile (FTP value + Last Tested date)
    - If FTP change > 5%: recalculate remaining weeks' target TSS
