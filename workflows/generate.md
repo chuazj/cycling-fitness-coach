@@ -89,6 +89,7 @@ Write XML directly using the templates and tag spec in `references/zwo_format.md
 - **Missing cadence**: Optional but recommended — add `Cadence`, `CadenceLow`/`CadenceHigh`, or `CadenceResting` attributes.
 - **XML encoding issues**: Always use `encoding="utf-8"` when writing. Windows defaults to cp1252 which breaks special characters.
 - **Zwift not showing workout**: Restart Zwift after adding .zwo files. Check file is in correct Workouts subfolder.
+- **intervals.icu unreachable**: ZWO generation needs no API. If you were fetching the athlete's FTP from intervals.icu and it's down, pass `--ftp <watts>` explicitly (the script warns and falls back to 200 W otherwise). For activity-data outages see `workflows/analyze.md` → Error Handling.
 
 ### Batch Generation Notes
 

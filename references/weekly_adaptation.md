@@ -101,6 +101,10 @@ ACWR (Acute:Chronic Workload Ratio) = ATL ÷ CTL. Measures training load spikes 
 - **THEN** plateau detected — consider changing stimulus
 - **ACTION** suggest block change (e.g., switch from SS-focused to VO2max block)
 
+**IF** intervals.icu eFTP runs >~5% above the set FTP for 2+ consecutive weeks:
+- **THEN** the set FTP likely under-represents true threshold (the field test may have been mis-paced, or fitness has outrun the last test)
+- **ACTION** flag an FTP retest, or propose adopting eFTP/CP as the working threshold per `references/block_templates.md` → Critical Power (CP) / eFTP. Do NOT silently raise FTP — confirm via the implausible-jump guardrail in `block_templates.md` → Mid-Plan FTP Update before any large change.
+
 ### Heart Rate Indicators
 
 **IF** average HR elevated >5% at same power output vs. prior weeks:

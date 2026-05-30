@@ -52,6 +52,10 @@ class IntervalsIcuClient:
                 return r.json()
             except ValueError:
                 raise RuntimeError(f"Non-JSON response from {endpoint} (HTTP {r.status_code})")
+        # Unreachable by construction: every attempt returns or raises above, and
+        # range(3) is never empty. Defensive net so a future refactor that drops a
+        # terminal branch can never silently return None in place of response data.
+        raise RuntimeError(f"{endpoint}: retry loop exited without a response")
 
     def get_activity(self, activity_id):
         return self._get(f"/activity/{activity_id}")

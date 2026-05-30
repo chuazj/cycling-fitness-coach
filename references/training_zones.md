@@ -1,6 +1,6 @@
 # Cycling Training Zones Reference
 
-> **Citation currency** — zone-model citations last verified **2026-05-26**. Re-verify against current literature at every skill audit. Anchor authorities: `governance/bibliography.md#coggan-andrew` (zone definitions Z1–Z7, PMC framework); `governance/bibliography.md#seiler-stephen` and `governance/bibliography.md#stoggl-thomas--sperlich-billy` (polarized distribution rationale). Z2 / mitochondrial framing — San Millán anchor pending per `governance/audit_protocol.md` → Currently-queued actions.
+> **Citation currency** — zone-model citations last verified **2026-05-26**. Re-verify against current literature at every skill audit. Anchor authorities: `governance/bibliography.md#coggan-andrew` (zone definitions Z1–Z7, PMC framework); `governance/bibliography.md#seiler-stephen` and `governance/bibliography.md#stoggl-thomas--sperlich-billy` (polarized distribution rationale). Z2 / mitochondrial framing — `governance/bibliography.md#san-millan-inigo` (**POPULAR-MEDIA** tier; the peer-reviewed mechanism is Brooks' lactate shuttle — see the bibliography entry).
 
 ## Power Zones (FTP-Based)
 
@@ -30,6 +30,8 @@ If Saturday Z2 sessions persistently feel >RPE 4 at 65–70% FTP, your individua
 
 This does not change the prescription default (56–75% FTP) but informs how to read your own signal.
 
+> **Authority** — the Z2 base / mitochondrial-density rationale follows San Millán's training framework (`governance/bibliography.md#san-millan-inigo`). Note its **POPULAR-MEDIA** evidence tier: the peer-reviewed mechanism is Brooks' lactate-shuttle work; treat San Millán as the cycling-specific application authority.
+
 ---
 
 ## Sweet Spot Training
@@ -55,7 +57,7 @@ WorldTour teams use a **pyramidal distribution** — most volume in Z1-Z2, moder
 ### Training Models
 
 - **Pyramidal (DEFAULT)**: Most training in Z1-Z2, meaningful Z3-Z4 (sweet spot/threshold), smaller Z5+ component. This is what the FTP Builder block implements. Validated by WorldTour practice and 2024 meta-analyses. Effective across all training volumes.
-- **Polarized (HIGH-VOLUME ALTERNATIVE)**: ~80% Z1-Z2, ~0% Z3, ~20% Z4+. Eliminates the Z3 "no man's land." Supported by Seiler (2010) and Stoggl & Sperlich (2014). Consider when: training volume >8 hrs/week, plateau occurs on SS-heavy plans for 2+ blocks, or aerobic base needs development (high cardiac drift on Z2 rides).
+- **Polarized (HIGH-VOLUME ALTERNATIVE)**: ~80% Z1-Z2, minimal Z3 (the ~0% is a distribution target, not a hard prohibition — Seiler's model is about where the bulk of volume sits), ~20% Z4+. Minimizes the Z3 "no man's land." Supported by Seiler (2010) and Stoggl & Sperlich (2014). Consider when: training volume >8 hrs/week, plateau occurs on SS-heavy plans for 2+ blocks, or aerobic base needs development (high cardiac drift on Z2 rides).
 
 Both approaches produce FTP gains. The FTP Builder block is pyramidal by design — it includes Z2 endurance days, Z3-Z4 sweet spot/threshold work, and Z5+ VO2max sessions within the same block.
 
@@ -68,6 +70,8 @@ Both approaches produce FTP gains. The FTP Builder block is pyramidal by design 
 | Z3 | Tempo | 84-94% | Tempo/SST validation |
 | Z4 | Threshold | 95-105% | FTP efforts |
 | Z5 | Anaerobic | >105% | VO2max+ efforts |
+
+> **Note — HR has 5 zones to power's 7.** Heart rate saturates near threshold, so power Z5–Z7 (VO2max / anaerobic / neuromuscular) all collapse into HR Z5. Use **power, not HR**, to differentiate efforts above threshold; HR Z5 only confirms you are above it, not how far.
 
 ## Cadence Guidelines
 

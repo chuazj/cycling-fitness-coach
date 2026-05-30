@@ -135,7 +135,7 @@ Volume-focused block with tempo integration. Use when building aerobic base or r
 
 ### Polarized Block (4 weeks)
 
-Distribution: ~80% Z1-Z2, ~0% Z3 (tempo), ~20% Z4+ (threshold/VO2max). Based on Seiler (2010) and Stoggl & Sperlich (2014) showing equal or superior adaptations to sweet spot training, particularly at higher training volumes.
+Distribution: ~80% Z1-Z2, minimal Z3 (tempo — the ~0% is a distribution target, not a hard prohibition), ~20% Z4+ (threshold/VO2max). Based on Seiler (2010) and Stoggl & Sperlich (2014) showing equal or superior adaptations to sweet spot training, particularly at higher training volumes.
 
 **Minimum volume threshold**: 6+ hours/week recommended. Below 6h/week, the Z2 sessions become too short to produce meaningful aerobic adaptations — consider FTP Builder (sweet spot) block instead.
 
@@ -174,7 +174,7 @@ Distribution: ~80% Z1-Z2, ~0% Z3 (tempo), ~20% Z4+ (threshold/VO2max). Based on 
 - Z2 sessions must be genuinely easy (conversational pace). If HR drifts into Z3, reduce power.
 - The hard sessions must be genuinely hard (Z4+). The "no man's land" of Z3 should be avoided.
 - Expect perceived effort paradox: athletes often feel like Z2 days are "too easy" — this is correct and intentional.
-- Monitor weekly zone distribution: target 80/0/20 (Z1-2 / Z3 / Z4+). If Z3 exceeds 5%, the athlete is drifting.
+- Monitor weekly zone distribution: target ~80% Z1-2 / minimal Z3 / ~20% Z4+ (the model is a distribution, not a Z3 ban). If Z3 exceeds ~5%, the athlete is drifting toward pyramidal — fine if intended, but it is no longer polarized.
 
 ---
 

@@ -201,6 +201,29 @@ All four P1 findings actioned in the working copy. Tests **646 → 648** green (
 | P1-3 | Added `## Ledger schema` and `## Model artifacts` sections to `prediction_calibration.md` (field-level schema for the JSONL ledger + the calibration model), resolving the two dangling `artifacts.md:27-28` cross-refs (`→ Ledger schema`, `→ Model artifacts`). The `schema_version` *field* itself remains queued as P2-1. | `references/prediction_calibration.md` |
 | P1-4 | Test count `637 → 648` in `cli_reference.md` and `README.md`; `646 → 648` in `CLAUDE.md`. Historical `a-plus-program-summary` left at 637 (pinned snapshot). | `references/cli_reference.md`, `README.md`, `CLAUDE.md` |
 
-**Deferred (unchanged):** all P2 items, including P2-1 (the `schema_version` key + migration rule — the doc sections now exist to host it).
+**Deferred at P1 time:** all P2 items — now actioned below.
 
-*Generated 2026-05-30 · 3 parallel auditors + primary-source verification · skill at `b448557`, P1 batch actioned · tests 648 green.*
+---
+
+## Resolution (P2 batch — 2026-05-30)
+
+P2 backlog actioned in the working copy. Tests **648 → 661** green (P2-1 +5, P2-3 +7, P2-8 +1; TDD RED→GREEN; full suite `Ran 661 tests … OK`). P2-12 deliberately skipped (cosmetic; a 2026-05-26 decision dropped ntnx-* frontmatter-style alignment).
+
+| ID | Resolution | Files |
+|----|-----------|-------|
+| P2-1 | `schema_version` (=1) on `DEFAULT_MODEL`, every new ledger record, and forward-tolerant loaders (`load_ledger`/`load_calibration` warn on a *newer* version, tolerate absent/older — read-old-tolerate / write-new). Serializers unchanged (round-trip tests preserved). | `scripts/prediction_tracker.py`, `tests/test_prediction_tracker.py` |
+| P2-2 | eFTP > set-FTP by >~5% for 2+ wks → retest trigger added to `weekly_adaptation.md` → Performance Indicators, registered in `rule_registry.md`, surfaced in `plan.md` Weekly Review Step 4. | `references/weekly_adaptation.md`, `references/rule_registry.md`, `workflows/plan.md` |
+| P2-3 | `check_planned_tss()` compares modeled vs per-workout optional `planned_tss`; warns when deviation > 10%; skips ftptest / FreeRide / MaxEffort; surfaced in result dict + stderr. (Per-workout JSON field chosen over a single `--planned-tss` flag — carries per-day targets.) | `scripts/batch_generate_zwo.py`, `tests/test_pure_functions.py` |
+| P2-4 | API-outage one-liner added to `plan.md` / `advise.md` / `generate.md` (parity with `analyze.md` → Error Handling). | `workflows/plan.md`, `workflows/advise.md`, `workflows/generate.md` |
+| P2-5 | `--compact` documented in `cli_reference.md`. | `references/cli_reference.md` |
+| P2-6 | Mujika cited at point of use in `race_taper.md`; San Millán (POPULAR-MEDIA → Brooks) in `training_zones.md` Z2 + preamble; bibliography "Currently cited at" + Currency log rows updated. | `references/training_zones.md`, `governance/bibliography.md` |
+| P2-7 | Defensive terminal `raise` after the `_get` retry loop (unreachable by construction — no test, matches the audit's "future-proofing" framing). | `scripts/intervals_icu/api_client.py` |
+| P2-8 | `extract_id` raises an actionable "export .fit → `fit_ingest.py`" error on Strava URLs. | `scripts/intervals_icu/metrics.py` |
+| P2-9 | HR-zone-collapse note (power Z5–Z7 all map to HR Z5; use power above threshold) added under the HR zone table. | `references/training_zones.md` |
+| P2-10 | Polarized "~0% Z3" softened to "minimal Z3" (distribution target, not prohibition); the >5% drift guardrail retained. | `references/training_zones.md`, `references/block_templates.md` |
+| P2-11 | Race-day TSB band tightened +5→+20 to +5→+15 (conservative central estimate, Mujika & Padilla 2003). | `references/race_taper.md` |
+| P2-12 | **Skipped** — cosmetic SKILL.md frontmatter block-scalar style; a 2026-05-26 decision dropped ntnx-* style alignment, so changing it would reverse that for no functional gain. | — |
+
+Test count refreshed **648 → 661** across `cli_reference.md`, `README.md`, `CLAUDE.md`. Not yet committed/pushed/synced at time of writing.
+
+*Generated 2026-05-30 · 3 parallel auditors + primary-source verification · skill at `b448557`, P1 + P2 batches actioned · tests 661 green.*

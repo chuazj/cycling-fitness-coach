@@ -220,6 +220,14 @@ def extract_id(url_or_id):
     m = re.search(r"intervals\.icu/activities/(i?\d+)", s)
     if m:
         return m.group(1)
+    # Strava is unsupported (this skill reads intervals.icu only) — point at the
+    # .fit fallback rather than failing with a generic "cannot extract" message.
+    if "strava.com" in s.lower():
+        raise ValueError(
+            f"Strava URLs are not supported (this skill reads intervals.icu). "
+            f"Export the ride's .fit file and analyze it with scripts/fit_ingest.py "
+            f"instead. Got: {url_or_id}"
+        )
     raise ValueError(f"Cannot extract intervals.icu activity ID from: {url_or_id}")
 
 

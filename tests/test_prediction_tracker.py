@@ -14,6 +14,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
 from prediction_tracker import (
     DEFAULT_MODEL,
+    LEDGER_SCHEMA_VERSION,
+    MODEL_SCHEMA_VERSION,
     predict_rpe,
     predict_ftp_gain,
     load_ledger,
@@ -548,6 +550,61 @@ class TestCLIRangeValidation(unittest.TestCase):
         self.assertIn("50", stderr)
         self.assertIn("500", stderr)
         self.assertIn("50000", stderr)
+
+
+class TestSchemaVersion(unittest.TestCase):
+    """P2-1: ledger records and the calibration model carry a schema_version;
+    loaders tolerate older/absent versions and warn on newer ones."""
+
+    def test_default_model_has_schema_version(self):
+        self.assertEqual(DEFAULT_MODEL["schema_version"], MODEL_SCHEMA_VERSION)
+
+    def test_predict_record_carries_schema_version(self):
+        with tempfile.TemporaryDirectory() as d:
+            ledger = os.path.join(d, "ledger.jsonl")
+            cal = os.path.join(d, "cal.md")
+            args = build_parser().parse_args(
+                ["--mode", "predict", "--type", "rpe_at_if", "--if", "0.84",
+                 "--slot", "morning", "--session-date", "2026-06-02",
+                 "--session-type", "Threshold",
+                 "--ledger-path", ledger, "--calibration-path", cal])
+            result = run_predict(args)
+            self.assertEqual(result["logged"]["schema_version"], LEDGER_SCHEMA_VERSION)
+
+    def test_load_ledger_tolerates_legacy_records_silently(self):
+        # A record with no schema_version (pre-versioning) loads with no warning.
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "ledger.jsonl")
+            save_ledger(path, [{"id": "P001", "type": "rpe_at_if"}])
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                recs = load_ledger(path)
+            self.assertEqual(len(recs), 1)
+            self.assertEqual(buf.getvalue(), "")
+
+    def test_load_ledger_warns_on_future_version(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "ledger.jsonl")
+            save_ledger(path, [{"id": "P001", "type": "rpe_at_if",
+                                "schema_version": 999}])
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                recs = load_ledger(path)
+            self.assertEqual(len(recs), 1)  # still returned (tolerant read)
+            self.assertIn("WARNING", buf.getvalue())
+            self.assertIn("999", buf.getvalue())
+
+    def test_load_calibration_warns_on_future_model_version(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "athlete_calibration.md")
+            future = dict(DEFAULT_MODEL)
+            future["schema_version"] = 999
+            write_calibration(path, future)
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                load_calibration(path)
+            self.assertIn("WARNING", buf.getvalue())
+            self.assertIn("999", buf.getvalue())
 
 
 if __name__ == "__main__":

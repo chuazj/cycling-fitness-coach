@@ -42,11 +42,19 @@ _SKILL_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_LEDGER_PATH = os.path.join(_SKILL_ROOT, "plans", "prediction_ledger.jsonl")
 DEFAULT_CALIBRATION_PATH = os.path.join(_SKILL_ROOT, "plans", "athlete_calibration.md")
 
+# Schema versions for the two persisted artifacts (ledger records, calibration
+# model). Bump when a field changes in a way older code can't read. Loaders
+# tolerate absent (= pre-versioning) and older versions, and warn only when they
+# meet a NEWER version than this code understands (read-old-tolerate / write-new).
+LEDGER_SCHEMA_VERSION = 1
+MODEL_SCHEMA_VERSION = 1
+
 # Generic default forecasting model (the scaffold). The athlete-calibrated
 # instance lives in plans/athlete_calibration.md; --seed-baseline produces it.
 # if_rpe_base: ordered [upper_exclusive_IF, expected_RPE] rows — first row whose
 # bound exceeds the IF wins. The final row's bound (2.0) is an upper sentinel.
 DEFAULT_MODEL = {
+    "schema_version": MODEL_SCHEMA_VERSION,
     "if_rpe_base": [[0.65, 3], [0.75, 5], [0.85, 6], [0.92, 8], [2.0, 9]],
     "corrections": {"post_3pm": 2},
     "ftp_gain_pct": [2.0, 4.0],
@@ -100,7 +108,7 @@ def load_ledger(path):
             if not line:
                 continue
             try:
-                records.append(json.loads(line))
+                rec = json.loads(line)
             except json.JSONDecodeError:
                 snippet = line[:72] + ("..." if len(line) > 72 else "")
                 print(
@@ -108,6 +116,17 @@ def load_ledger(path):
                     f" Snippet: {snippet!r}",
                     file=sys.stderr,
                 )
+                continue
+            # Forward-tolerant: a record written by a newer tracker still loads,
+            # but warn so a silently-newer ledger is visible. Absent/older = ok.
+            if isinstance(rec, dict) and rec.get("schema_version", 0) > LEDGER_SCHEMA_VERSION:
+                print(
+                    f"WARNING: ledger line {lineno} has schema_version "
+                    f"{rec.get('schema_version')} > supported {LEDGER_SCHEMA_VERSION} "
+                    f"— written by a newer prediction_tracker; some fields may be unread.",
+                    file=sys.stderr,
+                )
+            records.append(rec)
     return records
 
 
@@ -171,7 +190,18 @@ def load_calibration(path):
     end = content.find("```", start)
     if end == -1:
         raise ValueError(f"{path}: unterminated ```json block")
-    return json.loads(content[start:end])
+    model = json.loads(content[start:end])
+    # Forward-tolerant: a model without schema_version is structurally identical
+    # to v1 and read silently; only a NEWER version warrants a heads-up.
+    version = model.get("schema_version", 1) if isinstance(model, dict) else 1
+    if version > MODEL_SCHEMA_VERSION:
+        print(
+            f"WARNING: {path} has schema_version {version} > supported "
+            f"{MODEL_SCHEMA_VERSION} — written by a newer prediction_tracker; "
+            f"proceeding, but the model may not be fully understood.",
+            file=sys.stderr,
+        )
+    return model
 
 
 def write_calibration(path, model):
@@ -377,7 +407,8 @@ def run_predict(args):
     """--mode predict: look up the model, append an open ledger record."""
     model = load_calibration(args.calibration_path)
     records = load_ledger(args.ledger_path)
-    rec = {"id": next_id(records), "type": args.type,
+    rec = {"id": next_id(records), "schema_version": LEDGER_SCHEMA_VERSION,
+           "type": args.type,
            "made": datetime.now().strftime("%Y-%m-%d"),
            "status": "open", "actual": None, "reconciled": None, "delta": None}
     if args.type == "rpe_at_if":

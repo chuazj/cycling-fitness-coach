@@ -4,7 +4,7 @@ Command examples for every script in the skill. Workflows generally embed the sp
 
 **Dependencies:** `pip install requests` (core). The `.fit` ingest parse layer (`scripts/fit_ingest.py`) additionally needs `pip install fitparse`.
 
-**Tests:** `python -m unittest discover tests -v` (648 tests across 8 files, runs in ~0.1s — run before AND after any script change).
+**Tests:** `python -m unittest discover tests -v` (661 tests across 8 files, runs in ~0.1s — run before AND after any script change).
 
 ## Activity Analysis (intervals.icu)
 ```bash
@@ -31,7 +31,7 @@ python scripts/intervals_icu_api.py --latest --use-athlete-profile -o output.jso
 # Output to file
 python scripts/intervals_icu_api.py --activity i126468486 -o output.json
 ```
-Output is JSON to stdout (use `-o file.json` to save).
+Output is JSON to stdout (use `-o file.json` to save). Add `--compact` to omit rarely-used fields (variability index, efficiency factor, zone seconds, and per-lap distance/max_watts/intensity) for token-efficient output — available on `--activity`/`--latest`.
 
 ## Local .fit File Analysis (intervals.icu fallback)
 ```bash

@@ -50,7 +50,7 @@ from generate_zwo import (
     erg_rep_severity,
     check_erg_design,
 )
-from batch_generate_zwo import batch_generate
+from batch_generate_zwo import batch_generate, check_planned_tss
 from pmc_calculator import _ewa_constant, compute_pmc
 from intervals_icu_api import analyze_power_profile, POWER_PROFILE
 
@@ -312,6 +312,13 @@ class TestExtractId(unittest.TestCase):
     def test_invalid_raises(self):
         with self.assertRaises(ValueError):
             extract_id("not-a-valid-id")
+
+    def test_strava_url_gives_actionable_hint(self):
+        # P2-8: Strava is unsupported (this skill is intervals.icu-only). The
+        # error must point the user at the .fit fallback, not fail generically.
+        with self.assertRaises(ValueError) as ctx:
+            extract_id("https://www.strava.com/activities/123456789")
+        self.assertIn("fit_ingest.py", str(ctx.exception))
 
 
 class TestParsePowerCurve(unittest.TestCase):
@@ -953,6 +960,50 @@ class TestBatchGenerate(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             result = batch_generate(workouts, tmpdir, ftp=200)
             self.assertEqual(result["workouts"][0]["erg_warnings"], [])
+
+    # --- P2-3: planned-vs-modeled TSS reconciliation ---
+
+    def test_planned_tss_mismatch_flagged(self):
+        # Modeled TSS far from planned_tss -> "mismatch".
+        chk = check_planned_tss({"planned_tss": 50},
+                                {"estimated_tss": 13, "tss_estimated": False})
+        self.assertEqual(chk["status"], "mismatch")
+        self.assertIn("50", chk["message"])
+
+    def test_planned_tss_within_tolerance_ok(self):
+        # 63 vs 60 is 5% off -> within the 10% tolerance -> "ok".
+        chk = check_planned_tss({"planned_tss": 60},
+                                {"estimated_tss": 63, "tss_estimated": False})
+        self.assertEqual(chk["status"], "ok")
+
+    def test_planned_tss_absent_not_checked(self):
+        chk = check_planned_tss({}, {"estimated_tss": 50, "tss_estimated": False})
+        self.assertEqual(chk["status"], "not_checked")
+
+    def test_planned_tss_skipped_for_ftptest(self):
+        # ftptest -> estimated_tss is None -> no faithful basis for comparison.
+        chk = check_planned_tss({"planned_tss": 50},
+                                {"estimated_tss": None, "tss_estimated": True})
+        self.assertEqual(chk["status"], "skipped")
+
+    def test_planned_tss_skipped_for_freeride_placeholder(self):
+        # FreeRide/MaxEffort -> tss_estimated True -> modeled TSS rests on placeholder.
+        chk = check_planned_tss({"planned_tss": 50},
+                                {"estimated_tss": 40, "tss_estimated": True})
+        self.assertEqual(chk["status"], "skipped")
+
+    def test_planned_tss_invalid_value_skipped(self):
+        chk = check_planned_tss({"planned_tss": 0},
+                                {"estimated_tss": 50, "tss_estimated": False})
+        self.assertEqual(chk["status"], "skipped")
+
+    def test_batch_attaches_tss_check(self):
+        # Integration: batch_generate must attach tss_check per workout.
+        wk = self._make_workout("ss.zwo", power=0.88)
+        wk["planned_tss"] = 200  # deliberately far from the ~13 modeled value
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = batch_generate([wk], tmpdir, ftp=200)
+            self.assertEqual(result["workouts"][0]["tss_check"]["status"], "mismatch")
 
 
 # ===================================================================

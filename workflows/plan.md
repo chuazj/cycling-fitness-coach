@@ -167,6 +167,8 @@ python scripts/prediction_tracker.py --mode reconcile --vault-path "<CYCLING_VAU
 ```
 Matches this week's completed workout reviews to their logged RPE-at-IF predictions, fills in the deltas, and returns per-model `rpe_trigger` / `ftp_trigger` status. Skip silently if `plans/prediction_ledger.jsonl` does not exist yet (no predictions logged). Feeds the Forecast Accuracy block in Step 5.
 
+**If intervals.icu is unreachable** (timeout / 5xx): the API scripts retry 3× with backoff; on persistent failure, run the review from `plans/active_plan.md` plus the athlete's manual notes and flag that PMC/wellness data is stale — don't block the weekly review (see `workflows/analyze.md` → Error Handling).
+
 **Step 4:** Apply adaptation decision trees from `references/weekly_adaptation.md`:
 - Check all IF/THEN rules: load adaptation, fatigue management, performance indicators, HR indicators, session execution
 - List all triggered rules and proposed actions
@@ -178,6 +180,7 @@ Matches this week's completed workout reviews to their logged RPE-at-IF predicti
 - [ ] **FOR / NFOR / OTS tier** — if elevated RPE has NOT resolved after a completed 5-day FOR de-load, escalate the tier: NFOR → a full easy week (or two) at ~40-50% volume; symptoms persisting beyond ~3 weeks of genuine rest → suspected OTS, stop structured training and advise a medical review (`references/weekly_adaptation.md` → RPE Trend Escalation).
 - [ ] **3+ missed sessions** — 3 or more sessions skipped this week → treat as involuntary rest: shift the remaining block forward by one week, do NOT compress. If post-week ACWR <0.8, ease back at 50% volume for 3 days before resuming (`references/weekly_adaptation.md` → Training Load Adaptation).
 - [ ] **ACWR safe zone** — when ACWR lands 0.8-1.3, state "safe zone, no load intervention needed" explicitly so the athlete isn't left guessing (`references/weekly_adaptation.md` → Workload Ratio).
+- [ ] **eFTP divergence** — if intervals.icu eFTP has run >~5% above the set FTP for 2+ weeks, flag an FTP retest (or propose eFTP/CP as the working threshold); do not silently raise FTP (`references/weekly_adaptation.md` → Performance Indicators; `references/block_templates.md` → Critical Power (CP) / eFTP).
 
 **Step 4b (Skill maintenance check — coach-internal):** Read `governance/bibliography.md` → Currency log. For each authority row, compare current date against the `Next due` quarter (2026-Q1 = January, Q2 = April, Q3 = July, Q4 = October). If any row's `Next due` has passed, surface a single-line item in the Step 5 review output under a `### Skill maintenance` sub-section: list the authorities whose quarterly audit is due, propose running the audit per `governance/audit_protocol.md`. This is the cadence-surfacing mechanism documented in `audit_protocol.md` → Triggering mechanism — it fires weekly until the audit lands and the Currency log rolls forward. Skip the sub-section entirely if no rows triggered.
 

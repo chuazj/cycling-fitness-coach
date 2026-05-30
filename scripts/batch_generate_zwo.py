@@ -50,6 +50,51 @@ from generate_zwo import (
 )
 
 
+TSS_TOLERANCE = 0.10  # |modeled - planned| / planned above this -> mismatch warning
+
+
+def check_planned_tss(workout_def, stats):
+    """Compare a workout's modeled TSS against an optional ``planned_tss`` target.
+
+    The plan workflow knows each day's target TSS; passing it through lets the
+    generator catch a workout whose modeled load drifted from what the block
+    intended (a mistyped duration, a wrong power, a dropped rep).
+
+    Returns a dict ``{status, planned_tss, deviation_pct, message}`` where status is:
+      - ``not_checked`` — no ``planned_tss`` supplied.
+      - ``skipped``     — ``planned_tss`` non-positive/non-numeric, or the modeled
+                          TSS is not a faithful basis for comparison: ftptest
+                          (``estimated_tss is None``) or FreeRide/MaxEffort
+                          placeholder power (``tss_estimated`` True).
+      - ``mismatch``    — deviation exceeds ``TSS_TOLERANCE``.
+      - ``ok``          — deviation within tolerance.
+    """
+    planned = workout_def.get("planned_tss")
+    if planned is None:
+        return {"status": "not_checked", "planned_tss": None,
+                "deviation_pct": None, "message": None}
+    # bool is a subclass of int — reject it explicitly so `true` isn't treated as 1.
+    if isinstance(planned, bool) or not isinstance(planned, (int, float)) or planned <= 0:
+        return {"status": "skipped", "planned_tss": planned, "deviation_pct": None,
+                "message": f"planned_tss must be a positive number (got {planned!r})"}
+    modeled = stats.get("estimated_tss")
+    if modeled is None or stats.get("tss_estimated"):
+        reason = ("FTP test — TSS unmodeled" if modeled is None
+                  else "FreeRide/MaxEffort placeholder power — modeled TSS unreliable")
+        return {"status": "skipped", "planned_tss": planned, "deviation_pct": None,
+                "message": f"TSS check skipped ({reason})"}
+    deviation = abs(modeled - planned) / planned
+    dev_pct = round(deviation * 100, 1)
+    if deviation > TSS_TOLERANCE:
+        return {
+            "status": "mismatch", "planned_tss": planned, "deviation_pct": dev_pct,
+            "message": (f"modeled TSS {modeled} vs planned {planned} "
+                        f"({dev_pct}% off, > {round(TSS_TOLERANCE * 100)}% tolerance)"),
+        }
+    return {"status": "ok", "planned_tss": planned,
+            "deviation_pct": dev_pct, "message": None}
+
+
 def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
     """Generate .zwo files for all workouts in the batch.
 
@@ -115,6 +160,7 @@ def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
                 "estimated_tss": stats["estimated_tss"],
                 "estimated_if": stats["estimated_if"],
                 "erg_warnings": check_erg_design(workout),
+                "tss_check": check_planned_tss(workout_def, stats),
                 "path": filepath,
             })
         except Exception as e:
@@ -201,6 +247,12 @@ def main():
     for w in result["workouts"]:
         for erg_warning in w.get("erg_warnings", []):
             print(f"  ERG-design warning ({w['filename']}): {erg_warning}", file=sys.stderr)
+
+    # Surface planned-vs-modeled TSS mismatches per workout (P2-3).
+    for w in result["workouts"]:
+        chk = w.get("tss_check") or {}
+        if chk.get("status") == "mismatch":
+            print(f"  TSS mismatch ({w['filename']}): {chk['message']}", file=sys.stderr)
 
     if result.get("errors"):
         print(f"  FAILED: {result['workouts_failed']} workout(s) had errors:", file=sys.stderr)

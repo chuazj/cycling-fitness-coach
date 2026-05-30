@@ -77,7 +77,9 @@ Central index of the sports-science authorities this skill grounds its recommend
 - "Sharpening" principle — short, high-intensity work during taper preserves neuromuscular capacity.
 - Used as the methodology backbone of `references/race_taper.md`.
 
-**Currently cited at:** **NONE.** This is a gap — `references/race_taper.md` (58 lines) defines 2-week and 1-week taper structures but anchors to no published source. Mujika should be cited as the basis for the volume-decay + intensity-preservation pattern. Action queued under audit_protocol.md → 2026-Q3 methodology refresh.
+**Currently cited at:**
+- `references/race_taper.md:11` (citation-currency preamble — taper structure, volume-decay with intensity-preservation, "sharpening" principle).
+- `references/race_taper.md:5,23` (race-day TSB target band — conservative +5 to +15 per Mujika & Padilla 2003).
 
 **Last verified:** *not yet verified — listed for first inclusion 2026-05-26*
 
@@ -119,7 +121,9 @@ Central index of the sports-science authorities this skill grounds its recommend
 - Z2 (low-intensity, lactate-clearance-zone) as the primary aerobic-base stimulus — distinct from "easy spinning" because the upper Z2 boundary is bracketed by lactate threshold 1, not by an arbitrary % FTP.
 - Polarized + base-building rationale in `references/training_zones.md` and `references/block_templates.md` → Endurance Block.
 
-**Currently cited at:** **NONE.** This is a gap — Z2 work is central to the polarized block and base-block rationale, but no in-doc cite anchors it. Action queued under audit_protocol.md → 2026-Q3.
+**Currently cited at:**
+- `references/training_zones.md:3` (citation-currency preamble — Z2 / mitochondrial framing, POPULAR-MEDIA tier).
+- `references/training_zones.md` → Zone 2 section (Z2 base / mitochondrial-density rationale, with the Brooks lactate-shuttle mechanism caveat).
 
 **Evidence-level caveat:** A substantial portion of San Millán's coaching framework is disseminated via podcasts (Peter Attia, Rich Roll, others) and interviews rather than primary literature. When citing his Z2 framework for an athlete-facing claim, prefer Brooks (lactate shuttle, peer-reviewed) as the underlying mechanism and treat San Millán as the cycling-specific application authority. This skill is honest about that distinction; the audit protocol surfaces it as a recurring re-verification item.
 
@@ -185,9 +189,9 @@ A single row per authority. The quarterly audit (`governance/audit_protocol.md`)
 |-----------|--------------:|----------|----------|-------|
 | Allen, Hunter (with Coggan) | — | — | 2026-Q3 | First-inclusion 2026-05-26; needs primary-source check (2nd vs 3rd ed.) |
 | Coggan, Andrew | — | — | 2026-Q3 | First-inclusion 2026-05-26; framework is implicit-anchored, no formal cite yet |
-| Mujika, Iñigo | — | — | 2026-Q3 | First-inclusion 2026-05-26; **race_taper.md has no cite** — flag |
+| Mujika, Iñigo | — | — | 2026-Q3 | Cited 2026-05-30 at race_taper.md:11,5,23 (taper structure + conservative TSB band) — was flagged. |
 | Rønnestad, Bent | 2026-05-20 | ZJ | 2026-Q3 | Anchored at 3 sites; OK |
-| San Millán, Iñigo | — | — | 2026-Q3 | First-inclusion 2026-05-26; **training_zones.md has no Z2 cite** — flag |
+| San Millán, Iñigo | — | — | 2026-Q3 | Cited 2026-05-30 at training_zones.md (Z2 framing, POPULAR-MEDIA→Brooks) — was flagged. |
 | Seiler, Stephen | 2026-05-20 | ZJ | 2026-Q3 | Anchored at 2 sites; OK |
 | Stöggl, Thomas & Sperlich, Billy | 2026-05-20 | ZJ | 2026-Q3 | Anchored at 2 sites; OK |
 

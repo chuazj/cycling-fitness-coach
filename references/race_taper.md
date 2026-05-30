@@ -2,7 +2,7 @@
 
 Reference for Claude-as-coach: taper structures and TSB projection for reverse-engineering a race-day peak.
 
-When an athlete has a target event, reverse-engineer the taper from the event date to achieve optimal freshness (TSB +5 to +20 on race day).
+When an athlete has a target event, reverse-engineer the taper from the event date to achieve optimal freshness (TSB +5 to +15 on race day — the conservative central estimate per Mujika & Padilla 2003; see the over-taper guardrail below before pushing toward the fresh end).
 
 - For weekly adaptation decisions during a taper week → `references/weekly_adaptation.md`.
 - For block design and progressive overload → `references/block_templates.md`.
@@ -20,7 +20,7 @@ Use for A-priority events or when CTL > 50.
 |------|-----------------|-----------|--------------|
 | Race -2 | -30% volume | Maintain intensity (2 hard sessions) | 1× race-pace intervals + 1× short VO2max/openers |
 | Race -1 | -50% volume | Reduce intensity (1 hard session) | 1× openers (3×2min @ 105%) + easy rides only |
-| Race day | — | — | TSB target: +5 to +20 |
+| Race day | — | — | TSB target: +5 to +15 |
 
 **Week -2 detail:**
 - Tue: Race-pace intervals — 3×8min @ 100-105% FTP, 5min recovery (maintain sharpness)
