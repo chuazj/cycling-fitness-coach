@@ -53,11 +53,13 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 | Fatigue signal | Action | Session adjustment |
 |---|---|---|
 | Mild (RPE +1 vs typical, sleep ok, Recovery ≥67, HRV in/above 7-day band) | Train as planned, monitor first 15 min | None — abort if RPE doesn't settle |
-| Moderate (RHR +5 bpm OR poor sleep 1 night OR HRV below 7-day band (single day) OR Recovery 34–66 OR HRV CV-trend rising +2pp over 14d OR respiration +1/min vs baseline) | Modify down one tier | SS → endurance Z2; threshold → SS; VO2max → threshold; cut duration 20% |
+| Moderate (RHR +5 bpm OR poor sleep 1 night OR HRV below 7-day band (single day) OR Recovery 34–66 OR respiration +1/min vs baseline) | Modify down one tier | SS → endurance Z2; threshold → SS; VO2max → threshold; cut duration 20% |
 | High (RHR ≥+10 bpm OR poor sleep 2+ nights, OR HRV below 7-day band 2 consecutive days, OR Recovery <34, OR respiration +2/min vs baseline, OR SpO2 <90%, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
 | Severe (RHR +10 bpm AND illness symptoms OR TSB <−30 OR Recovery <34 with red signals across HRV/RHR/respiration) | Full rest | No bike. Reassess next day. |
 | Sick (above-neck only) | Rest 1–2 days then Z1–Z2 only | Per `references/weekly_adaptation.md` → Illness/Injury rules |
 | Sick (below-neck or systemic) | Full rest until 48h symptom-free | Per `references/weekly_adaptation.md` → Illness/Injury rules |
+
+> **HRV CV-trend is informational, not a same-day downgrade.** A rising 7-day CV (≥ prior-7d + 2.0pp over the 14-day split-window) is an early autonomic-strain signal — it prompts a **weekly-TSS review**, not a session cut. `--readiness-check` surfaces it as an Active flag but does **not** gate the verdict on it (consistent with the Gating? table below + `references/training_zones.md` → Fatigue Indicators). Cut today's session only if an acute signal in the table above also fires.
 
 **"Can I swap/skip a session?"** — Schedule adaptation:
 1. Identify what the session targets (energy system, training stimulus)

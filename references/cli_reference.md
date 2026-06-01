@@ -4,7 +4,7 @@ Command examples for every script in the skill. Workflows generally embed the sp
 
 **Dependencies:** `pip install requests` (core). The `.fit` ingest parse layer (`scripts/fit_ingest.py`) additionally needs `pip install fitparse`.
 
-**Tests:** `python -m unittest discover tests -v` (661 tests across 8 files, runs in ~0.1s — run before AND after any script change).
+**Tests:** `python -m unittest discover tests -v` (663 tests across 8 files, runs in ~0.1s — run before AND after any script change).
 
 ## Activity Analysis (intervals.icu)
 ```bash

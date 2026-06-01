@@ -898,6 +898,23 @@ class TestReadinessHelpers(unittest.TestCase):
         # band is yellow-high; recovery flag excluded → stays YELLOW-HIGH
         self.assertEqual(vb, "YELLOW-HIGH")
 
+    def test_synthesize_verdict_hrv_cv_flag_excluded_from_gating(self):
+        # HRV_CV is informational-only per the CLAUDE.md gating spec: an isolated
+        # rising-CV yellow flag must NOT downgrade an otherwise-green verdict.
+        # (It still surfaces in the Active-flags list, which reads full `flags`.)
+        flags = [{"signal": "HRV_CV", "severity": "yellow",
+                  "rule": "HRV 7-day CV rose +2.5pp — early autonomic strain; review weekly TSS"}]
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "green", flags, "full")
+        self.assertEqual(vb, "GREEN")
+
+    def test_synthesize_verdict_hrv_cv_does_not_suppress_real_gating(self):
+        # Excluding HRV_CV from gating must not suppress a genuine yellow flag:
+        # a real RHR yellow alongside an HRV_CV flag still gates to YELLOW-LOW.
+        flags = [{"signal": "HRV_CV", "severity": "yellow", "rule": "CV rose +2.5pp"},
+                 {"signal": "RHR", "severity": "yellow", "rule": "RHR +6bpm"}]
+        vb, _verdict, _ceiling = _synthesize_verdict("green", "green", flags, "full")
+        self.assertEqual(vb, "YELLOW-LOW")
+
     def test_synthesize_verdict_yellow_low_from_band(self):
         vb, _verdict, _ceiling = _synthesize_verdict("green", "yellow-low", [], "full")
         self.assertEqual(vb, "YELLOW-LOW")

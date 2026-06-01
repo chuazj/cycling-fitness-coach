@@ -85,7 +85,11 @@ def _synthesize_verdict(sleep_status, band, flags, signal_mode, hrv_sample_size=
 
     The legacy "recovery"-signal flag is excluded from gating in every mode
     (the `band` variable supersedes it in full mode; it cannot exist in the
-    others).
+    others). The "HRV_CV" trend flag is likewise excluded: it is an
+    informational early-autonomic-strain signal whose documented action is a
+    weekly-TSS review, not a same-day session cap (CLAUDE.md gating spec +
+    references/training_zones.md → Fatigue Indicators). It still surfaces in
+    the Active-flags list (which reads the full `flags`, not `gating_flags`).
 
     `hrv_sample_size` only affects the descriptive parenthetical in the
     reduced-mode GREEN ceiling string — never the verdict tier or the
@@ -95,7 +99,7 @@ def _synthesize_verdict(sleep_status, band, flags, signal_mode, hrv_sample_size=
 
     Returns (verdict_band, verdict, ceiling).
     """
-    gating_flags = [f for f in flags if f.get("signal") != "recovery"]
+    gating_flags = [f for f in flags if f.get("signal") not in ("recovery", "HRV_CV")]
     has_red_flag = any(f["severity"] == "red" for f in gating_flags)
     has_yellow_flag = any(f["severity"] == "yellow" for f in gating_flags)
 
