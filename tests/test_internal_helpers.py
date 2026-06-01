@@ -539,6 +539,20 @@ class TestWeeklySummaryHelpers(unittest.TestCase):
         expected_change_pct = round((209 - 188) / 188 * 100, 1)
         self.assertEqual(frag["ftp_change_pct"], expected_change_pct)
 
+    def test_ftp_update_suggestion_carries_retest_caveat(self):
+        # F2/D1-N2: an unpaced 20-min peak must be flagged retest-only, never
+        # apply-able (aligns with weekly_adaptation.md → "do NOT derive a new
+        # FTP from the training peak").
+        frag = _ftp_update_suggestion(220.0, 188)
+        self.assertTrue(frag["requires_confirming_test"])
+        self.assertIn("test", frag["note"].lower())
+
+    def test_ftp_update_no_caveat_when_not_suggested(self):
+        # Below the 3% threshold → no suggestion, so no retest-caveat keys.
+        frag = _ftp_update_suggestion(195.0, 188)
+        self.assertNotIn("requires_confirming_test", frag)
+        self.assertNotIn("note", frag)
+
     # ------------------------------------------------------------------
     # _aggregate_week
     # ------------------------------------------------------------------
@@ -1432,6 +1446,39 @@ class TestLoadEnv(unittest.TestCase):
                     os.environ.pop(k, None)
                 else:
                     os.environ[k] = v
+
+
+class TestDocCountConsistency(unittest.TestCase):
+    """F9/CL-2 — guard the 3 canonical docs against test-count / file-count drift.
+
+    Rather than hardcode a 4th copy of the number, this derives the live counts
+    from a fresh discovery and asserts each doc's "N tests across M files" marker
+    matches reality. Adding a test (or a test file) without updating the docs
+    fails here — converting the manual 3-place sync into an enforced contract.
+    """
+
+    def test_canonical_docs_match_live_counts(self):
+        import re
+        from pathlib import Path
+        repo_root = Path(__file__).resolve().parent.parent
+        tests_dir = repo_root / "tests"
+        live_tests = unittest.defaultTestLoader.discover(
+            str(tests_dir), top_level_dir=str(repo_root)).countTestCases()
+        live_files = len(list(tests_dir.glob("test_*.py")))
+        pat = re.compile(r"(\d+) tests across (\d+) files")
+        docs = [repo_root / "CLAUDE.md",
+                repo_root / "README.md",
+                repo_root / "references" / "cli_reference.md"]
+        for doc in docs:
+            m = pat.search(doc.read_text(encoding="utf-8"))
+            self.assertIsNotNone(
+                m, f"'N tests across M files' marker missing in {doc.name}")
+            self.assertEqual(
+                int(m.group(1)), live_tests,
+                f"{doc.name}: doc says {m.group(1)} tests, live count is {live_tests}")
+            self.assertEqual(
+                int(m.group(2)), live_files,
+                f"{doc.name}: doc says {m.group(2)} files, actual is {live_files}")
 
 
 if __name__ == "__main__":

@@ -94,7 +94,7 @@ This applies **regardless of the athlete's body size or weight** — RED-S occur
 
 ## 8. How to track
 
-- **intervals.icu** supports menstrual-cycle and wellness logging. Have the athlete log daily: cycle day / bleeding status, plus the symptom set from §4. The `--wellness` and `--readiness-check` modes already pull subjective wellness — menstrual symptoms sit alongside them as another input.
+- **intervals.icu** supports menstrual-cycle and wellness logging. Have the athlete log daily: cycle day / bleeding status, plus the symptom set from §4. Note: the `--wellness` and `--readiness-check` modes pull only the *generic* subjective fields (fatigue, soreness, stress, mood) — they do **not** emit a dedicated menstrual/bleeding field. Read the cycle-day and symptom log in the intervals.icu UI alongside the script output.
 - **Minimum useful history: 2–3 cycles.** Below that, treat any "pattern" as provisional — the protocol is individualized, and the individual's pattern needs data.
 - **What to look for:** a *consistent, repeating* relationship between a cycle point and a symptom or performance dip. Found → individualize scheduling around it (§4). Not found → standard periodization, autoregulate reactively.
 - **HC users:** log symptoms only (no phase); watch the withdrawal-bleed week.

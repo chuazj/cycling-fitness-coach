@@ -8,7 +8,7 @@ intervals.icu uses **HTTP Basic Auth** with a permanent API key — no token ref
 - **Password**: Your API key from https://intervals.icu/settings
 - **Athlete ID**: Found in your intervals.icu profile URL (e.g., `i22439`)
 
-Credentials stored in `.env` at project root:
+Credentials stored in `.env` at the skill root (the directory containing `SKILL.md`):
 ```
 INTERVALS_ICU_ATHLETE_ID=i22439
 INTERVALS_ICU_API_KEY=your_key_here

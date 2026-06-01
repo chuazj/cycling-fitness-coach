@@ -450,7 +450,10 @@ def _ftp_update_suggestion(max_20min_peak, ftp):
     - None peak: {"ftp_update_suggested": False}
     - Peak present, threshold not crossed: {"max_20min_peak": ..., "ftp_update_suggested": False}
     - Peak present, threshold crossed: {"max_20min_peak": ..., "ftp_update_suggested": True,
-                                         "suggested_ftp": ..., "ftp_change_pct": ...}
+                                         "suggested_ftp": ..., "ftp_change_pct": ...,
+                                         "requires_confirming_test": True, "note": <retest caveat>}
+      suggested_ftp is a RETEST FLAG, not an apply-able FTP: it is derived from an
+      unpaced training peak (×0.95), so it always carries requires_confirming_test.
     """
     # FE-3: Auto-FTP detection
     if max_20min_peak is not None:
@@ -461,6 +464,12 @@ def _ftp_update_suggestion(max_20min_peak, ftp):
             frag["ftp_update_suggested"] = True
             frag["suggested_ftp"] = suggested_ftp
             frag["ftp_change_pct"] = change_pct
+            # An unpaced training 20-min peak is NOT a paced FTP test: flag it
+            # retest-only, never apply-able (aligns with weekly_adaptation.md →
+            # "do NOT derive a new FTP from the training peak").
+            frag["requires_confirming_test"] = True
+            frag["note"] = ("unpaced training peak — schedule a dedicated FTP test "
+                            "before changing FTP; do not apply this estimate directly")
         else:
             frag["ftp_update_suggested"] = False
         return frag

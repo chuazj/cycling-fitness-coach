@@ -277,6 +277,6 @@ Power Profile data sources:
 
 **Step 3:** If FTP update suggested by auto-detection, flag it:
 ```
-FTP Update Suggested: 20min best {X}W → estimated FTP {X}W (+{X}% vs current {FTP}W)
-Consider scheduling an FTP test to confirm.
+FTP Update Flagged: 20min best {X}W → provisional estimate {X}W (+{X}% vs current {FTP}W)
+⚠ Unpaced training peak — schedule a dedicated FTP test to confirm before changing FTP. Do not apply directly.
 ```

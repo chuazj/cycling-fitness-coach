@@ -52,6 +52,8 @@ The primary block for systematic FTP improvement. Progressive overload through i
 | 3 | Build 3 | Threshold + VO2max | +10-15% vs W2 | 2× Threshold + 1× VO2max |
 | 4 | Recovery | Test FTP | -45% vs W1 | Recovery rides + FTP test |
 
+> *Ramp note: the +10% steps are a ceiling, not a default — ramp 5–8%/week if CTL <30, inconsistent training history, or any ACWR/RPE/HRV yellow flag. See **Weekly Ramp Rate** below. A single block typically yields 2–4% FTP gain; larger targets are multi-block goals.*
+
 **Week 1 detail (Build 1):**
 - Tue: Sweet Spot — 2×15min @ 88-94% FTP, 5min recovery
 - Thu: Threshold intro — 3×8min @ 100-105% FTP, 5min recovery
@@ -93,6 +95,8 @@ For athletes who need top-end power development after establishing a solid sweet
 | 3 | VO2 Build 3 | Mixed: short intervals peak + classic 4-5min | +10% vs W2 |
 | 4 | Recovery | Deload + retest | -45% |
 
+> *Ramp note: the +10% steps are a ceiling, not a default — ramp 5–8%/week if CTL <30, inconsistent training history, or any ACWR/RPE/HRV yellow flag. See **Weekly Ramp Rate** below.*
+
 **Week 1 detail (VO2 Build 1):**
 - Tue: SVO2-1 (30/30s 2×8, 3min set rest) — 8min total work @ 120-130% FTP
 - Thu: Threshold — 3×8min @ 100-105% FTP, 5min recovery (sustains FTP base while VO2 work begins)
@@ -133,6 +137,8 @@ Volume-focused block with tempo integration. Use when building aerobic base or r
 | 3 | Base 3 | Longer Z2 + tempo | +10% vs W2 |
 | 4 | Recovery | Deload | -40% |
 
+> *Ramp note: the +10% steps are a ceiling, not a default — ramp 5–8%/week if CTL <30, inconsistent training history, or any ACWR/RPE/HRV yellow flag. See **Weekly Ramp Rate** below.*
+
 ### Polarized Block (4 weeks)
 
 Distribution: ~80% Z1-Z2, minimal Z3 (tempo — the ~0% is a distribution target, not a hard prohibition), ~20% Z4+ (threshold/VO2max). Based on Seiler (2010) and Stoggl & Sperlich (2014) showing equal or superior adaptations to sweet spot training, particularly at higher training volumes.
@@ -145,6 +151,8 @@ Distribution: ~80% Z1-Z2, minimal Z3 (tempo — the ~0% is a distribution target
 | 2 | Polarized 2 | 3×Z2 longer + 1×VO2max + 1×Threshold | +10% |
 | 3 | Polarized 3 | 3×Z2 longest + 2×VO2max/Threshold | +10% vs W2 |
 | 4 | Recovery | Deload | -45% |
+
+> *Ramp note: the +10% steps are a ceiling, not a default — ramp 5–8%/week if CTL <30, inconsistent training history, or any ACWR/RPE/HRV yellow flag. See **Weekly Ramp Rate** below.*
 
 **Week 1 detail:**
 - Tue: VO2max — 4×4min @ 115-120% FTP, 4min recovery (sole hard session this week)

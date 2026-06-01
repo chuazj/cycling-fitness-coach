@@ -16,7 +16,7 @@ This skill queries the intervals.icu API directly to fetch activity data, interv
 
 ### Credentials
 
-Stored in `.env` at project root (loaded automatically by the script):
+Stored in `.env` at the skill root — the directory containing `SKILL.md` (loaded automatically by the script):
 ```
 INTERVALS_ICU_ATHLETE_ID=your_athlete_id
 INTERVALS_ICU_API_KEY=your_key_here

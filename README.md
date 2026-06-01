@@ -48,7 +48,7 @@ Copy-Item -Recurse cycling-fitness-coach "$env:USERPROFILE\.claude\skills\cyclin
 
 ### 3. Configure intervals.icu credentials
 
-Create a `.env` file in the skill directory:
+Create a `.env` file in the skill root (the directory containing `SKILL.md`):
 
 ```
 INTERVALS_ICU_ATHLETE_ID=i12345
@@ -302,7 +302,7 @@ The skill follows strict coaching process rules:
 python -m unittest discover tests -v
 ```
 
-663 tests across 8 files: pure function unit tests, mocked HTTP responses, CLI argument parsing, PMC integration, .fit file ingestion, ZWO linting, and prediction tracker tests. Expected runtime ~0.1s.
+666 tests across 8 files: pure function unit tests, mocked HTTP responses, CLI argument parsing, PMC integration, .fit file ingestion, ZWO linting, and prediction tracker tests. Expected runtime ~0.1s.
 
 ## Customization
 
