@@ -5,7 +5,7 @@ type: audit
 audit_scope: [methodology-drift, output-contract, citation-currency]
 skill: cycling-fitness-coach
 skill_version_start: c2ce55e
-skill_version_end: 9017dca
+skill_version_end: eae1ed9
 rubric: internal-backlog-verification (16-agent verify fan-out + adversarial required/optional classification, all claims primary-source-verified to file:line)
 status: actioned
 findings_count: 10
@@ -21,7 +21,7 @@ tags: [cycling, coaching, audit, backlog-verification, w9]
 
 **Method.** A 16-agent verification workflow (not open-ended discovery — three audits in ten days make fresh true-positives low-probability and confabulation-risk high). Five cluster-verifiers triaged the 11-item W9 enforcement backlog + the 5/30 deferred set against **current committed files** (file:line + quote, not inferred from which prior audit mentioned an item); one resolution-drift verifier confirmed the 5/30 review's 18 claimed fixes actually landed; one hard-gated discovery agent looked only for guarantee-breaking defects (returned none beyond the cluster set). Every OPEN/PARTIAL candidate was then adversarially re-classified by an independent agent instructed to *refute* both "still open" and "required". Test suite run live: **661 → 663 pass, 0 fail** after the one actioned fix.
 
-**Headline.** **No P0/P1. The required column is empty.** All 10 carried-forward open items adversarially classified `required: false`. One sat on the required/optional boundary — **F1 (D2-N3)**, a readiness doc-vs-code contradiction that changed an emitted verdict — and was fixed and shipped this pass (`9017dca`). The remaining 9 are enhancement / polish / preventive, several explicitly "reference, not scheduled" from the A+ program, and one (F10) already queued for the 2026-Q3 citation-currency audit.
+**Headline.** **No P0/P1. The required column is empty.** All 10 carried-forward open items adversarially classified `required: false`. One sat on the required/optional boundary — **F1 (D2-N3)**, a readiness doc-vs-code contradiction that changed an emitted verdict — and was fixed and shipped this pass (`9017dca`). A follow-up consistency+polish batch (`eae1ed9`) then closed **F2, F3, F6, F7, F9** (6 of 10 actioned in total). The 4 that remain — **F4, F5, F8, F10** — are enhancement / preventive: F10 is queued for the 2026-Q3 citation-currency audit; F4/F5/F8 are deferrable, with the strength/mobility pillar the preference-aligned next investment.
 
 ---
 
@@ -62,11 +62,11 @@ Scope check confirmed `overall_status` is consumed only by the **weekly review**
 
 ## §3 Out of scope (deliberately not actioned — do not re-discover)
 
-**F2-F10 (all Low / not required).** Each adversarially confirmed `required: false` — no correctness, safety, data-integrity, or broken-guarantee defect. Deferred reasoning per row in §1. Cross-cutting notes for the next audit:
+**F4, F5, F8, F10 (the 4 not actioned this pass; all Low / not required).** Each adversarially confirmed `required: false` — no correctness, safety, data-integrity, or broken-guarantee defect. Deferred reasoning per row in §1. (F2, F3, F6, F7, F9 were actioned in the consistency+polish batch — see §4.) Cross-cutting notes for the next audit:
 
-- **Re-surfacing class deprioritized by standing preference.** F5 (D2-N1) and F6 (D2-N2) both re-surface data already collected (peak series / intervals.icu menstrual logging). Per the athlete's standing preference — new training-stimulus enhancements (strength, mobility) outrank data-re-surfacing tools — these are explicitly low-value. The **strength/mobility pillar** (a weekly lifting slot, deferred pending Block 3 restart) is the preference-aligned enhancement, not these.
+- **Re-surfacing class deprioritized by standing preference.** F5 (D2-N1) — and the optional *code* form of F6 (D2-N2 menstrual fields in `_build_daily`, distinct from the wording fix that shipped) — both re-surface data already collected (peak series / intervals.icu logging). Per the athlete's standing preference — new training-stimulus enhancements (strength, mobility) outrank data-re-surfacing tools — these are explicitly low-value. The **strength/mobility pillar** (a weekly lifting slot, deferred pending Block 3 restart) is the preference-aligned enhancement, not these.
 - **F10 is already queued**, not a new finding — fold into the 2026-Q3 citation-currency pass; this audit only confirmed the 8 flags persist and remain non-load-bearing.
-- **F2's harm path is gated end-to-end** — worth a consistency fix, never urgent.
+- **F4 is plausibly by-design** (the sweet-spot-only rotation trigger covers the athlete's actual monotony risk; a symmetric branch could misfire on intended crit-season VO2max cycles) and **F8 is preventive** (a 685-LOC module that works, fully tested) — neither is scheduled.
 
 **Verified CLOSED (15) — do not re-open.** Confirmed landed in committed files this pass, so the next audit can skip re-deriving them:
 
@@ -84,6 +84,16 @@ Scope check confirmed `overall_status` is consumed only by the **weekly review**
 |----|-----------|--------|-------|
 | F1 / D2-N3 | `HRV_CV` excluded from `_synthesize_verdict` gating set (informational-only, per athlete-chosen contract); docstring rationale added; `advise.md:56` Moderate row de-listed CV-trend + informational note added; +2 regression tests (661 → 663 green); test count bumped in 3 canonical docs. Verified live at install path. | `9017dca` | `scripts/intervals_icu/readiness.py`, `workflows/advise.md`, `tests/test_internal_helpers.py`, `CLAUDE.md`, `README.md`, `references/cli_reference.md` |
 
-`status: actioned`. F2-F10 remain open as documented Low/optional backlog (no scheduled action except F10 → 2026-Q3). `git diff c2ce55e..9017dca` shows exactly what shipped from this audit.
+### Resolution (consistency+polish batch — 2026-06-01, `eae1ed9`)
 
-*Generated 2026-06-01 · 16-agent verification fan-out + adversarial required/optional classification · skill `c2ce55e` → `9017dca`, F1 actioned · tests 663 green.*
+| ID | Resolution | Files |
+|----|-----------|-------|
+| F2 / D1-N2 | `_ftp_update_suggestion` now flags the 20-min-peak FTP suggestion **retest-only** — adds `requires_confirming_test: True` + a caveat `note` ("unpaced training peak — schedule a dedicated FTP test before changing FTP"), docstring marks `suggested_ftp` a RETEST FLAG, and `analyze.md` Step 3 renders the ⚠ "do not apply directly". Aligns the script with `weekly_adaptation.md`. +2 tests. | `scripts/intervals_icu/activity.py`, `workflows/analyze.md`, `tests/test_internal_helpers.py` |
+| F3 / D1-N1 | Ramp-ceiling footnote added under all 4 block tables (FTP Builder / VO2max / Endurance / Polarized): "+10% is a ceiling, not a default — ramp 5–8%/week if CTL <30 / inconsistent history / any yellow flag → **Weekly Ramp Rate**"; FTP Builder note also carries the 2–4%/block realistic-gain caveat. | `references/block_templates.md` |
+| F6 / D2-N2 | Tightened the §8 wording: the `--wellness`/`--readiness-check` modes pull only generic subjective fields and do **not** emit a menstrual/bleeding field; read the log in the intervals.icu UI. (Optional code-surfacing form remains deferred — re-surfacing class.) | `references/menstrual_cycle_training.md` |
+| F7 / D4-N1 | Canonicalized the `.env` location to one phrase — "the skill root (the directory containing `SKILL.md`)" — across `setup.md`, `intervals_icu_api.md`, `README.md` (was "project root" ×2 vs "skill directory"). | `references/setup.md`, `references/intervals_icu_api.md`, `README.md` |
+| F9 / CL-2 | Added a doc-count guard test: derives the live test/file counts from a fresh `discover().countTestCases()` + `glob("test_*.py")` and asserts each of the 3 canonical docs' "N tests across M files" marker matches — no 4th hardcoded number; adding a test without updating the docs now fails the suite. Count rolled 663 → 666. | `tests/test_internal_helpers.py`, `CLAUDE.md`, `README.md`, `references/cli_reference.md` |
+
+`status: actioned`. **6 of 10 actioned** (F1 + F2/F3/F6/F7/F9). F4 / F5 / F8 remain open as deferrable Low/optional backlog (no scheduled action); F10 → 2026-Q3 citation-currency audit. `git diff c2ce55e..eae1ed9` shows exactly what shipped from this audit. Tests 666 green.
+
+*Generated 2026-06-01 · 16-agent verification fan-out + adversarial required/optional classification · skill `c2ce55e` → `eae1ed9`, F1 + consistency batch actioned · tests 666 green.*

@@ -23,7 +23,7 @@ A single audit can cover multiple scopes; the topic slug reflects the dominant o
 
 | Date | Title | Status | Scope |
 |------|-------|--------|-------|
-| 2026-06-01 | [Open-backlog verification (W9 + 5/30 deferred); D2-N3 shipped](cycling-coach-backlog-verification-2026-06-01.md) | actioned | backlog-verification |
+| 2026-06-01 | [Open-backlog verification (W9 + 5/30 deferred); 6 of 10 actioned](cycling-coach-backlog-verification-2026-06-01.md) | actioned | backlog-verification |
 | 2026-05-30 | [Comprehensive 3-dimension review (impl / methodology / code)](cycling-coach-comprehensive-review-2026-05-30.md) | actioned | comprehensive-review |
 | 2026-05-26 | [Refactor proposal — methodology, recurrence, sub-prompts](cycling-coach-refactor-proposal-2026-05-26.md) | actioned | refactor-proposal |
 | 2026-05-23 | [Writing-skills rubric audit](cycling-coach-writing-skills-2026-05-23.md) | actioned | writing-skills |
