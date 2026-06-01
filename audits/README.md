@@ -14,6 +14,7 @@ Version-controlled audit log for the cycling-fitness-coach skill. Each audit is 
 | `output-contract` | Walk-through of every emitted artifact's schema + gitignore status. |
 | `refactor-proposal` | Multi-scope proposal that drives a refactor PR series (not a single-scope finding). |
 | `comprehensive-review` | Full cross-dimension review (skill implementation + methodology + code quality) in one pass. |
+| `backlog-verification` | Verification pass over the open W9 / deferred backlog against current committed code; required/optional reclassification of carried-forward findings. |
 | `program-summary` | Consolidated record of a multi-workstream improvement program (legacy slug; reserved for back-ports of pre-2026-05-26 Obsidian artifacts). |
 
 A single audit can cover multiple scopes; the topic slug reflects the dominant one. The frontmatter `audit_scope:` array captures the full set.
@@ -22,6 +23,7 @@ A single audit can cover multiple scopes; the topic slug reflects the dominant o
 
 | Date | Title | Status | Scope |
 |------|-------|--------|-------|
+| 2026-06-01 | [Open-backlog verification (W9 + 5/30 deferred); D2-N3 shipped](cycling-coach-backlog-verification-2026-06-01.md) | actioned | backlog-verification |
 | 2026-05-30 | [Comprehensive 3-dimension review (impl / methodology / code)](cycling-coach-comprehensive-review-2026-05-30.md) | actioned | comprehensive-review |
 | 2026-05-26 | [Refactor proposal — methodology, recurrence, sub-prompts](cycling-coach-refactor-proposal-2026-05-26.md) | actioned | refactor-proposal |
 | 2026-05-23 | [Writing-skills rubric audit](cycling-coach-writing-skills-2026-05-23.md) | actioned | writing-skills |
