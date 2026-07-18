@@ -28,6 +28,15 @@ def apply_compact(result):
     return result
 
 
+def _positive_int(s):
+    """argparse type: int >= 1. Rejects --list-recent 0, which is falsy and
+    would otherwise slip through every dispatch elif as a silent no-op."""
+    v = int(s)
+    if v < 1:
+        raise argparse.ArgumentTypeError(f"must be >= 1 (got {v})")
+    return v
+
+
 def build_parser():
     """Build the CLI argument parser. Exposed for tests and reuse."""
     p = argparse.ArgumentParser(description="intervals.icu activity analysis")
@@ -36,7 +45,7 @@ def build_parser():
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument("--activity", help="Activity ID or intervals.icu URL")
     mode.add_argument("--latest", action="store_true", help="Fetch and analyze the most recent activity")
-    mode.add_argument("--list-recent", type=int, help="List N most recent activities")
+    mode.add_argument("--list-recent", type=_positive_int, help="List N most recent activities")
     mode.add_argument("--weekly-summary", type=int, nargs="?", const=7,
                        help="Weekly training summary for last N days (default: 7)")
     mode.add_argument("--wellness", type=int, nargs="?", const=14,
@@ -96,6 +105,14 @@ def main():
 
     client = IntervalsIcuClient(athlete_id, api_key)
 
+    # Modes that never read FTP/weight (--list-recent, --wellness,
+    # --readiness-check) must not prompt or hard-error for them — the profile
+    # fetch below still runs (harmless when it succeeds), but the interactive
+    # prompt / p.error fallback paths are gated on this.
+    needs_ftp_weight = not (args.list_recent is not None
+                            or args.wellness is not None
+                            or args.readiness_check)
+
     if args.use_athlete_profile:
         profile_error = None
         try:
@@ -118,7 +135,7 @@ def main():
         # If --use-athlete-profile was requested but didn't yield an FTP, prompt
         # interactively rather than silently defaulting to 200W. Hard-error if
         # stdin isn't a TTY (e.g., piped/CI) — caller must pass --ftp explicitly.
-        if args.ftp is None:
+        if args.ftp is None and needs_ftp_weight:
             reason = ("profile fetch failed" if profile_error is not None
                       else "no FTP in intervals.icu profile (check sportSettings → bike → ftp)")
             if not sys.stdin.isatty():
@@ -144,7 +161,7 @@ def main():
                 break
 
         # Same hardening for weight: prompt rather than silently default to 70kg.
-        if args.weight is None:
+        if args.weight is None and needs_ftp_weight:
             reason = ("profile fetch failed" if profile_error is not None
                       else "no weight in intervals.icu profile (icu_weight is unset)")
             if not sys.stdin.isatty():
@@ -170,9 +187,8 @@ def main():
                 break
 
     # Final fallbacks after profile logic — neutral generic defaults, warn loudly.
-    # Modes that don't use FTP/weight (--list-recent, --wellness, --readiness-check)
-    # should NOT see this warning since the defaults are never read by them.
-    needs_ftp_weight = not (args.list_recent or args.wellness is not None or args.readiness_check)
+    # needs_ftp_weight (computed above) suppresses the warning for modes whose
+    # defaults are never read.
     used_fallback = []
     if args.ftp is None:
         args.ftp = 200

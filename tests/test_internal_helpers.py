@@ -847,6 +847,16 @@ class TestReadinessHelpers(unittest.TestCase):
         status, note = _sleep_status({"sleep_hours": 5.0})
         self.assertEqual(status, "red")
 
+    def test_rhr_flag_rule_strings_use_gte(self):
+        """Q3 P2: flags fire at >=5/>=10 bpm — the athlete-facing rule string
+        must say ≥, not > (at exactly +5.0 the old text contradicted itself)."""
+        from intervals_icu.wellness import _flag_rhr
+        sizes = {"resting_hr": 7}
+        yellow = _flag_rhr({"resting_hr": 55.0}, {"resting_hr_avg": 50.0}, sizes)
+        red = _flag_rhr({"resting_hr": 60.0}, {"resting_hr_avg": 50.0}, sizes)
+        self.assertIn("≥5 bpm", yellow[0]["rule"])
+        self.assertIn("≥10 bpm", red[0]["rule"])
+
     def test_sleep_status_missing_when_none(self):
         status, note = _sleep_status({"sleep_hours": None})
         self.assertEqual(status, "missing")

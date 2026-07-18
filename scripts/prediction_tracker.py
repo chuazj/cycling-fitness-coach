@@ -118,9 +118,16 @@ def load_ledger(path):
                     file=sys.stderr,
                 )
                 continue
+            if not isinstance(rec, dict):
+                print(
+                    f"WARNING: ledger line {lineno} is valid JSON but not a record "
+                    f"object — skipping. Value: {rec!r}",
+                    file=sys.stderr,
+                )
+                continue
             # Forward-tolerant: a record written by a newer tracker still loads,
             # but warn so a silently-newer ledger is visible. Absent/older = ok.
-            if isinstance(rec, dict) and rec.get("schema_version", 0) > LEDGER_SCHEMA_VERSION:
+            if rec.get("schema_version", 0) > LEDGER_SCHEMA_VERSION:
                 print(
                     f"WARNING: ledger line {lineno} has schema_version "
                     f"{rec.get('schema_version')} > supported {LEDGER_SCHEMA_VERSION} "

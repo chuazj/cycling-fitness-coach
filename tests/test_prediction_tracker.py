@@ -364,6 +364,22 @@ class TestLoadLedgerMalformed(unittest.TestCase):
             for line in lines:
                 f.write(line + "\n")
 
+    def test_valid_json_non_dict_lines_skipped_with_warning(self):
+        """Q3 P2: null / 42 / "x" are valid JSON but not records — must be
+        warned and skipped so next_id/check_rpe_trigger don't crash later."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "ledger.jsonl")
+            good = '{"id": "P001", "type": "rpe_at_if", "status": "open"}'
+            self._write_ledger(path, [good, "null", "42", '"x"'])
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                records = load_ledger(path)
+            self.assertEqual(len(records), 1)
+            self.assertEqual(next_id(records), "P002")  # must not crash on non-dicts
+            self.assertIn("not a record", buf.getvalue())
+
     def test_malformed_line_skipped_returns_valid_records(self):
         """One valid, one corrupt, one valid -> 2 valid records returned, no exception."""
         with tempfile.TemporaryDirectory() as d:

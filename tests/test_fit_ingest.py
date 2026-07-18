@@ -110,6 +110,20 @@ class TestExtract(unittest.TestCase):
         _, meta = _extract(ff, "ride")
         self.assertFalse(meta.get("start_time_utc_fallback"))
 
+    def test_lap_intensity_enum_mapped_to_work_recovery(self):
+        """Q3 P2: FIT lap 'intensity' is an enum (active/rest/...), not the
+        numeric IF the API path carries — map it to the typed lap path and
+        emit intensity=None to keep the field numeric-or-None."""
+        ff = _FakeFitFile({
+            "record": [_FakeMsg({"power": 200})],
+            "lap": [_FakeMsg({"avg_power": 250, "intensity": "active"}),
+                    _FakeMsg({"avg_power": 120, "intensity": "rest"}),
+                    _FakeMsg({"avg_power": 130, "intensity": "warmup"})],
+        })
+        _, meta = _extract(ff, "ride")
+        self.assertEqual([lp["type"] for lp in meta["laps"]], ["WORK", "RECOVERY", ""])
+        self.assertEqual([lp["intensity"] for lp in meta["laps"]], [None, None, None])
+
 
 class TestStartTimeUtcWarning(unittest.TestCase):
     def test_analyze_local_warns_when_start_time_is_utc(self):
@@ -122,6 +136,23 @@ class TestStartTimeUtcWarning(unittest.TestCase):
         meta = {"name": "ride", "start_time_utc_fallback": False}
         result = analyze_local([{"watts": None}], meta, ftp=200, weight=70)
         self.assertFalse(any("start_time_utc" in w for w in result["data_warnings"]))
+
+
+class TestSmartRecordingWarning(unittest.TestCase):
+    def test_sparse_records_vs_moving_time_warns(self):
+        """Q3 P2: Garmin smart recording yields far fewer than 1 sample/sec;
+        the 1Hz assumption then breaks NP/TSS/zones silently — must warn."""
+        records = [{"watts": 150}] * 100
+        meta = {"name": "ride", "moving_time_s": 600, "device_watts": True}
+        result = analyze_local(records, meta, ftp=200, weight=70)
+        self.assertTrue(any("non_1hz" in w for w in result["data_warnings"]),
+                        f"expected non_1hz warning, got {result['data_warnings']}")
+
+    def test_near_1hz_no_warning(self):
+        records = [{"watts": 150}] * 590
+        meta = {"name": "ride", "moving_time_s": 600, "device_watts": True}
+        result = analyze_local(records, meta, ftp=200, weight=70)
+        self.assertFalse(any("non_1hz" in w for w in result["data_warnings"]))
 
 
 class TestImportFitparse(unittest.TestCase):

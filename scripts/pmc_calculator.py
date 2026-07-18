@@ -358,6 +358,15 @@ def main():
                 planned = json.loads(args.planned_tss)
             except json.JSONDecodeError as e:
                 p.error(f"--planned-tss must be valid JSON: {e}")
+            # json.loads accepts arrays and quoted numbers ('{"Tue":"65"}') that
+            # crash weekly_update later with a raw TypeError — reject them here.
+            if not isinstance(planned, dict):
+                p.error('--planned-tss must be a JSON object mapping day -> TSS, '
+                        'e.g. \'{"Tue":65,"Thu":70}\'')
+            bad = {k: v for k, v in planned.items()
+                   if isinstance(v, bool) or not isinstance(v, (int, float))}
+            if bad:
+                p.error(f"--planned-tss values must be numbers (got: {bad})")
 
         prev_peaks = None
         if args.prev_peaks:

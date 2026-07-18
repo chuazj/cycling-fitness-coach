@@ -672,8 +672,15 @@ def main():
         print(f"ERROR: Invalid JSON in {args.json}: {e}", file=sys.stderr)
         sys.exit(1)
 
-    workout = workout_from_dict(data)
-    xml_content = create_zwo_xml(workout)
+    try:
+        workout = workout_from_dict(data)
+        xml_content = create_zwo_xml(workout)
+    except ValueError as e:
+        # workout_from_dict crafts user-facing messages ("Unknown interval
+        # type: ... Valid fields: ...") — surface them cleanly like the batch
+        # path does, not as a traceback.
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
 
     try:
         with open(args.output, "w", encoding="utf-8") as f:

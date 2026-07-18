@@ -7,19 +7,25 @@ with the production parsers (no schema drift).
 Run: python -m unittest tests.test_cli -v
 """
 
+import json
 import os
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 
 # Add scripts/ to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
 from intervals_icu_api import build_parser as build_intervals_parser
 from generate_zwo import build_parser as build_generate_parser
+from generate_zwo import main as generate_zwo_main
 from batch_generate_zwo import build_parser as build_batch_parser
 from pmc_calculator import build_parser as build_pmc_parser
+from pmc_calculator import main as pmc_main
 from zwo_lint import build_parser as build_zwo_lint_parser
 from fit_ingest import build_parser as build_fit_ingest_parser
+import intervals_icu.cli as icu_cli
 
 
 class TestIntervalsIcuApiCli(unittest.TestCase):
@@ -71,6 +77,33 @@ class TestIntervalsIcuApiCli(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self._parse(["--activity", "i123", "--latest"])
 
+    def test_list_recent_zero_rejected(self):
+        # Q3 P2: --list-recent 0 was a silent no-op (0 is falsy, every dispatch
+        # elif missed, exit 0 with no output) — reject at parse time.
+        with self.assertRaises(SystemExit):
+            self._parse(["--list-recent", "0"])
+
+    def test_wellness_mode_skips_ftp_prompt_when_profile_fails(self):
+        """Q3 P2: --wellness never reads FTP/weight — a failed profile fetch
+        must not hard-error (CI) or prompt (TTY) for them."""
+        import contextlib
+        import io
+        from unittest.mock import MagicMock
+        argv = ["prog", "--wellness", "7", "--use-athlete-profile",
+                "--athlete-id", "x", "--api-key", "y"]
+        fake_stdin = MagicMock()
+        fake_stdin.isatty.return_value = False
+        with patch.object(sys, "argv", argv), \
+             patch.object(sys, "stdin", fake_stdin), \
+             patch.object(icu_cli.IntervalsIcuClient, "get_athlete",
+                          side_effect=Exception("boom")), \
+             patch.object(icu_cli, "wellness_summary",
+                          return_value={"ok": True}) as ws, \
+             contextlib.redirect_stdout(io.StringIO()), \
+             contextlib.redirect_stderr(io.StringIO()):
+            icu_cli.main()  # must complete without SystemExit
+        ws.assert_called_once()
+
     def test_use_athlete_profile_flag(self):
         ns = self._parse(["--activity", "i999", "--use-athlete-profile"])
         self.assertTrue(ns.use_athlete_profile)
@@ -95,6 +128,20 @@ class TestGenerateZwoCli(unittest.TestCase):
     def test_custom_ftp(self):
         ns = self._parse(["--json", "w.json", "-o", "w.zwo", "--ftp", "192"])
         self.assertEqual(ns.ftp, 192)
+
+    def test_invalid_interval_type_exits_cleanly(self):
+        """Q3 P2: workout_from_dict's crafted ValueError must surface as a
+        clean ERROR + exit 1, not a raw traceback (batch path already does)."""
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, "w.json")
+            with open(src, "w", encoding="utf-8") as f:
+                json.dump({"name": "X", "workout": [
+                    {"type": "steady", "duration": 300, "power": 0.8}]}, f)
+            argv = ["prog", "--json", src, "--output", os.path.join(d, "o.zwo")]
+            with patch.object(sys, "argv", argv):
+                with self.assertRaises(SystemExit) as cm:
+                    generate_zwo_main()
+            self.assertEqual(cm.exception.code, 1)
 
     def test_missing_required_fails(self):
         with self.assertRaises(SystemExit):
@@ -144,6 +191,26 @@ class TestPmcCalculatorCli(unittest.TestCase):
     def test_mutually_exclusive_modes(self):
         with self.assertRaises(SystemExit):
             self._parse(["--bootstrap", "--weekly-update"])
+
+    def test_planned_tss_non_numeric_values_rejected(self):
+        """Q3 P2: '{"Tue":"65"}' passed json.loads but crashed weekly_update
+        with a raw TypeError — reject with a clean parser error instead."""
+        argv = ["prog", "--weekly-update", "--week", "1",
+                "--plan-start", "2026-07-14", "--prev-ctl", "50",
+                "--prev-atl", "50", "--planned-tss", '{"Tue":"65"}']
+        with patch.object(sys, "argv", argv):
+            with self.assertRaises(SystemExit) as cm:
+                pmc_main()
+        self.assertEqual(cm.exception.code, 2)  # argparse p.error convention
+
+    def test_planned_tss_array_rejected(self):
+        argv = ["prog", "--weekly-update", "--week", "1",
+                "--plan-start", "2026-07-14", "--prev-ctl", "50",
+                "--prev-atl", "50", "--planned-tss", '[65, 70]']
+        with patch.object(sys, "argv", argv):
+            with self.assertRaises(SystemExit) as cm:
+                pmc_main()
+        self.assertEqual(cm.exception.code, 2)
 
     def test_prev_peaks_arg(self):
         ns = self._parse(["--weekly-update", "--prev-peaks", '{"5s":450}'])

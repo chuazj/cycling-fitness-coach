@@ -122,12 +122,15 @@ def batch_generate(workouts_data, output_dir, ftp, dry_run=False):
             errors.append({"index": idx, "error": "missing required 'filename' field"})
             continue
 
-        # Reject path traversal / absolute paths — filename must be a bare basename
-        if (os.sep in filename or "/" in filename
+        # Reject path traversal / absolute paths — filename must be a bare
+        # basename. ':' catches Windows drive-relative paths ("D:evil.zwo",
+        # which os.path.isabs misses and os.path.join silently re-roots) and
+        # NTFS alternate data streams ("w1.zwo:x").
+        if (os.sep in filename or "/" in filename or ":" in filename
                 or filename.startswith("..") or os.path.isabs(filename)):
             errors.append({
                 "index": idx, "filename": filename,
-                "error": "filename must be a bare filename (no path separators or '..')",
+                "error": "filename must be a bare filename (no path separators, ':' or '..')",
             })
             continue
 

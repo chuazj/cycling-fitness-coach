@@ -205,12 +205,12 @@ def _flag_rhr(latest, baseline, sizes):
             flags.append({"signal": "RHR", "severity": "red",
                           "value": latest["resting_hr"], "baseline": baseline["resting_hr_avg"],
                           "delta_bpm": delta,
-                          "rule": "RHR elevated >10 bpm above baseline (red flag)"})
+                          "rule": "RHR elevated ≥10 bpm above baseline (red flag)"})
         elif delta >= 5:
             flags.append({"signal": "RHR", "severity": "yellow",
                           "value": latest["resting_hr"], "baseline": baseline["resting_hr_avg"],
                           "delta_bpm": delta,
-                          "rule": "RHR elevated >5 bpm above baseline (yellow flag)"})
+                          "rule": "RHR elevated ≥5 bpm above baseline (yellow flag)"})
     return flags
 
 

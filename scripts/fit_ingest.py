@@ -121,10 +121,17 @@ def _extract(fitfile, name):
         })
     laps = []
     for idx, m in enumerate(fitfile.get_messages("lap")):
+        # FIT lap 'intensity' is an enum (active/rest/warmup/cooldown), not
+        # the numeric IF the intervals.icu path carries. Map it onto the typed
+        # lap path (interval_stats' accurate branch) and emit intensity=None
+        # so the field stays numeric-or-None across sources.
+        fit_intensity = m.get_value("intensity")
+        lap_type = {"active": "WORK", "rest": "RECOVERY"}.get(
+            str(fit_intensity).lower() if fit_intensity is not None else "", "")
         laps.append({
             "name": f"Lap {idx + 1}",
             "lap_index": idx,
-            "type": "",  # .fit laps carry no WORK/RECOVERY tag → heuristic path
+            "type": lap_type,
             "elapsed_time": m.get_value("total_elapsed_time") or 0,
             "moving_time": (m.get_value("total_timer_time")
                             or m.get_value("total_elapsed_time") or 0),
@@ -135,7 +142,7 @@ def _extract(fitfile, name):
             "max_heartrate": m.get_value("max_heart_rate"),
             "average_cadence": m.get_value("avg_cadence"),
             "max_watts": m.get_value("max_power"),
-            "intensity": m.get_value("intensity"),
+            "intensity": None,
         })
     session = next(iter(fitfile.get_messages("session")), None)
     activity_msg = next(iter(fitfile.get_messages("activity")), None)
@@ -230,6 +237,12 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
         data_warnings.append(
             "start_time_utc: no local_timestamp in .fit — start_date_local is "
             "UTC; the ride date may be one day early for morning rides")
+    mt = metadata.get("moving_time_s")
+    if mt and records and len(records) < 0.8 * mt:
+        data_warnings.append(
+            f"non_1hz_recording: {len(records)} samples for {mt}s moving time — "
+            f"smart-recording .fit; stream-derived NP/TSS/zones/peaks assume 1Hz "
+            f"and are unreliable here")
 
     # I-2: data_completeness mirrors analyze()'s semantics — it means "did the API
     # fetches succeed", NOT "is the data high quality". A local .fit has no API

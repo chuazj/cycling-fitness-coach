@@ -906,6 +906,16 @@ class TestBatchGenerate(unittest.TestCase):
             self.assertEqual(result["workouts_failed"], 1)
             self.assertIn("filename", result["errors"][0]["error"])
 
+    def test_drive_relative_and_stream_filenames_rejected(self):
+        """Q3 P2: Windows drive-relative (D:evil.zwo) and NTFS alternate-data-
+        stream (w1.zwo:x) filenames escape the output dir — reject like any
+        other path-bearing filename."""
+        workouts = [self._make_workout("D:evil.zwo"), self._make_workout("w1.zwo:x")]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = batch_generate(workouts, tmpdir, ftp=200, dry_run=True)
+            self.assertEqual(result["workouts_generated"], 0)
+            self.assertEqual(result["workouts_failed"], 2)
+
     def test_dry_run(self):
         workouts = [self._make_workout("test.zwo")]
         with tempfile.TemporaryDirectory() as tmpdir:
