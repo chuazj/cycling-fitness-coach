@@ -37,6 +37,8 @@ Use for A-priority events or when CTL > 50.
 
 Use for B-priority events, shorter races, or when CTL < 50.
 
+> **Selection tiebreak (priority wins over CTL):** A-priority with CTL < 50 still gets the 2-week structure — the lighter base just means smaller absolute reductions; B-priority with CTL > 50 stays on the 1-week mini-taper (a 2-week taper costs more training than a B race is worth). **Event < 7 days away:** skip straight to the final-week structure of the matching protocol — cut volume immediately (~40-50%), keep 2-3 short openers, add no new intensity.
+
 | Week | Volume vs. Build | Intensity | Key Sessions |
 |------|-----------------|-----------|--------------|
 | Race -1 | -40% volume | 1 opener session mid-week | 1× openers (3×2min @ 105%) + easy rides |

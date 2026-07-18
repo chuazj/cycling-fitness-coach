@@ -140,8 +140,8 @@ These are gaps identified in the 2026-05-26 refactor proposal and committed to a
 | Mujika not cited in `references/race_taper.md` | 2026-Q3 | Add inline cite at the taper-structure paragraph anchoring to `bibliography.md#mujika-inigo`. Verify Mujika & Padilla (2003) volume/pages. |
 | San Millán not cited in `references/training_zones.md` (Z2 / mitochondrial framing) | 2026-Q3 | Add inline cite at the Z2 paragraph with **POPULAR-MEDIA** evidence tier flag; anchor underlying mechanism to Brooks (1986, lactate shuttle). |
 | Allen-Coggan not anchored in `references/training_zones.md` or `references/plan_state_schema.md` | 2026-Q3 | Add footer cite to each; verify against 3rd edition (2019), update bibliography if the 2nd→3rd transition changed the cited framework. |
-| Methodology citation-currency preambles on 6 docs (C4) | 2026-Q3 if not shipped sooner | Per-doc preamble line; copy `block_templates.md` pattern. |
-| Sub-prompt contract headers on 4 docs (C3) | 2026-Q3 if not shipped sooner | Inputs / Outputs / Invocation contract headers, additive only. |
+| ~~Methodology citation-currency preambles on 6 docs (C4)~~ | ~~2026-Q3~~ | **Shipped 2026-05-26**: preambles on all 6 methodology reference docs. |
+| ~~Sub-prompt contract headers on 4 docs (C3)~~ | ~~2026-Q3~~ | **Shipped 2026-05-26**: contract headers present on 4 reference docs (verified 2026-07-18). |
 | ~~Workflow checkpoint consistency (C5)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**: validation-gate tables added to `analyze.md`, `advise.md`, `generate.md`. |
 | ~~Section anchors for large refs (C6)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**: "Stable section anchors" inventory added to `block_templates.md` and `workout_analysis.md`; §N-style cross-refs in `plan.md` rewritten to named-item pointers. |
 | ~~Output artifact index `governance/artifacts.md` (C7)~~ | ~~2026-Q4~~ | **Shipped 2026-05-26**. Now required reading for Scope 4 (output contract audit). |

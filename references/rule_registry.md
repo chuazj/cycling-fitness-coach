@@ -76,6 +76,7 @@ Standing rules added after the W4 audit and wired into a workflow in the same ch
 | Signal-mode readiness contract | `references/cli_reference.md` → Readiness Check → Signal-mode contract (canonical); `references/training_zones.md` → Non-WHOOP degradation | coach-internal | Non-WHOOP wellness data present (no `readiness` field) | `workflows/advise.md` (Mid-Week Check-In references the contract) + `readiness.py` verdict | wired |
 | `.fit` ingest fallback | `references/intervals_icu_api.md` → Dependency Note; `workflows/analyze.md` → Fallback — activity not on intervals.icu | coach-internal | Activity not on intervals.icu | `workflows/analyze.md` → fallback path | wired |
 | Implausible FTP-jump guardrail | `references/block_templates.md` → Mid-Plan FTP Update | coach-internal | Detected/estimated single-step FTP increase >~8% | `analyze.md` Step 6 (FTP change confirmation) + `plan.md` Step 5b (Mid-Plan FTP Change) | wired |
+| Keystone-session protection | `references/adaptation_rules.md` → protection override 5 | coach-internal | Cascade downgrade lands on a schedule row tagged `[KEYSTONE]`; downgrade only on red, yellow preserves it | Producer: `plan.md` Step 5 (tag one session/week) + `plan_state_schema.md` Session column; consumer: `adaptation_rules.md` override table | wired |
 | eFTP / set-FTP divergence retest | `references/weekly_adaptation.md` → Performance Indicators; `references/block_templates.md` → Critical Power (CP) / eFTP | coach-internal | Weekly review; intervals.icu eFTP >~5% above set FTP for 2+ weeks | `plan.md` Weekly Review Step 4 Checks applied | wired |
 
 ---
@@ -85,3 +86,4 @@ Standing rules added after the W4 audit and wired into a workflow in the same ch
 *W7 (2026-05-22) registered the signal-mode readiness contract and the `.fit` ingest fallback.*
 *2026-05-30 comprehensive review (P1-2) registered the implausible FTP-jump guardrail and realigned the 20-min-peak retest trigger to retest-only.*
 *2026-05-30 comprehensive review (P2-2) registered the eFTP/set-FTP divergence retest trigger.*
+*2026-07-18 Q3 audit (P2 batch) registered keystone-session protection and wired its producer (`plan.md` Step 5 tagging instruction) — the override existed since W-era but had no producer.*

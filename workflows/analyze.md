@@ -52,7 +52,7 @@ The script outputs JSON with:
 - **Takeaway:** [one-sentence headline — the single most important thing about this ride]
 
 ## Workout Analysis: [Name] - [Date]
-### Execution Rating: [pass/warn/fail]
+### Execution Score: [1-5] (`references/workout_analysis.md` → Session Rating Framework)
 ### Interval Review
 [Lap-by-lap target vs actual, consistency]
 ### Key Takeaways
@@ -249,7 +249,7 @@ When user asks "weekly summary", "how was my week", or "training summary":
 
 **Step 1:** Run weekly summary:
 ```bash
-python scripts/intervals_icu_api.py --weekly-summary -o output.json
+python scripts/intervals_icu_api.py --weekly-summary -o summary.json
 ```
 
 **Step 2:** Present aggregated view:

@@ -50,6 +50,7 @@ python scripts/generate_zwo.py --json workout_def.json --output workout.zwo --ft
 # Validate a .zwo against the canonical element reference + project hygiene rules.
 # Exit 0 = clean or warnings only, 1 = errors, 2 = unreadable file. Reports NP-based modeled stats.
 python scripts/zwo_lint.py workout.zwo --ftp 200
+# Add -o report.json to also write the findings/stats as JSON
 ```
 
 ## PMC Calculator (Performance Management Chart)
@@ -62,6 +63,9 @@ python scripts/pmc_calculator.py --weekly-update \
   --week 1 --plan-start 2026-03-31 \
   --prev-ctl 30.7 --prev-atl 31.6 \
   --planned-tss '{"Mon":72,"Wed":75,"Fri":68,"Sat":68,"Sun":55}'
+# Optional: carry the running peak-power table forward so the weekly output
+# can report new peaks vs plan-to-date bests
+#   --prev-peaks '{"5s":480,"1min":310,"5min":240,"20min":195}'
 ```
 
 ## Batch Zwift Workout Generation
@@ -72,12 +76,13 @@ python scripts/pmc_calculator.py --weekly-update \
 #   Windows:       %LOCALAPPDATA%\Zwift\Workouts\<athlete_id>\
 #   macOS/Linux:   ~/Documents/Zwift/Workouts/<athlete_id>/
 python scripts/batch_generate_zwo.py --input week_workouts.json --output-dir "<ZWIFT_WORKOUTS_DIR>/week1/" --ftp 200
+# --dry-run validates + computes stats without writing files; -o summary.json saves the batch report
 ```
 
 ## Weekly Training Summary
 ```bash
 # Aggregate last 7 days: total TSS, zone distribution, power profile, auto-FTP detection
-python scripts/intervals_icu_api.py --weekly-summary -o output.json
+python scripts/intervals_icu_api.py --weekly-summary -o summary.json
 ```
 
 ## Wellness / Readiness Summary
@@ -126,15 +131,20 @@ Pure-Python ASCII sparkline (no matplotlib). Used by the Weekly Review workflow 
 # Scan Obsidian workout reviews and detect rising-RPE-at-constant-IF (overreaching signal)
 python scripts/rpe_trend.py --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-coach/workout-reviews" --weeks 2 -o rpe_trend.json
 ```
+Reads YAML frontmatter from each `.md`, extracts `(date, session_type, if, rpe)`, compares last `--weeks` weeks to the prior `--weeks` weeks per session type. Flags `rising_rpe_at_constant_if` when ΔRPE ≥ 1.0 with ΔIF within ±0.03. Used by the Weekly Review workflow. Returns `error` field if no usable reviews found (silent skip in workflow).
 
 ## Prediction Tracker (W5 validation loop)
 ```bash
 # Seed the athlete forecasting model from existing Obsidian reviews (one-time)
 python scripts/prediction_tracker.py --mode seed-baseline --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-coach/workout-reviews"
-# Log a forecast (per hard session / per block)
+# Log a per-session forecast (rpe_at_if) — --session-date is required (YYYY-MM-DD)
 python scripts/prediction_tracker.py --mode predict --type rpe_at_if --if 0.84 --slot morning --session-date 2026-06-02 --session-type Threshold
+# Log a per-block FTP-gain forecast
+python scripts/prediction_tracker.py --mode predict --type ftp_gain --start-ftp 188 --block-label "FTP Builder, 4wk" --block-end 2026-06-28
 # Reconcile open predictions against actuals; emits recalibration flags
 python scripts/prediction_tracker.py --mode reconcile --vault-path "<CYCLING_VAULT_PATH>/cycling-fitness-coach/workout-reviews" -o prediction_report.json
+# FTP-gain reconcile (after a test): only closes forecasts whose block end is within ±14 days of the test date
+python scripts/prediction_tracker.py --mode reconcile --new-ftp 194 --ftp-test-date 2026-06-28
 ```
+`--ledger-path` / `--calibration-path` override the default file locations (used by tests; rarely needed live).
 Ledger (`plans/prediction_ledger.jsonl`) and athlete model (`plans/athlete_calibration.md`) are gitignored PII.
-Reads YAML frontmatter from each `.md`, extracts `(date, session_type, if, rpe)`, compares last `--weeks` weeks to the prior `--weeks` weeks per session type. Flags `rising_rpe_at_constant_if` when ΔRPE ≥ 1.0 with ΔIF within ±0.03. Used by the Weekly Review workflow. Returns `error` field if no usable reviews found (silent skip in workflow).

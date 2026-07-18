@@ -80,7 +80,7 @@ Heat adaptation is a low-cost, high-ROI adaptation that drives plasma volume exp
 | **Hydration target** | 750–1000 mL/h (matches `references/fueling.md` → Indoor/heat) | Higher end if sweat rate >1.5 L/h |
 | **Electrolyte target** | Na⁺ 500–1000 mg/L of fluid | Critical — heat-block dehydration risk is the primary safety concern |
 | **Pre-session** | 250–500 mL fluid 1–2 h before | Start session euhydrated |
-| **Post-session** | Replace fluid losses + electrolytes; 0.8–1.2g/kg carb within 60 min | Standard recovery (see `references/fueling.md`) |
+| **Post-session** | Replace fluid losses + electrolytes; 0.8–1.2g/kg carb within 30 min | Standard recovery (matches `references/fueling.md` → post-ride window) |
 
 ### Heat Block Scheduling Within a Training Plan
 

@@ -36,7 +36,7 @@ Claude follows these IF/THEN rules after each weekly review. Multiple rules may 
 - **THEN** reassess plan difficulty; consider dropping one intensity day
 - **ACTION** reduce next week to 3 sessions; add the 4th only if athlete confirms availability
 
-**IF** 2+ sessions skipped in a week:
+**IF** 2 sessions skipped in a week (3+ skipped → next rule, which forbids compression):
 - **THEN** compress remaining week — do NOT try to "catch up" missed sessions
 - **ACTION** prioritize the most important remaining session; drop or shorten others
 - **EXAMPLES**:

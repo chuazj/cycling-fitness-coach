@@ -57,7 +57,7 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 | Moderate-low (RHR +5 bpm OR poor sleep 1 night OR HRV below 7-day band (single day) OR Recovery 34–49 OR respiration +1/min vs baseline — engine YELLOW-LOW) | Modify down; ceiling = Sweet Spot 88–94% FTP | SS → proceed; threshold → SS; VO2max → SS or Z2; cut duration 20% |
 | High (RHR ≥+10 bpm OR poor sleep 2+ nights, OR HRV below 7-day band 2 consecutive days, OR Recovery <34, OR respiration +2/min vs baseline, OR SpO2 <90%, OR TSB <−30, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
 | Severe ((RHR +10 bpm AND illness symptoms) OR (Recovery <34 with red signals across HRV/RHR/respiration)) | Full rest | No bike. Reassess next day. |
-| Sick (above-neck only) | Rest 1–2 days then Z1–Z2 only | Per `references/weekly_adaptation.md` → Illness/Injury rules |
+| Sick (above-neck only) | Z1–Z2 only, ~50% volume, 3–5 days; resume structure when symptoms resolve | Per `references/weekly_adaptation.md` → Illness/Injury rules (Severity 1) |
 | Sick (below-neck or systemic) | Full rest until 48h symptom-free | Per `references/weekly_adaptation.md` → Illness/Injury rules |
 
 > **TSB persistence rules live in `references/weekly_adaptation.md`** (TSB <−30 → insert recovery day; <−40 → replace hard sessions with Z1–Z2 until TSB >−25). The High-row `TSB <−30` cell is the same rule's same-day rendering — an active-recovery spin, not forced full rest.
@@ -183,7 +183,7 @@ python scripts/pmc_calculator.py --bootstrap --days 90
 
 **Step 4:** Calculate taper timing:
 - Determine current TSB and target TSB (+5 to +15, per `references/race_taper.md`)
-- Select protocol: 2-week taper (A-priority, CTL >50) or 1-week mini-taper (B-priority, CTL <50)
+- Select protocol per `references/race_taper.md`: 2-week (A-priority) or 1-week mini-taper (B-priority); priority wins over CTL on conflicts; event <7 days → final-week structure only
 - Project TSB forward to confirm the taper duration achieves target freshness
 
 **Step 5:** Present taper plan:

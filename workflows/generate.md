@@ -17,9 +17,8 @@ When user requests a workout file ("build a workout", "create a ZWO", workout ge
 - Specific targets if any (e.g., "3x10min at 95%")
 
 **Step 2:** Design the workout structure:
-- **Warm-up**: 10-15 min progressive ramp (45-50% → 75% FTP), include 1-2min opener at FTP for threshold+ sessions
+- **Warm-up / Cool-down**: use the canonical structures in `references/block_templates.md` → Warmup and Cooldown Standards (Standard Warmup 10min: 40→65% ramp, 2min @75%, 75→95% ramp, 1min @50%; Standard Cooldown 5min: 55→35% ramp). Add a 1-2min opener at FTP for threshold+ sessions
 - **Main set**: Intervals matched to workout type and athlete's current block progression
-- **Cool-down**: 5-10 min ramp down (60% → 35% FTP)
 - **FTP test sessions**: the test effort itself MUST be a `<FreeRide>` segment with `show_avg="1"` — never `<SteadyState>`. In ERG mode a SteadyState block holds the rider at the *current* FTP, so there is nothing to test; FreeRide hands power control back to the rider. Set `ftptest="1"` on the `<workout>` element. See `references/zwo_format.md` → FTP Test Attribute.
 - Reference `references/training_zones.md` for zone boundaries and cadence targets
 - Reference `references/block_templates.md` for progression context if part of a training block

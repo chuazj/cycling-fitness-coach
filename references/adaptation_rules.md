@@ -112,7 +112,7 @@ Drift is interpreted alongside ambient conditions (heat/hydration) — a yellow 
 These override the cascade matrix — apply them first.
 
 1. **Rest day next** — never override a planned REST with work, regardless of upside signals.
-2. **FTP test within next 3 days** — protect the test. Any cascade downgrade lands on the session **before** the test, not the test itself. Never demote the test.
+2. **FTP test within next 3 days** — protect the test. Any cascade downgrade lands on the session **before** the test, not the test itself. Never demote the test. If the analyzed session *is* the last one before the test, there is no session left to downgrade — carry the signal to test day instead: proceed on green/yellow, and on a RED readiness verdict reschedule the test ±2 days rather than testing fatigued (`references/workout_analysis.md` → retest guidance).
 3. **Taper week** (Block W4 or any explicit taper phase) — only protective cascades allowed (downgrade). Never add load.
 4. **Illness already declared** (Severity 1 or 2 noted in `plans/active_plan.md` → Adaptation Log within the last 14 days) — skip this cascade entirely; `weekly_adaptation.md` → Illness/Injury rules apply.
 5. **Keystone session next** (schedule row flagged `KEYSTONE` in the `Session` or `Key Interval` column) — downgrade only on **red**. Yellow preserves the keystone; add readiness check instead.

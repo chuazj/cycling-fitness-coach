@@ -62,7 +62,7 @@ Header format: `## Current Week Schedule (Week {N}: {Mon date}-{Sun date})`
 | Column | Type | Valid Values | Description |
 |--------|------|-------------|-------------|
 | Day | string | Either `Tue`/`Thu`/`Sat`/`Flex` (day-of-week shorthand for fixed-schedule plans) OR `D1 (DD Mmm)`/`D2 (DD Mmm)`/... (date-anchored — preferred when training days shift week-to-week or to make the actual calendar date unambiguous) | Training day |
-| Session | string | e.g., `Sweet Spot`, `Threshold`, `VO2max`, `Endurance`, `FTP Test` | Session type |
+| Session | string | e.g., `Sweet Spot`, `Threshold`, `VO2max`, `Endurance`, `FTP Test`; append ` [KEYSTONE]` to the week's single most important session (arms `references/adaptation_rules.md` override 5) | Session type |
 | Duration | string | e.g., `60min`, `90min` | Planned duration |
 | Key Interval | string | e.g., `2×20min @ 88-94%` | Main interval description |
 | Target TSS | int | Planned session TSS |
@@ -94,13 +94,12 @@ Current PMC values. **Overwritten** with latest values during weekly review.
 | ACWR | float, 2 decimals | Acute:Chronic Workload Ratio (ATL ÷ CTL); null if CTL = 0 |
 | Status | string | Interpretation: see status rules below |
 
-**Status rules (TSB):**
-- TSB > 10: `Fresh — ready for hard efforts`
-- TSB 0 to 10: `Good form — normal training`
-- TSB -10 to 0: `Normal training range`
-- TSB -20 to -10: `Building fatigue — monitor recovery`
-- TSB -30 to -20: `High fatigue — consider extra recovery`
-- TSB < -30: `WARNING: Very high fatigue — recovery needed`
+**Status rules (TSB — bands match `readiness.py` / `readiness_template.md`):**
+- TSB ≥ +5: `Fresh — ready for hard efforts`
+- TSB -10 to +5: `Neutral — normal training range`
+- TSB -20 to -10: `Productive — building fitness, monitor recovery`
+- TSB -30 to -20: `Productive/high fatigue — consider extra recovery`
+- TSB < -30: `WARNING: Overreached — recovery needed (weekly_adaptation.md TSB rules)`
 
 **ACWR zone rules:**
 - ACWR 0.8-1.3: `Safe zone — normal training`

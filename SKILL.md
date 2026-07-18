@@ -67,6 +67,10 @@ Read the workflow file for the matched trigger before proceeding. Each file cont
 | "race prep", "peak for event", "taper for race", "I have a race on DATE" | Race Peaking | `workflows/advise.md` |
 | "build a workout", "create a ZWO", workout generation request | ZWO Generation | `workflows/generate.md` |
 | RPE discussion, power/HR conversation | Training Advice | `workflows/advise.md` |
+| Fueling / carbs / hydration / race-nutrition question | Training Advice | `workflows/advise.md` (+ `references/fueling.md`) |
+| Readiness / Whoop / HRV / recovery-score question, "should I train today" | Training Advice | `workflows/advise.md` |
+| Menstrual-cycle / period training question | Training Advice | `workflows/advise.md` (+ `references/menstrual_cycle_training.md`) |
+| .fit file upload (ride never synced to intervals.icu) | Activity Analysis | `workflows/analyze.md` (fit_ingest fallback) |
 
 > **Weekly disambiguation:** "how was my week" and "how did I do this week" are interchangeable in normal speech. If `plans/active_plan.md` exists, prefer **Weekly Review** (it runs the adaptation trees, wellness pull, and plan-state update that Weekly Summary skips); use Weekly Summary only when there is no active plan or the athlete explicitly wants stats-only.
 

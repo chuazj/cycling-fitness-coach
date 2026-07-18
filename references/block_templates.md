@@ -471,7 +471,7 @@ These adjust the block volume/intensity once the block type is picked.
 3. **CTL level**:
    - CTL < 30: start conservative (reduce baseline TSS by 10%)
    - CTL 30-60: normal progression
-   - CTL > 60: can handle aggressive progression (+5% additional)
+   - CTL > 60: can handle aggressive progression (+5% additional, still capped by the +10%/week ceiling above — never stack past it)
 4. **TSB at plan start**:
    - TSB < -20: add recovery week before starting build
    - TSB -20 to +10: normal start

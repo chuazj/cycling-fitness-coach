@@ -64,6 +64,7 @@ If zone confidence is not `validated`, insert a field test session into Week 1 (
 - Assign sessions to each training day following TSS distribution rules
 - Select interval progressions appropriate for athlete's level
 - Calculate per-session target TSS
+- Tag the week's single most important session by appending `[KEYSTONE]` to its `Session` cell — this arms adaptation override 5 (`references/adaptation_rules.md`: a keystone is downgraded only on red; yellow preserves it). Repeat when writing each new week's schedule in Weekly Review
 
 **Checks applied — block design** (registry: `references/rule_registry.md`):
 
@@ -149,9 +150,9 @@ python scripts/intervals_icu_api.py --activity {id} --use-athlete-profile -o out
 
 **Step 3b (recommended):** Pull wellness/readiness summary for the review week:
 ```bash
-python scripts/intervals_icu_api.py --wellness 14 -o wellness.json
+python scripts/intervals_icu_api.py --wellness 21 -o wellness.json
 ```
-Use the 14-day window so the latest 7 training days have a 7-day baseline. Output includes `baseline_maturity` (insufficient/preliminary/consolidating/stable), per-metric `baseline_sample_sizes`, `recovery_slope_3day`, `subjective_stale_warning`, and `training_load` (CTL/ATL/TSB). Deviation flags (RHR/HRV/respiration) auto-suppress when sample size <7 — `baseline_note` explains when this applies. Skip if athlete doesn't log wellness (script returns `error` field — note in review output and proceed without).
+Use the 21-day window: the latest 7 training days keep a full baseline AND the 14-day CV-trend split-window retains slack — at exactly 14 days a single missed WHOOP night silently disables the CV-trend flag this review exists to read. Output includes `baseline_maturity` (insufficient/preliminary/consolidating/stable), per-metric `baseline_sample_sizes`, `recovery_slope_3day`, `subjective_stale_warning`, and `training_load` (CTL/ATL/TSB). Deviation flags (RHR/HRV/respiration) auto-suppress when sample size <7 — `baseline_note` explains when this applies. Skip if athlete doesn't log wellness (script returns `error` field — note in review output and proceed without).
 
 **Step 3c (recommended):** Aggregate RPE trends from Obsidian workout reviews:
 ```bash

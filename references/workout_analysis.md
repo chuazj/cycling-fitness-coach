@@ -74,7 +74,7 @@ For zone boundaries, see `references/training_zones.md` → Power Zones.
 |--------|-------------------|------------|
 | Average Power | Overall intensity | Context-dependent |
 | Normalized Power (NP) | Physiological cost accounting for variability | Higher = harder workout |
-| Intensity Factor (IF) | NP ÷ FTP | 0.60-0.75 endurance, 0.85-0.95 threshold |
+| Intensity Factor (IF) | NP ÷ FTP | 0.60-0.75 endurance, 0.88-0.95 threshold |
 | Variability Index (VI) | NP ÷ Avg Power | <1.05 steady, >1.10 variable |
 | Training Stress Score (TSS) | Training load | See ranges by type below |
 
@@ -249,7 +249,7 @@ For FTP estimation formulas and individual variation ranges, see `references/tra
 ### Endurance Ride Analysis
 
 1. **Zone Distribution**
-   - Time in Z2: >80% for pure endurance
+   - Time in Z2: >80% ideal for pure endurance (the per-activity cascade passes at ≥60% — `references/adaptation_rules.md` expected-IF table)
    - Avoid Z3 "gray zone" drift
    - Short Z4+ spikes acceptable
 
@@ -270,23 +270,23 @@ For FTP estimation formulas and individual variation ranges, see `references/tra
 - **Pacing**: Even or slight negative split preferred; >5% fade = started too hard or under-fueled
 - **Cadence**: 85-95 rpm steady
 - **Failure mode**: HR fails to plateau (keeps climbing) = intensity too high or fatigue; power sags in final third = fueling issue
-- **Expected IF**: 0.80-0.88 | **Expected TSS/hr**: ~60-75
+- **Expected IF**: 0.82-0.88 | **Expected TSS/hr**: ~60-75
 
-#### Threshold Sessions (90-105% FTP)
+#### Threshold Sessions (91-105% FTP)
 - **Power**: Even pacing critical; <3% variation across intervals
 - **HR**: Should reach Z4 (95-105% LTHR) by mid-interval and hold; failure to reach = under-target; exceeding early = over-target
 - **Pacing**: Negative splits ideal; positive split >3% = started too aggressively
 - **Cadence**: 90-100 rpm
 - **Failure mode**: Power drops >5% in final interval = reduce interval count or duration next session; HR at ceiling with power declining = session too hard for current fitness
-- **Expected IF**: 0.85-0.95 | **Expected TSS/hr**: ~70-90
+- **Expected IF**: 0.88-0.95 | **Expected TSS/hr**: ~70-90
 
-#### VO2max Sessions (105-120% FTP)
+#### VO2max Sessions (106-120% FTP)
 - **Power**: Target range more important than precision; +/-5% acceptable due to high intensity
 - **HR**: Must reach >90% HRmax by end of interval — if not reaching this, intensity is too low or intervals too short
 - **Recovery**: HR should drop to <75% HRmax between intervals; if not recovering, extend rest or reduce interval count
 - **Cadence**: 95-105 rpm (high leg speed reduces peripheral fatigue)
 - **Failure mode**: Unable to reach target power from interval 1 = accumulated fatigue, consider rest day; power OK + normal RPE but HR not reaching >90% HRmax = intervals may be too short (a shortfall repeating across 2+ sessions is deep fatigue instead — `references/weekly_adaptation.md` → HR-response rule)
-- **Expected IF**: 0.85-0.95 | **Expected TSS/hr**: ~70-90
+- **Expected IF**: 0.85-0.92 | **Expected TSS/hr**: ~70-90
 
 #### Over-Under Sessions
 - **Over segments** (105-110% FTP): Brief lactate accumulation; power precision less critical than sustaining effort
@@ -294,7 +294,7 @@ For FTP estimation formulas and individual variation ranges, see `references/tra
 - **Success criteria**: HR drops 5-10 bpm during under segments (shows clearance capacity); HR fails to drop = clearance overwhelmed, reduce over intensity or extend under duration
 - **Pacing**: Smooth transitions critical; avoid spiking above over-target on transitions
 - **Failure mode**: Under-segment HR stays pinned at over-segment levels = athlete has exceeded clearance capacity; stop or convert remaining to steady sweet spot
-- **Expected IF**: 0.82-0.90 | **Expected TSS/hr**: ~65-80
+- **Expected IF**: 0.85-0.92 | **Expected TSS/hr**: ~65-80
 
 ## Common Issues & Coaching Feedback
 
