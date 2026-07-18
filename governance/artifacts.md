@@ -31,7 +31,7 @@ The `plans/` directory is gitignored as a whole (single `!plans/.gitkeep` except
 
 ## Script JSON outputs (skill root, gitignored)
 
-Root-anchored gitignore rules in `.gitignore` exclude these specific filenames. If you add a new script output file, **name it from this list** (or extend `.gitignore`); ad-hoc filenames like `data.json` would be tracked. The root anchor means test fixtures with the same names under `tests/fixtures/` are unaffected.
+Root-anchored gitignore globs in `.gitignore` exclude these filenames plus suffixed variants (e.g. `/wellness*.json` also catches `wellness7.json`). If you add a new script output file, **name it to match one of these globs** (or extend `.gitignore`); ad-hoc filenames like `data.json` would be tracked. The root anchor means test fixtures with the same names under `tests/fixtures/` are unaffected.
 
 | Filename | Path | Emitter (CLI) | Contents | Notes |
 |----------|------|---------------|----------|-------|
@@ -41,6 +41,7 @@ Root-anchored gitignore rules in `.gitignore` exclude these specific filenames. 
 | `rpe_trend.json` | `/rpe_trend.json` | `rpe_trend.py --vault-path <path> -o rpe_trend.json` | Per-session-type RPE deltas at constant IF, anchored on last review date | Documented in `references/cli_reference.md` → RPE Trend |
 | `summary.json` | `/summary.json` | `intervals_icu_api.py --weekly-summary -o summary.json` | 7-day aggregate (volume, TSS, zone distribution, peaks, power profile) | Documented in `references/cli_reference.md` → Weekly Summary |
 | `trend.json` | `/trend.json` | (reserved — used by trend-aggregating script variants) | (varies) | Held in the ignore list so it doesn't accidentally get tracked |
+| `prediction_report.json` | `/prediction_report.json` | `prediction_tracker.py --mode reconcile ... -o prediction_report.json` | Reconciled predictions, RPE/FTP recalibration triggers, open-forecast count | Documented in `references/cli_reference.md` → Prediction Tracker |
 
 ---
 
@@ -94,7 +95,7 @@ For audit Scope 4 (output contract audit), this is the canonical check:
 | Category | Gitignore rule | Source |
 |----------|----------------|--------|
 | Plan state | `plans/*` (with `!plans/.gitkeep` exception) | `.gitignore` |
-| Script JSON outputs | Root-anchored: `/output.json`, `/wellness.json`, `/readiness.json`, `/rpe_trend.json`, `/summary.json`, `/trend.json` | `.gitignore` |
+| Script JSON outputs | Root-anchored globs: `/output*.json`, `/wellness*.json`, `/readiness*.json`, `/rpe_trend*.json`, `/summary*.json`, `/trend*.json`, `/prediction_report*.json` | `.gitignore` |
 | Zwift `.zwo` files | External dir — never inside the repo | n/a |
 | Obsidian notes | External vault — never inside the repo | n/a |
 | Audits (about the skill) | **Tracked** — committed to git | `audits/` directory is intentionally NOT in `.gitignore` |

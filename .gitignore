@@ -41,9 +41,12 @@ plans/*
 
 # Script outputs containing athlete data (HRV, RHR, RPE, FTP, weight, training history)
 # Anchored to repo root so test fixtures with the same name are unaffected.
-/output.json
-/wellness.json
-/readiness.json
-/rpe_trend.json
-/summary.json
-/trend.json
+# Globbed: ad-hoc suffixed variants (wellness7.json, readiness_0604.json) were slipping
+# past exact-name rules and landing untracked in a repo that has a push remote.
+/output*.json
+/wellness*.json
+/readiness*.json
+/rpe_trend*.json
+/summary*.json
+/trend*.json
+/prediction_report*.json
