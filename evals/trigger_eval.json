@@ -90,5 +90,25 @@
   {
     "query": "i'm doing leg day tomorrow and a sweet spot workout the day after, is that ok",
     "should_trigger": true
+  },
+  {
+    "query": "how many carbs per hour should I take in on a 4 hour gravel ride? I keep bonking around the 3 hour mark",
+    "should_trigger": true
+  },
+  {
+    "query": "whoop says my recovery is 38% this morning and I have threshold intervals scheduled -- should I still train today",
+    "should_trigger": true
+  },
+  {
+    "query": "I'm in my luteal phase and my usual sweet spot numbers feel way harder than normal, should I adjust the week",
+    "should_trigger": true
+  },
+  {
+    "query": "my ride never synced to intervals.icu, I've got the .fit file off the head unit -- can you analyze it from that",
+    "should_trigger": true
+  },
+  {
+    "query": "my HRV dropped to 42 from a baseline around 60 -- what does that mean for my training this week",
+    "should_trigger": true
   }
 ]

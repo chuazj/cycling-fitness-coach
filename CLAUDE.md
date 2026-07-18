@@ -110,7 +110,7 @@ evals/
   evals.json                    ← Skill evaluation definitions
   README.md                     ← Eval set authoring notes
   results/                      ← Per-iteration eval result JSON archive (gitignored)
-  trigger_eval.json             ← Workflow trigger matching tests (23 queries: 11 positive, 12 negative)
+  trigger_eval.json             ← Workflow trigger matching tests (28 queries: 16 positive, 12 negative)
 assets/
   template_sweetspot.zwo        ← Example Zwift workout XML
 .env                            ← intervals.icu credentials (not committed)
