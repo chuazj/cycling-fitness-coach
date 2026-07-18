@@ -1,6 +1,6 @@
 # Cycling Training Zones Reference
 
-> **Citation currency** — zone-model citations last verified **2026-05-26**. Re-verify against current literature at every skill audit. Anchor authorities: `governance/bibliography.md#coggan-andrew` (zone definitions Z1–Z7, PMC framework); `governance/bibliography.md#seiler-stephen` and `governance/bibliography.md#stoggl-thomas--sperlich-billy` (polarized distribution rationale). Z2 / mitochondrial framing — `governance/bibliography.md#san-millan-inigo` (**POPULAR-MEDIA** tier; the peer-reviewed mechanism is Brooks' lactate shuttle — see the bibliography entry).
+> **Citation currency** — zone-model citations last verified **2026-07-18**. Re-verify against current literature at every skill audit. Anchor authorities: `governance/bibliography.md#coggan-andrew` (zone definitions Z1–Z7, PMC framework); `governance/bibliography.md#seiler-stephen` and `governance/bibliography.md#stoggl-thomas--sperlich-billy` (polarized distribution rationale). Z2 / mitochondrial framing — `governance/bibliography.md#san-millan-inigo` (**POPULAR-MEDIA** tier; the peer-reviewed mechanism is Brooks' lactate shuttle — see the bibliography entry).
 
 ## Power Zones (FTP-Based)
 
@@ -30,7 +30,7 @@ If Saturday Z2 sessions persistently feel >RPE 4 at 65–70% FTP, your individua
 
 This does not change the prescription default (56–75% FTP) but informs how to read your own signal.
 
-> **Authority** — the Z2 base / mitochondrial-density rationale follows San Millán's training framework (`governance/bibliography.md#san-millan-inigo`). Note its **POPULAR-MEDIA** evidence tier: the peer-reviewed mechanism is Brooks' lactate-shuttle work; treat San Millán as the cycling-specific application authority.
+> **Authority** — the Z2 base / mitochondrial-density rationale follows San Millán's training framework (`governance/bibliography.md#san-millan-inigo`). Note its **POPULAR-MEDIA** evidence tier: San Millán's own peer-reviewed contribution (San Millán & Brooks 2018, *Sports Med* 48(2):467–479) demonstrates that elite endurance athletes clear lactate and oxidise fat at higher absolute intensities than less-fit individuals — it does **not** test a Z2-dose prescription. The underlying mechanism is Brooks' lactate shuttle (Brooks 1986, *Fed Proc* 45:2924–2929). So: treat "Z2 raises mitochondrial density" as a well-motivated practitioner heuristic, and San Millán as the cycling-specific application authority rather than the source of a dose-response trial.
 
 ---
 
@@ -160,3 +160,11 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 4. **Hour of Power**: FTP = 60min avg power (gold standard)
 
 For block templates, progression tables, and common prescriptions: see `references/block_templates.md` → Training Blocks.
+
+---
+
+## Source
+
+The Z1–Z7 power-zone model, the sweet-spot band, and the FTP-anchored prescription convention used throughout this file come from Allen, H., Coggan, A. R., & McGregor, S. (2019). *Training and Racing with a Power Meter* (3rd ed.). VeloPress. → `governance/bibliography.md#allen-hunter-with-coggan`.
+
+The 3rd edition adds newer metrics (FRC, Pmax, mFTP, Power Duration Curve) but leaves the zone boundaries and TSS/NP/IF definitions this skill relies on unchanged from the 2nd edition — no re-anchoring of the zone table was required at the 2026-Q3 audit.

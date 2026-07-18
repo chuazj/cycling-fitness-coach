@@ -243,3 +243,11 @@ Append-only archive consumed by the Weekly Review stimulus-rotation check (`work
 - FTP: {start}W → {end}W ({test | estimate | unchanged})
 - Outcome: {1-2 lines — key adaptations, limiters observed, what to rotate next}
 ```
+
+---
+
+## Source
+
+The PMC fields in this schema (CTL as a 42-day exponentially weighted average, ATL as 7-day, TSB = CTL − ATL) and the CTL/ATL/TSB "fitness / fatigue / form" vocabulary follow Allen, H., Coggan, A. R., & McGregor, S. (2019). *Training and Racing with a Power Meter* (3rd ed.). VeloPress. → `governance/bibliography.md#allen-hunter-with-coggan`. The formulas themselves live in `scripts/pmc_calculator.py` (canonical); this file only documents how the resulting values are stored.
+
+ACWR is **not** from that framework — it comes from the injury-risk literature and carries a live methodological critique. See `references/weekly_adaptation.md` for the Lolli (2019) / Impellizzeri (2020) caveats before treating an ACWR band as authoritative.

@@ -31,15 +31,20 @@ Central index of the sports-science authorities this skill grounds its recommend
 ### Allen, Hunter (with Coggan)
 
 **Primary works:**
-- Allen, H., & Coggan, A. R. (2010, 2nd ed.). *Training and Racing with a Power Meter*. VeloPress. **Needs verification** — the 3rd edition (Allen, Coggan, & McGregor, 2019) is the current edition and supersedes some chapters; re-anchor to 3rd ed. if it materially changes the cited framework.
+- Allen, H., Coggan, A. R., & McGregor, S. (2019, 3rd ed.). *Training and Racing with a Power Meter*. VeloPress. ISBN 978-1-937715-93-9, 384 pp. **Current edition — this skill anchors here.**
+- Allen, H., & Coggan, A. R. (2010, 2nd ed.). *Training and Racing with a Power Meter*. VeloPress. Superseded; retained because older cites in the wild reference it.
+
+**Edition check (2026-Q3):** the 3rd edition adds FRC, Pmax, mFTP, and the Power Duration Curve, plus new masters/triathlete plans. None of that displaces the framework this skill actually uses — Z1–Z7 zone boundaries, TSS/NP/IF definitions, and CTL/ATL/TSB semantics are unchanged from the 2nd edition. **No re-anchoring required**; cites updated to the 3rd edition for accuracy only.
 
 **Grounds in this skill:**
 - The PMC framework as practitioner-accessible methodology: CTL/ATL/TSB language, training-stress philosophy, power-zone training conventions.
 - Coggan-style zone definitions (Z1–Z7 + neuromuscular) used in `references/training_zones.md`.
 
-**Currently cited at:** Framework is pervasive but the book itself is **not anchored** in any reference doc — claim shows up implicitly. Action: add a footer cite to `references/training_zones.md` and `references/plan_state_schema.md`.
+**Currently cited at:**
+- `references/training_zones.md` → Source footer (zone model, sweet-spot band, FTP-anchored prescription).
+- `references/plan_state_schema.md` → Source footer (PMC field semantics; formulas themselves live in `scripts/pmc_calculator.py`).
 
-**Last verified:** *not yet verified against primary source — listed for first inclusion 2026-05-26*
+**Last verified:** **2026-07-18** (ZJ — publisher record confirms 3rd ed., VeloPress, April 2019; edition delta assessed as non-material to cited framework).
 
 ---
 
@@ -69,8 +74,8 @@ Central index of the sports-science authorities this skill grounds its recommend
 
 **Primary works:**
 - Mujika, I. (2009). *Tapering and Peaking for Optimal Performance*. Human Kinetics.
-- Mujika, I., & Padilla, S. (2003). "Scientific bases for precompetition tapering strategies." *Medicine & Science in Sports & Exercise*, 35(7), 1182–1187.
-- Mujika, I. (2010). "Intense training: the key to optimal performance before and during the taper." *Scandinavian Journal of Medicine & Science in Sports*, 20(Suppl 2), 24–31. **Needs verification** of exact volume/pages.
+- Mujika, I., & Padilla, S. (2003). "Scientific bases for precompetition tapering strategies." *Medicine & Science in Sports & Exercise*, 35(7), 1182–1187. Verified 2026-07-18 against the journal record (DOI 10.1249/01.MSS.0000074448.73931.11) — volume, issue, and page range confirmed exactly as cited.
+- Mujika, I. (2010). "Intense training: the key to optimal performance before and during the taper." *Scandinavian Journal of Medicine & Science in Sports*, 20(Suppl 2), 24–31. Verified 2026-07-18 (DOI 10.1111/j.1600-0838.2010.01189.x; PMID 20840559).
 
 **Grounds in this skill:**
 - Race-taper structure (volume reduction with intensity preservation, fast-decay vs slow-decay protocols, optimal 7–21 day window).
@@ -78,10 +83,10 @@ Central index of the sports-science authorities this skill grounds its recommend
 - Used as the methodology backbone of `references/race_taper.md`.
 
 **Currently cited at:**
-- `references/race_taper.md:11` (citation-currency preamble — taper structure, volume-decay with intensity-preservation, "sharpening" principle).
-- `references/race_taper.md:5,23` (race-day TSB target band — conservative +5 to +15 per Mujika & Padilla 2003).
+- `references/race_taper.md` → citation-currency preamble (taper structure, volume-decay with intensity-preservation, "sharpening" principle).
+- `references/race_taper.md` → opening paragraph + `## 2-Week Taper` (race-day TSB target band +5 to +15; taper-shape rationale with the 0.5–6% gain figure and the ~40–60% volume-cut window).
 
-**Last verified:** *not yet verified — listed for first inclusion 2026-05-26*
+**Last verified:** **2026-07-18** (ZJ — both papers confirmed against journal records; the 2003 review's 0.5–6% performance-gain range and 7–21 day window are quoted accurately in `race_taper.md`).
 
 ---
 
@@ -114,20 +119,23 @@ Central index of the sports-science authorities this skill grounds its recommend
 *(Iñigo San Millán — proper diacritical form.)*
 
 **Primary works:**
-- San Millán, I., & Brooks, G. A. (2018). "Assessment of metabolic flexibility by means of measuring blood lactate, fat, and carbohydrate oxidation responses to exercise in professional endurance athletes and less-fit individuals." *Sports Medicine*, 48(2), 467–479.
-- Brooks, G. A. (1986, and subsequent). Lactate shuttle hypothesis — San Millán's Z2 / mitochondrial-function framework derives from Brooks' broader work; San Millán is the practitioner-side popularizer in elite cycling (notably WorldTour-level coaching).
+- San Millán, I., & Brooks, G. A. (2018). "Assessment of metabolic flexibility by means of measuring blood lactate, fat, and carbohydrate oxidation responses to exercise in professional endurance athletes and less-fit individuals." *Sports Medicine*, 48(2), 467–479. Verified 2026-07-18 (DOI 10.1007/s40279-017-0751-x). **Scope caveat:** this is a cross-sectional comparison of professional athletes vs moderately-active vs metabolic-syndrome groups — it establishes that trained athletes oxidise fat and clear lactate at higher absolute intensities, but it does **not** test a Z2 training dose. Do not cite it as evidence for "X hours of Z2 per week".
+- Brooks, G. A. (1986). "Lactate production under fully aerobic conditions: the lactate shuttle during rest and exercise." *Federation Proceedings*, 45(13), 2924–2929. Verified 2026-07-18. The peer-reviewed mechanism underneath San Millán's Z2 framing; San Millán is the practitioner-side popularizer in elite cycling (notably WorldTour-level coaching).
+- Brooks, G. A. (2018). "The science and translation of lactate shuttle theory." *Cell Metabolism*, 27(4), 757–785. Verified 2026-07-18 (DOI 10.1016/j.cmet.2018.03.008; PMID 29617642). Modern consolidation of the 1986 hypothesis — cite this rather than the 1986 original when a current review is wanted.
 
 **Grounds in this skill:**
 - Z2 (low-intensity, lactate-clearance-zone) as the primary aerobic-base stimulus — distinct from "easy spinning" because the upper Z2 boundary is bracketed by lactate threshold 1, not by an arbitrary % FTP.
 - Polarized + base-building rationale in `references/training_zones.md` and `references/block_templates.md` → Endurance Block.
 
 **Currently cited at:**
-- `references/training_zones.md:3` (citation-currency preamble — Z2 / mitochondrial framing, POPULAR-MEDIA tier).
-- `references/training_zones.md` → Zone 2 section (Z2 base / mitochondrial-density rationale, with the Brooks lactate-shuttle mechanism caveat).
+- `references/training_zones.md` → citation-currency preamble (Z2 / mitochondrial framing, POPULAR-MEDIA tier).
+- `references/training_zones.md` → Zone 2 section, Authority blockquote (Z2 base / mitochondrial-density rationale, with the 2018 paper's scope caveat and the Brooks lactate-shuttle mechanism).
 
 **Evidence-level caveat:** A substantial portion of San Millán's coaching framework is disseminated via podcasts (Peter Attia, Rich Roll, others) and interviews rather than primary literature. When citing his Z2 framework for an athlete-facing claim, prefer Brooks (lactate shuttle, peer-reviewed) as the underlying mechanism and treat San Millán as the cycling-specific application authority. This skill is honest about that distinction; the audit protocol surfaces it as a recurring re-verification item.
 
-**Last verified:** *not yet verified — listed for first inclusion 2026-05-26*
+**2026-Q3 note:** the 2018 *Sports Medicine* paper drew published comment (Monferrer-Marín et al., 2022, *Sports Med*, with authors' reply) contesting aspects of the metabolic-flexibility assessment method. This does not touch any claim this skill makes — the skill cites the paper for the trained-vs-untrained lactate/fat-oxidation contrast, not for the disputed assessment protocol. Recorded so the next audit does not re-discover it as new.
+
+**Last verified:** **2026-07-18** (ZJ — 2018 *Sports Med* record confirmed; Brooks 1986 *Fed Proc* and the 2018 *Cell Metabolism* consolidation both confirmed and added).
 
 ---
 
@@ -187,13 +195,13 @@ A single row per authority. The quarterly audit (`governance/audit_protocol.md`)
 
 | Authority | Last verified | Verifier | Next due | Notes |
 |-----------|--------------:|----------|----------|-------|
-| Allen, Hunter (with Coggan) | — | — | 2026-Q3 | First-inclusion 2026-05-26; needs primary-source check (2nd vs 3rd ed.) |
-| Coggan, Andrew | — | — | 2026-Q3 | First-inclusion 2026-05-26; framework is implicit-anchored, no formal cite yet |
-| Mujika, Iñigo | — | — | 2026-Q3 | Cited 2026-05-30 at race_taper.md:11,5,23 (taper structure + conservative TSB band) — was flagged. |
-| Rønnestad, Bent | 2026-05-20 | ZJ | 2026-Q3 | Anchored at 3 sites; OK |
-| San Millán, Iñigo | — | — | 2026-Q3 | Cited 2026-05-30 at training_zones.md (Z2 framing, POPULAR-MEDIA→Brooks) — was flagged. |
-| Seiler, Stephen | 2026-05-20 | ZJ | 2026-Q3 | Anchored at 2 sites; OK |
-| Stöggl, Thomas & Sperlich, Billy | 2026-05-20 | ZJ | 2026-Q3 | Anchored at 2 sites; OK |
+| Allen, Hunter (with Coggan) | 2026-07-18 | ZJ | 2026-Q4 | Re-anchored to 3rd ed. (2019); edition delta assessed non-material. Footer cites now in `training_zones.md` + `plan_state_schema.md`. |
+| Coggan, Andrew | 2026-07-18 | ZJ | 2026-Q4 | Framework cites resolve via the Allen-Coggan 3rd-ed. anchor; TSS/NP/IF definitions unchanged across editions. |
+| Mujika, Iñigo | 2026-07-18 | ZJ | 2026-Q4 | Mujika & Padilla 2003 vol/pages confirmed; 2010 supplement confirmed. Inline cite added at `race_taper.md` → 2-Week Taper. |
+| Rønnestad, Bent | 2026-05-20 | ZJ | 2026-Q4 | Anchored at 3 sites; OK. 2020 VO2max paper still **needs verification** of exact paper(s) — carried to Q4. |
+| San Millán, Iñigo | 2026-07-18 | ZJ | 2026-Q4 | 2018 *Sports Med* confirmed + scope caveat added; Brooks 1986 and 2018 both added and confirmed. |
+| Seiler, Stephen | 2026-05-20 | ZJ | 2026-Q4 | Anchored at 2 sites; OK. Sportscience 2009 co-paper still **needs verification** (online-only, editable) — carried to Q4. |
+| Stöggl, Thomas & Sperlich, Billy | 2026-05-20 | ZJ | 2026-Q4 | Anchored at 2 sites; OK |
 
 ---
 

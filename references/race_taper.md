@@ -8,13 +8,15 @@ When an athlete has a target event, reverse-engineer the taper from the event da
 - For block design and progressive overload → `references/block_templates.md`.
 - For concurrent-strength frequency tapering → `references/durability_strength.md` → Concurrent Training.
 
-> **Citation currency** — taper citations last verified **2026-05-26** (first inclusion — Mujika anchor pending per `governance/audit_protocol.md` → Currently-queued actions). Re-verify against current literature at every skill audit. Anchor authorities: `governance/bibliography.md#mujika-inigo` (taper structure, volume-decay with intensity-preservation, "sharpening" principle).
+> **Citation currency** — taper citations last verified **2026-07-18** (Mujika & Padilla 2003 volume/pages confirmed against the primary source; Mujika 2010 supplement issue confirmed). Re-verify against current literature at every skill audit. Anchor authorities: `governance/bibliography.md#mujika-inigo` (taper structure, volume-decay with intensity-preservation, "sharpening" principle).
 
 ---
 
 ## 2-Week Taper (Standard)
 
 Use for A-priority events or when CTL > 50.
+
+Both structures below follow the same evidence-backed shape: **cut volume, hold intensity, keep frequency roughly intact** (Mujika & Padilla 2003, *Med Sci Sports Exerc* 35(7):1182–1187 → `governance/bibliography.md#mujika-inigo`). That review found peak performance gains of roughly 0.5–6% from a 7–21 day taper, with volume reductions of ~40–60% outperforming both smaller cuts and complete rest. Intensity is the variable that must **not** drop — Mujika (2010, *Scand J Med Sci Sports* 20(Suppl 2):24–31) argues the retained high-intensity work is precisely what preserves the adaptations the volume cut is meant to unmask. That is why every week below keeps at least one hard session or opener rather than going fully easy.
 
 | Week | Volume vs. Build | Intensity | Key Sessions |
 |------|-----------------|-----------|--------------|
