@@ -63,8 +63,8 @@ def _sleep_status(latest):
         sleep_status = "red"
     elif sleep_h < 7:
         if sleep_score is not None and sleep_score >= 85:
-            sleep_status = "yellow"
-            sleep_note = f"borderline ({sleep_h}h) but score {sleep_score} keeps yellow (would have been red)"
+            sleep_status = "green"
+            sleep_note = f"borderline ({sleep_h}h) but score {sleep_score} upgrades to green"
         elif sleep_score is not None and sleep_score < 70:
             sleep_status = "red"
             sleep_note = f"borderline ({sleep_h}h) and score {sleep_score} downgrades to red"

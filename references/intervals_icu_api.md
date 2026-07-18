@@ -26,7 +26,8 @@ GET /api/v1/activity/{id}
 - `name`, `type`, `start_date_local`
 - `distance` (meters), `moving_time` (seconds), `elapsed_time` (seconds)
 - `icu_average_watts`, `icu_weighted_avg_watts` (= NP)
-- `p_max` (max power), `icu_joules` (energy in joules)
+- `icu_pm_p_max` (this activity's max power — matches 1s stream max), `icu_joules` (energy in joules)
+- `p_max` — **athlete all-time max power, NOT this ride's max** (verified live 2026-07-18: constant across activities); never report it as a per-ride value
 - `average_heartrate`, `max_heartrate`
 - `average_cadence`
 - `device_watts` (boolean: real power meter data)
@@ -135,7 +136,7 @@ underlying signals.
 | Intensity Factor (IF) | `icu_intensity` (percentage, ÷100 for decimal) | Activity |
 | TSS | `icu_training_load` | Activity |
 | Energy (kJ) | `icu_joules` (÷1000 for kJ) | Activity |
-| Max Power | `p_max` or 5s peak from power curve | Activity / Power Curve |
+| Max Power | `icu_pm_p_max`, else 5s peak from power curve (`p_max` is athlete all-time — do not use) | Activity / Power Curve |
 | Power Meter | `device_watts` (boolean) | Activity |
 | Interval Power | `average_watts` per interval | Intervals (`icu_intervals`) |
 | Interval NP | `weighted_average_watts` per interval | Intervals |

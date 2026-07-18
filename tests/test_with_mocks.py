@@ -276,6 +276,44 @@ class TestIFOutOfRangeWarning(unittest.TestCase):
         self.assertFalse(any("if_out_of_range" in w for w in result["data_warnings"]))
 
 
+class TestMaxWattsSelection(unittest.TestCase):
+    """Q3 audit P1: max_watts must be the per-activity true max
+    (icu_pm_p_max, which matches the 1s stream max), not the 5s curve
+    average, and never the athlete-level all-time p_max."""
+
+    def setUp(self):
+        self.client = IntervalsIcuClient("test_athlete", "test_key")
+        self.intervals_data = load_fixture("intervals.json")
+        self.power_curve_data = load_fixture("power_curve.json")
+
+    def _analyze(self, activity, power_curve):
+        with patch.object(self.client, "get_activity", return_value=activity), \
+             patch.object(self.client, "get_intervals", return_value=self.intervals_data["icu_intervals"]), \
+             patch.object(self.client, "get_streams", return_value={}), \
+             patch.object(self.client, "get_power_curve", return_value=power_curve):
+            return analyze(self.client, "i999", ftp=192, weight=74)
+
+    def test_max_watts_prefers_per_activity_power_model_max(self):
+        a = load_fixture("activity.json")
+        a["icu_pm_p_max"] = 912
+        result = self._analyze(a, self.power_curve_data)
+        self.assertEqual(result["activity"]["max_watts"], 912)
+
+    def test_max_watts_falls_back_to_curve_peak(self):
+        a = load_fixture("activity.json")  # icu_pm_p_max is None in fixture
+        result = self._analyze(a, self.power_curve_data)
+        self.assertEqual(result["activity"]["max_watts"], 480)  # 5s curve peak
+
+    def test_max_watts_ignores_athlete_alltime_p_max(self):
+        # p_max is the athlete's ALL-TIME max (verified live: constant 697
+        # across rides with stream maxes of 140-172W) — must never be
+        # reported as this ride's max.
+        a = load_fixture("activity.json")
+        a["p_max"] = 697
+        result = self._analyze(a, {})
+        self.assertIsNone(result["activity"]["max_watts"])
+
+
 class TestDataCompleteness(unittest.TestCase):
     """Test data_completeness field and stream validation in analyze()."""
 

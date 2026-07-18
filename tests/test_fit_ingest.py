@@ -80,6 +80,49 @@ class TestExtract(unittest.TestCase):
         self.assertEqual(records, [])
         self.assertFalse(meta["device_watts"])
 
+    def test_start_time_shifted_to_local_via_activity_offset(self):
+        """Q3 audit P1: FIT start_time is UTC; the activity message's
+        local_timestamp/timestamp pair gives the UTC offset. A 07:00 SGT
+        ride must not be dated the previous day."""
+        from datetime import datetime
+        ff = _FakeFitFile({
+            "record": [_FakeMsg({"power": 200})],
+            "session": [_FakeMsg({"start_time": datetime(2026, 7, 17, 23, 0, 0)})],
+            "activity": [_FakeMsg({"timestamp": datetime(2026, 7, 18, 1, 0, 0),
+                                   "local_timestamp": datetime(2026, 7, 18, 9, 0, 0)})],
+        })
+        _, meta = _extract(ff, "ride")
+        self.assertEqual(meta["start_date_local"], "2026-07-18T07:00:00")
+        self.assertFalse(meta.get("start_time_utc_fallback"))
+
+    def test_start_time_utc_fallback_flag_without_activity_message(self):
+        from datetime import datetime
+        ff = _FakeFitFile({
+            "record": [_FakeMsg({"power": 200})],
+            "session": [_FakeMsg({"start_time": datetime(2026, 7, 17, 23, 0, 0)})],
+        })
+        _, meta = _extract(ff, "ride")
+        self.assertEqual(meta["start_date_local"], "2026-07-17T23:00:00")
+        self.assertTrue(meta["start_time_utc_fallback"])
+
+    def test_no_start_time_no_fallback_flag(self):
+        ff = _FakeFitFile({"record": [_FakeMsg({"power": 200})]})
+        _, meta = _extract(ff, "ride")
+        self.assertFalse(meta.get("start_time_utc_fallback"))
+
+
+class TestStartTimeUtcWarning(unittest.TestCase):
+    def test_analyze_local_warns_when_start_time_is_utc(self):
+        meta = {"name": "ride", "start_time_utc_fallback": True}
+        result = analyze_local([{"watts": None}], meta, ftp=200, weight=70)
+        self.assertTrue(any("start_time_utc" in w for w in result["data_warnings"]),
+                        f"expected start_time_utc warning, got {result['data_warnings']}")
+
+    def test_analyze_local_no_utc_warning_when_offset_applied(self):
+        meta = {"name": "ride", "start_time_utc_fallback": False}
+        result = analyze_local([{"watts": None}], meta, ftp=200, weight=70)
+        self.assertFalse(any("start_time_utc" in w for w in result["data_warnings"]))
+
 
 class TestImportFitparse(unittest.TestCase):
     def test_missing_fitparse_raises_with_install_hint(self):

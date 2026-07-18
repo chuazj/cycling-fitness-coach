@@ -135,11 +135,22 @@ def collect_reviews(vault_path):
                   f"Quote dates in YAML frontmatter (e.g., date: \"2026-05-09\") to avoid this.",
                   file=sys.stderr)
             continue
+        try:
+            # Values survive as raw strings when YAML carries inline comments
+            # ("if: 0.84 # felt hard") or fractions ("rpe: 7/10") — skip the
+            # file like the invalid-date branch, never crash the whole scan.
+            if_num = float(if_val)
+            rpe_num = float(rpe)
+        except (ValueError, TypeError):
+            print(f"WARNING: skipping {entry} — if={if_val!r} / rpe={rpe!r} is not numeric. "
+                  f"Remove inline comments or units from these frontmatter fields.",
+                  file=sys.stderr)
+            continue
         reviews.append({
             "date": date_str,
             "session_type": fm.get("session_type") or "unknown",
-            "if": float(if_val),
-            "rpe": float(rpe),
+            "if": if_num,
+            "rpe": rpe_num,
             "tss": fm.get("tss"),
             "rating": fm.get("rating"),
             "filename": entry,

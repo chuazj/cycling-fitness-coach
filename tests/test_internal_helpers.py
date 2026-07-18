@@ -855,12 +855,13 @@ class TestReadinessHelpers(unittest.TestCase):
         status, note = _sleep_status({})
         self.assertEqual(status, "missing")
 
-    def test_sleep_status_score_tiebreaker_keeps_yellow(self):
-        # borderline 6-7h with score ≥85 → yellow (not red)
+    def test_sleep_status_score_tiebreaker_upgrades_to_green(self):
+        # borderline 6-7h with score ≥85 → green (documented upgrade:
+        # readiness_template.md "6–7h tiebroken by sleep_score (≥85 upgrade)")
         status, note = _sleep_status({"sleep_hours": 6.5, "sleep_score": 88})
-        self.assertEqual(status, "yellow")
+        self.assertEqual(status, "green")
         self.assertIsNotNone(note)
-        self.assertIn("keeps yellow", note)
+        self.assertIn("upgrades to green", note)
 
     def test_sleep_status_score_tiebreaker_downgrades_to_red(self):
         # borderline 6-7h with score <70 → red

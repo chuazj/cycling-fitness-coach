@@ -278,16 +278,16 @@ def analyze(client, activity_id, ftp=200, weight=70.0):
     if not has_power and not is_indoor:
         data_warnings.append("outdoor_no_power: Outdoor ride without power meter — power data is estimated")
 
-    # Max watts: from power curve if available, else from intervals
-    max_watts = None
-    if power_curve:
-        # Shortest duration peak is effectively max power
+    # Max watts: icu_pm_p_max is the per-activity true max (matches the 1s
+    # stream max); the 5s curve peak is a rolling average, so it only serves
+    # as fallback. a["p_max"] is the athlete's ALL-TIME max (constant across
+    # rides) — never usable as this ride's max.
+    max_watts = a.get("icu_pm_p_max")
+    if max_watts is None and power_curve:
         for label in ["5s", "1min"]:
             if label in (m.get("peak_powers") or {}):
                 if max_watts is None or m["peak_powers"][label] > max_watts:
                     max_watts = m["peak_powers"][label]
-    if max_watts is None:
-        max_watts = a.get("p_max")
 
     return {
         "activity": _build_activity_block(a, moving_time, avg_w, max_watts, avg_hr,

@@ -44,12 +44,28 @@ def _import_fitparse():
         )
 
 
-def _build_metadata(session, records, laps, name):
+def _utc_offset(activity_msg):
+    """UTC-offset timedelta from a FIT activity message, or None.
+
+    FIT `activity.timestamp` is UTC and `activity.local_timestamp` is device
+    local time — their difference is the recording device's UTC offset.
+    """
+    if activity_msg is None:
+        return None
+    ts = activity_msg.get_value("timestamp")
+    local = activity_msg.get_value("local_timestamp")
+    if hasattr(ts, "isoformat") and hasattr(local, "isoformat"):
+        return local - ts
+    return None
+
+
+def _build_metadata(session, records, laps, name, activity_msg=None):
     """Assemble the metadata dict from the optional session message + records."""
     has_power = any(r["watts"] is not None for r in records)
     sport_type, sub_sport = "", ""
     distance_m, elevation = 0, 0
     start = ""
+    start_is_utc = False
     elapsed_s = len(records)
     timer_s = len(records)
     if session is not None:
@@ -60,11 +76,24 @@ def _build_metadata(session, records, laps, name):
         elapsed_s = session.get_value("total_elapsed_time") or len(records)
         timer_s = session.get_value("total_timer_time") or elapsed_s
         st = session.get_value("start_time")
-        start = st.isoformat() if hasattr(st, "isoformat") else (str(st) if st else "")
+        # FIT start_time is UTC by spec — shift to device-local so the
+        # emitted key really is start_date_LOCAL (a 07:00 SGT ride must not
+        # land on the previous calendar date).
+        if hasattr(st, "isoformat"):
+            offset = _utc_offset(activity_msg)
+            if offset is not None:
+                st = st + offset
+            else:
+                start_is_utc = True
+            start = st.isoformat()
+        else:
+            start = str(st) if st else ""
+            start_is_utc = bool(st)
     return {
         "name": name,
         "sport_type": sport_type or "Ride",
         "start_date_local": start,
+        "start_time_utc_fallback": start_is_utc,
         "distance_m": distance_m,
         "moving_time_s": int(timer_s) if timer_s else len(records),
         "elapsed_time_s": int(elapsed_s) if elapsed_s else len(records),
@@ -109,7 +138,8 @@ def _extract(fitfile, name):
             "intensity": m.get_value("intensity"),
         })
     session = next(iter(fitfile.get_messages("session")), None)
-    return records, _build_metadata(session, records, laps, name)
+    activity_msg = next(iter(fitfile.get_messages("activity")), None)
+    return records, _build_metadata(session, records, laps, name, activity_msg)
 
 
 def parse_fit(path):
@@ -196,6 +226,10 @@ def analyze_local(records, metadata, ftp=200, weight=70.0):
         data_warnings.append("estimated_power: No power data in the .fit file — power metrics unavailable or estimated")
     if watts_present and not has_power_stream:
         data_warnings.append("streams_too_short: Power stream present but too short for zone/drift analysis")
+    if metadata.get("start_time_utc_fallback"):
+        data_warnings.append(
+            "start_time_utc: no local_timestamp in .fit — start_date_local is "
+            "UTC; the ride date may be one day early for morning rides")
 
     # I-2: data_completeness mirrors analyze()'s semantics — it means "did the API
     # fetches succeed", NOT "is the data high quality". A local .fit has no API

@@ -63,6 +63,7 @@ DEFAULT_MODEL = {
 RPE_TRIGGER_WINDOW = 5        # reconciled RPE predictions per slot
 RPE_TRIGGER_THRESHOLD = 1.0   # |mean signed delta| RPE that fires recalibration
 FTP_TRIGGER_WINDOW = 2        # consecutive completed blocks
+FTP_RECONCILE_WINDOW_DAYS = 14  # max |ftp_test_date - reconcile_when| to close a forecast
 
 
 def predict_rpe(model, if_value, slot):
@@ -268,7 +269,15 @@ def reconcile(records, reviews, new_ftp=None, ftp_test_date=None):
             continue
 
         if rec["type"] == "rpe_at_if":
-            target = datetime.strptime(rec["reconcile_when"], "%Y-%m-%d")
+            try:
+                target = datetime.strptime(rec["reconcile_when"], "%Y-%m-%d")
+            except (TypeError, ValueError):
+                # A record with a null/malformed reconcile_when (written before
+                # --session-date was validated) must not kill the whole run.
+                print(f"WARNING: prediction {rec.get('id')} has invalid "
+                      f"reconcile_when {rec.get('reconcile_when')!r} — skipping "
+                      f"(fix the ledger line to reconcile it).", file=sys.stderr)
+                continue
             want_type = (rec["inputs"].get("session_type") or "").lower()
             best = None  # (gap_days, index, review)
             for idx, rv in enumerate(reviews):
@@ -291,6 +300,18 @@ def reconcile(records, reviews, new_ftp=None, ftp_test_date=None):
         elif rec["type"] == "ftp_gain" and new_ftp is not None:
             if ftp_test_date and ftp_test_date < rec["made"]:
                 continue
+            # Only close forecasts whose block actually ended near this test.
+            # A stale open forecast from an earlier block would otherwise be
+            # attributed a later block's gain — a fabricated "outside" delta
+            # that can spuriously fire the recalibration trigger.
+            if rec.get("reconcile_when"):
+                try:
+                    when = datetime.strptime(rec["reconcile_when"], "%Y-%m-%d")
+                    eff = datetime.strptime(ftp_test_date or today, "%Y-%m-%d")
+                    if abs((eff - when).days) > FTP_RECONCILE_WINDOW_DAYS:
+                        continue
+                except ValueError:
+                    pass  # unparseable dates: fall back to the made-date check
             start = rec["inputs"]["start_ftp"]
             actual_pct = round((new_ftp - start) / start * 100, 1)
             p = rec["predicted"]
@@ -481,6 +502,19 @@ def main():
         if args.type == "rpe_at_if" and args.if_value is None:
             print("ERROR: --if is required for --type rpe_at_if", file=sys.stderr)
             sys.exit(1)
+        if args.type == "rpe_at_if":
+            # Without a valid session date the record is written with
+            # reconcile_when null/garbage and every later reconcile run dies.
+            if not args.session_date:
+                print("ERROR: --session-date is required for --type rpe_at_if",
+                      file=sys.stderr)
+                sys.exit(1)
+            try:
+                datetime.strptime(args.session_date, "%Y-%m-%d")
+            except ValueError:
+                print(f"ERROR: --session-date must be YYYY-MM-DD "
+                      f"(got {args.session_date!r})", file=sys.stderr)
+                sys.exit(1)
         if args.type == "ftp_gain" and args.start_ftp is None:
             print("ERROR: --start-ftp is required for --type ftp_gain", file=sys.stderr)
             sys.exit(1)

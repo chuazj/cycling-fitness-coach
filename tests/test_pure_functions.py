@@ -1643,6 +1643,31 @@ class TestRpeTrendCollectReviews(unittest.TestCase):
             self.assertIn("bad_date.md", stderr_out)
             self.assertIn("Quote dates", stderr_out)
 
+    def test_non_numeric_if_or_rpe_warns_and_skips(self):
+        """One malformed if/rpe value (e.g. YAML inline comment) must skip that
+        file with a stderr warning — not crash the whole scan (Q3 audit P0-1)."""
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "bad_if.md"), "w", encoding="utf-8") as f:
+                f.write("---\ntype: workout-review\ndate: \"2026-04-01\"\n"
+                        "if: 0.84 # felt hard\nrpe: 7\n---\n")
+            with open(os.path.join(d, "bad_rpe.md"), "w", encoding="utf-8") as f:
+                f.write("---\ntype: workout-review\ndate: \"2026-04-02\"\n"
+                        "if: 0.85\nrpe: 7/10\n---\n")
+            with open(os.path.join(d, "good.md"), "w", encoding="utf-8") as f:
+                f.write("---\ntype: workout-review\ndate: \"2026-04-03\"\n"
+                        "if: 0.85\nrpe: 7\n---\n")
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                reviews, err = self.collect(d)
+            self.assertIsNone(err)
+            filenames = [r["filename"] for r in reviews]
+            self.assertEqual(filenames, ["good.md"])
+            stderr_out = buf.getvalue()
+            self.assertIn("bad_if.md", stderr_out)
+            self.assertIn("bad_rpe.md", stderr_out)
+
 
 class TestIntervalStatsEdgeCases(unittest.TestCase):
     def test_all_work_intervals(self):

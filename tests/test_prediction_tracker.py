@@ -193,6 +193,47 @@ class TestReconcile(unittest.TestCase):
         recs, just = reconcile([rec], [])
         self.assertEqual(recs[0]["status"], "open")
 
+    def _open_ftp(self, rec_id, made, when):
+        return {"id": rec_id, "type": "ftp_gain", "made": made,
+                "reconcile_when": when,
+                "inputs": {"start_ftp": 180, "block": "x"},
+                "predicted": {"pct_low": 2.0, "pct_high": 4.0,
+                              "watts_low": 184, "watts_high": 187},
+                "status": "open", "actual": None, "reconciled": None, "delta": None}
+
+    def test_ftp_gain_stale_block_not_reconciled_against_later_test(self):
+        """Q3 audit P1: a never-reconciled prediction from an earlier block must
+        not be closed by a much later block's FTP test — that fabricates an
+        'outside' delta and can spuriously fire the recalibration trigger."""
+        stale = self._open_ftp("P001", "2026-03-01", "2026-03-28")
+        current = self._open_ftp("P002", "2026-06-01", "2026-06-30")
+        recs, just = reconcile([stale, current], [],
+                               new_ftp=194, ftp_test_date="2026-06-28")
+        self.assertEqual(recs[0]["status"], "open")        # stale block untouched
+        self.assertEqual(recs[1]["status"], "reconciled")  # current block closes
+        self.assertEqual(len(just), 1)
+
+    def test_ftp_gain_without_reconcile_when_falls_back_to_made_check(self):
+        rec = self._open_ftp("P001", "2026-06-01", None)
+        recs, just = reconcile([rec], [], new_ftp=194, ftp_test_date="2026-06-28")
+        self.assertEqual(recs[0]["status"], "reconciled")
+
+    def test_rpe_record_with_null_reconcile_when_skipped_not_crash(self):
+        """Q3 audit P0: a ledger record with reconcile_when null (written by an
+        unvalidated predict call) must be skipped with a warning — one poison
+        record must not kill every future reconcile run."""
+        import contextlib
+        import io
+        poison = self._open_rpe(None, 6)
+        good = self._open_rpe("2026-05-10", 6)
+        good["id"] = "P002"
+        buf = io.StringIO()
+        with contextlib.redirect_stderr(buf):
+            recs, just = reconcile([poison, good], [self._review("2026-05-10", 8)])
+        self.assertEqual(recs[0]["status"], "open")        # poison skipped, still open
+        self.assertEqual(recs[1]["status"], "reconciled")  # good one matched
+        self.assertIn("reconcile_when", buf.getvalue())
+
 
 class TestTriggers(unittest.TestCase):
     def _rpe(self, delta, slot, day):
@@ -289,6 +330,30 @@ class TestCLI(unittest.TestCase):
         with patch.object(sys, "argv", argv):
             with self.assertRaises(SystemExit):
                 main()
+
+    def test_predict_rpe_without_session_date_exits(self):
+        """Q3 audit P0: predict without --session-date must be rejected up
+        front — otherwise it writes reconcile_when: null into the ledger and
+        every later reconcile run crashes."""
+        with tempfile.TemporaryDirectory() as d:
+            argv = ["prog", "--mode", "predict", "--type", "rpe_at_if",
+                    "--if", "0.84", "--session-type", "Threshold",
+                    "--ledger-path", os.path.join(d, "ledger.jsonl"),
+                    "--calibration-path", os.path.join(d, "cal.md")]
+            with patch.object(sys, "argv", argv):
+                with self.assertRaises(SystemExit):
+                    main()
+
+    def test_predict_rpe_non_iso_session_date_exits(self):
+        with tempfile.TemporaryDirectory() as d:
+            argv = ["prog", "--mode", "predict", "--type", "rpe_at_if",
+                    "--if", "0.84", "--session-type", "Threshold",
+                    "--session-date", "06/02/2026",
+                    "--ledger-path", os.path.join(d, "ledger.jsonl"),
+                    "--calibration-path", os.path.join(d, "cal.md")]
+            with patch.object(sys, "argv", argv):
+                with self.assertRaises(SystemExit):
+                    main()
 
 
 class TestLoadLedgerMalformed(unittest.TestCase):
