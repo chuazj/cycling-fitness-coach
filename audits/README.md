@@ -23,6 +23,7 @@ A single audit can cover multiple scopes; the topic slug reflects the dominant o
 
 | Date | Title | Status | Scope |
 |------|-------|--------|-------|
+| 2026-07-18 | [2026-Q3 quarterly audit — citations, methodology drift, evals, output contract](cycling-coach-methodology-currency-2026-07-18.md) | actioned | citation-currency, eval-refresh, methodology-drift, output-contract |
 | 2026-06-01 | [Open-backlog verification (W9 + 5/30 deferred); 6 of 10 actioned](cycling-coach-backlog-verification-2026-06-01.md) | actioned | backlog-verification |
 | 2026-05-30 | [Comprehensive 3-dimension review (impl / methodology / code)](cycling-coach-comprehensive-review-2026-05-30.md) | actioned | comprehensive-review |
 | 2026-05-26 | [Refactor proposal — methodology, recurrence, sub-prompts](cycling-coach-refactor-proposal-2026-05-26.md) | actioned | refactor-proposal |

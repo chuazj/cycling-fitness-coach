@@ -21,8 +21,8 @@ This file defines the recurring audit ritual that keeps the skill's methodology 
 |---------|--------|-----------------|
 | Q1 | January (any week) | 2027-Q1 |
 | Q2 | April (any week) | 2027-Q2 |
-| Q3 | July (any week) | **2026-Q3** ← first repo-tracked audit |
-| Q4 | October (any week) | 2026-Q4 |
+| Q3 | July (any week) | ~~2026-Q3~~ — **completed 2026-07-18** ([artifact](../audits/cycling-coach-methodology-currency-2026-07-18.md)), first repo-tracked audit |
+| Q4 | October (any week) | **2026-Q4** ← next due |
 
 **Why quarterly:** evidence half-life in the cited domains (block periodization, interval formats, fuelling, recovery markers) is on the order of 6–18 months. Quarterly cadence is the slowest review interval that still catches a meaningful new RCT or meta-analysis before it propagates into a coaching recommendation downstream.
 
