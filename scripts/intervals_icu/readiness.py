@@ -87,8 +87,8 @@ def _synthesize_verdict(sleep_status, band, flags, signal_mode, hrv_sample_size=
     (the `band` variable supersedes it in full mode; it cannot exist in the
     others). The "HRV_CV" trend flag is likewise excluded: it is an
     informational early-autonomic-strain signal whose documented action is a
-    weekly-TSS review, not a same-day session cap (CLAUDE.md gating spec +
-    references/training_zones.md → Fatigue Indicators). It still surfaces in
+    weekly-TSS review, not a same-day session cap (workflows/advise.md →
+    Gating? table + references/training_zones.md → Fatigue Indicators). It still surfaces in
     the Active-flags list (which reads the full `flags`, not `gating_flags`).
 
     `hrv_sample_size` only affects the descriptive parenthetical in the

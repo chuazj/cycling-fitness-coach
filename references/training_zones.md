@@ -129,7 +129,7 @@ No back-to-back hard days. Tue and Thu should target different energy systems wh
 - **HRV below 7-day band 2 consecutive days** (de-load trigger; escalation, not duplicate — only the red fires, not yellow + red on the same day)
 - Recovery score <34 (Whoop band; low readiness) — fires regardless of baseline depth
 - **Respiration +2.0/min above 14-day baseline** (likely active illness; Z1 30min or full rest)
-- **SpO2 nightly average <90%** — absolute red floor, fires regardless of baseline depth. Significant desaturation; rest and check for illness / altitude / sleep apnea
+- **SpO2 nightly average <90%** — absolute red floor, fires regardless of baseline depth. Significant desaturation; recovery-only day (full rest, or Z1 spin ≤60 min per the RED ceiling) and check for illness / altitude / sleep apnea
 - Motivation significantly decreased
 - Persistent muscle soreness
 - Illness symptoms

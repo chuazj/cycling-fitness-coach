@@ -283,5 +283,6 @@ This is **default-on** for the Weekly Review workflow — write happens immediat
 **Step 8:** After approval, apply changes:
 - Generate next week's ZWO files via `batch_generate_zwo.py`
 - Update `plans/active_plan.md`: advance week, new schedule, PMC history, peak powers, review log, adaptation log
+- **Block rollover** — if this review just completed the final week (`Current Week` = `Total Weeks`): do NOT advance past `Total Weeks`. Append the completed block's summary to `plans/block_history.md` (create the file on first rollover; entry format in `references/plan_state_schema.md` → Block History — the Create Plan stimulus-rotation check reads it), then archive the plan (Create Plan Step 0 convention) and offer to start the next block via Create Plan
 - **Log RPE forecasts (W5):** for each hard session in the new week's schedule, log an RPE-at-IF prediction via `prediction_tracker.py --mode predict --type rpe_at_if` (same call as Create Plan → Step 5).
 - (If the Obsidian write was deferred or skipped in Step 6 due to user opt-out, do not retroactively write here — respect the opt-out.)

@@ -64,7 +64,7 @@ Map your script-output field paths to the placeholders below. Mid-Week uses the 
 ```
 - TSB context: {tsb:+} (CTL {ctl} / ATL {atl}) — {fresh/neutral/productive/overreached}
 ```
-- Status mapping: TSB > +10 fresh; -10 to +10 neutral; -20 to -10 productive; < -20 overreached.
+- Status mapping (matches `readiness.py`): TSB ≥ +5 fresh; -10 to +5 neutral; -30 to -10 productive; < -30 overreached.
 
 ### Subjective fields
 Render the Subjective row only when at least one of `fatigue`/`soreness`/`stress`/`mood` is non-null. Join only the non-null fields:

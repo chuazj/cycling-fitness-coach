@@ -48,7 +48,7 @@ python scripts/generate_zwo.py --json workout_def.json --output workout.zwo --ft
 ## ZWO Linting
 ```bash
 # Validate a .zwo against the canonical element reference + project hygiene rules.
-# Exit 0 = clean, 1 = warnings, 2 = errors. Reports NP-based modeled stats.
+# Exit 0 = clean or warnings only, 1 = errors, 2 = unreadable file. Reports NP-based modeled stats.
 python scripts/zwo_lint.py workout.zwo --ftp 200
 ```
 

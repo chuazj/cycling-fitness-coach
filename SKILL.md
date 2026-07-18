@@ -68,6 +68,8 @@ Read the workflow file for the matched trigger before proceeding. Each file cont
 | "build a workout", "create a ZWO", workout generation request | ZWO Generation | `workflows/generate.md` |
 | RPE discussion, power/HR conversation | Training Advice | `workflows/advise.md` |
 
+> **Weekly disambiguation:** "how was my week" and "how did I do this week" are interchangeable in normal speech. If `plans/active_plan.md` exists, prefer **Weekly Review** (it runs the adaptation trees, wellness pull, and plan-state update that Weekly Summary skips); use Weekly Summary only when there is no active plan or the athlete explicitly wants stats-only.
+
 ## Response Guidelines
 
 1. Be specific: power in % FTP AND watts

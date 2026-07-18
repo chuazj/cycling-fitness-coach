@@ -29,7 +29,7 @@ This is a **Claude Code skill** (not a standalone application). It provides cycl
 ## Wellness signal changes
 
 - **Test fixtures exclude today from baseline**: `wellness_summary()` uses `history = daily[:-1]`. To test an N-day baseline rule (CV-trend needs 14d, RHR/HRV band-check/respiration need 7d), provide **N+1 daily records** — sending N gives only N-1 history days and the rule silently won't fire.
-- **Signal-change sync list** (when adding/modifying a wellness rule, all 6 must update): code (`scripts/intervals_icu/wellness.py`, verdict layer in `readiness.py`) → tests (`tests/test_with_mocks.py`, `tests/test_internal_helpers.py`) → Fatigue Indicators (`references/training_zones.md`) → readiness template in `workflows/advise.md` AND `workflows/plan.md` → project `CLAUDE.md` Block-wide gating rules. Skip any → doc/code drift.
+- **Signal-change sync list** (when adding/modifying a wellness rule, all 5 must update): code (`scripts/intervals_icu/wellness.py`, verdict layer in `readiness.py`) → tests (`tests/test_with_mocks.py`, `tests/test_internal_helpers.py`) → Fatigue Indicators (`references/training_zones.md`) → shared readiness template (`references/readiness_template.md` — single source for both workflows) → Gating? table (`workflows/advise.md` → Readiness signals table). Skip any → doc/code drift.
 
 ## Eval harness limitations (skill-creator/run_eval.py)
 

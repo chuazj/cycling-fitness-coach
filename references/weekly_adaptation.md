@@ -115,9 +115,10 @@ ACWR (Acute:Chronic Workload Ratio) = ATL ÷ CTL. Measures training load spikes 
 - **THEN** aerobic fitness needs work or session fueling was inadequate
 - **ACTION** add more Z2 volume; check nutrition/hydration habits
 
-**IF** HR fails to reach expected levels during high-intensity work:
+**IF** HR fails to reach expected levels during high-intensity work across 2+ consecutive hard sessions:
 - **THEN** possible deep fatigue or overtraining
 - **ACTION** recommend 3-5 days easy before resuming intensity
+- **NOTE** a single-session shortfall is NOT this rule: with elevated RPE, drop one progression level next session (`references/block_templates.md` → VO2max fatigue note); with normal RPE and power on target, the intervals may simply be too short (`references/workout_analysis.md` → VO2max failure modes)
 
 ### Session Execution Quality
 
@@ -152,7 +153,7 @@ ACWR (Acute:Chronic Workload Ratio) = ATL ÷ CTL. Measures training load spikes 
 
 ### RPE Trend Escalation
 
-**IF** session RPE ≥ 8 for all sessions for 2+ consecutive weeks at same or lower IF:
+**IF** `rising_rpe_at_constant_if` fires (`rpe_trend.py`: ΔRPE ≥ +1.0 between consecutive 2-week windows at |ΔIF| ≤ 0.03) OR session RPE ≥ 8 for all sessions for 2+ consecutive weeks at same or lower IF:
 - **THEN** functional overreaching signal — recovery needed before breakdown occurs
 - **ACTION** prescribe 5 days of Z1-only riding (active recovery), then reassess
 - **WHY** rising RPE at constant intensity is the earliest reliable indicator of overreaching; PMC/TSB alone cannot detect this because TSS is RPE-blind

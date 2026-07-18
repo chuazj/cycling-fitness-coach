@@ -77,7 +77,7 @@ Heat adaptation is a low-cost, high-ROI adaptation that drives plasma volume exp
 | **Intensity** | <75% FTP (Z2-low to Z2-high) | Strict — RPE must remain ≤4 |
 | **Ambient temperature** | 27–30°C indoor | Reduce fan speed; close room windows; consider long-sleeve layer |
 | **Relative humidity** | Whatever ambient delivers | Singapore default ~70–90% is sufficient; no humidifier needed |
-| **Hydration target** | 400–800 mL/h | Higher end if sweat rate >1.5 L/h |
+| **Hydration target** | 750–1000 mL/h (matches `references/fueling.md` → Indoor/heat) | Higher end if sweat rate >1.5 L/h |
 | **Electrolyte target** | Na⁺ 500–1000 mg/L of fluid | Critical — heat-block dehydration risk is the primary safety concern |
 | **Pre-session** | 250–500 mL fluid 1–2 h before | Start session euhydrated |
 | **Post-session** | Replace fluid losses + electrolytes; 0.8–1.2g/kg carb within 60 min | Standard recovery (see `references/fueling.md`) |

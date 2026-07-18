@@ -39,8 +39,8 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 5. **Never lower based on a single bad session.** Look for patterns across 2+ sessions.
 
 **"I'm tired, should I train today?"** — Fatigue assessment:
-1. Check resting HR — if +5 bpm above baseline → modify or rest
-2. Ask about sleep quality (last 2 nights) and life stress
+1. Run `python scripts/intervals_icu_api.py --readiness-check` — its verdict + ceiling is the primary gate (pulls RHR, sleep, HRV band, Recovery, respiration, SpO2 in one call). If wellness data is unavailable (script `error` field), fall back to asking: RHR vs baseline, sleep last 2 nights
+2. Ask about what the data can't see: life stress, motivation, soreness
 3. Prescribe based on fatigue level using the Recovery Prescription table below
 4. **Rule of thumb**: Modified workout > forced workout > skipped workout
 
@@ -53,11 +53,14 @@ Covers **Training Advice**, **Mid-Week Check-In**, and **Race/Event Peaking**. T
 | Fatigue signal | Action | Session adjustment |
 |---|---|---|
 | Mild (RPE +1 vs typical, sleep ok, Recovery ≥67, HRV in/above 7-day band) | Train as planned, monitor first 15 min | None — abort if RPE doesn't settle |
-| Moderate (RHR +5 bpm OR poor sleep 1 night OR HRV below 7-day band (single day) OR Recovery 34–66 OR respiration +1/min vs baseline) | Modify down one tier | SS → endurance Z2; threshold → SS; VO2max → threshold; cut duration 20% |
-| High (RHR ≥+10 bpm OR poor sleep 2+ nights, OR HRV below 7-day band 2 consecutive days, OR Recovery <34, OR respiration +2/min vs baseline, OR SpO2 <90%, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
-| Severe (RHR +10 bpm AND illness symptoms OR TSB <−30 OR Recovery <34 with red signals across HRV/RHR/respiration) | Full rest | No bike. Reassess next day. |
+| Moderate-high (Recovery 50–66 with no other flags — engine YELLOW-HIGH) | Proceed with caution | Threshold/SS as planned; VO2max marginal — proceed only if motivated, abort if HR/RPE elevated |
+| Moderate-low (RHR +5 bpm OR poor sleep 1 night OR HRV below 7-day band (single day) OR Recovery 34–49 OR respiration +1/min vs baseline — engine YELLOW-LOW) | Modify down; ceiling = Sweet Spot 88–94% FTP | SS → proceed; threshold → SS; VO2max → SS or Z2; cut duration 20% |
+| High (RHR ≥+10 bpm OR poor sleep 2+ nights, OR HRV below 7-day band 2 consecutive days, OR Recovery <34, OR respiration +2/min vs baseline, OR SpO2 <90%, OR TSB <−30, OR motivation absent) | Replace with active recovery | 30–45 min Z1, no intervals |
+| Severe ((RHR +10 bpm AND illness symptoms) OR (Recovery <34 with red signals across HRV/RHR/respiration)) | Full rest | No bike. Reassess next day. |
 | Sick (above-neck only) | Rest 1–2 days then Z1–Z2 only | Per `references/weekly_adaptation.md` → Illness/Injury rules |
 | Sick (below-neck or systemic) | Full rest until 48h symptom-free | Per `references/weekly_adaptation.md` → Illness/Injury rules |
+
+> **TSB persistence rules live in `references/weekly_adaptation.md`** (TSB <−30 → insert recovery day; <−40 → replace hard sessions with Z1–Z2 until TSB >−25). The High-row `TSB <−30` cell is the same rule's same-day rendering — an active-recovery spin, not forced full rest.
 
 > **HRV CV-trend is informational, not a same-day downgrade.** A rising 7-day CV (≥ prior-7d + 2.0pp over the 14-day split-window) is an early autonomic-strain signal — it prompts a **weekly-TSS review**, not a session cut. `--readiness-check` surfaces it as an Active flag but does **not** gate the verdict on it (consistent with the Gating? table below + `references/training_zones.md` → Fatigue Indicators). Cut today's session only if an acute signal in the table above also fires.
 
@@ -141,7 +144,7 @@ Deviation flags (RHR/HRV/respiration/SpO2) are auto-suppressed when per-metric s
 
 Render the per-metric body (Recovery / Sleep / HRV / RHR / Respiration / SpO2 / TSB / Subjective / Active flags / Progression signal) using `references/readiness_template.md` — map `--readiness-check` field paths (`recovery.score`, `hrv.today`, `resting_hr.today`, `respiration.today`, `spo2.today`, `tsb.tsb`, etc.) to the canonical line skeletons. The shared interpretation footnotes (Recovery lag, Reading priority, Baseline-maturity caveat, Data freshness) also live there.
 
-**Mid-Week-specific addendum:** if verdict is YELLOW-LOW or RED, apply the verdict's ceiling to the planned session (downgrade hard sessions per Recovery Prescription table — Training Advice section above) before showing the session.
+**Mid-Week-specific addendum:** if verdict is YELLOW-LOW or RED, apply the verdict's ceiling to the planned session before showing it. The Recovery Prescription table (Training Advice section above) maps sessions *under* that ceiling — the ceiling always wins: keep downgrading until the session fits (YELLOW-LOW caps at Sweet Spot 88–94% FTP, RED at Z1–Z2).
 
 ### SpO2 cross-check (Apple Watch tiebreaker)
 
@@ -179,7 +182,7 @@ python scripts/pmc_calculator.py --bootstrap --days 90
 ```
 
 **Step 4:** Calculate taper timing:
-- Determine current TSB and target TSB (+5 to +20)
+- Determine current TSB and target TSB (+5 to +15, per `references/race_taper.md`)
 - Select protocol: 2-week taper (A-priority, CTL >50) or 1-week mini-taper (B-priority, CTL <50)
 - Project TSB forward to confirm the taper duration achieves target freshness
 
@@ -187,7 +190,7 @@ python scripts/pmc_calculator.py --bootstrap --days 90
 ```
 ## Race Peaking: {Event Name} — {Date}
 **Current**: CTL {X} | ATL {X} | TSB {X}
-**Target race-day TSB**: +5 to +20
+**Target race-day TSB**: +5 to +15
 **Protocol**: {2-week / 1-week} taper starting {date}
 
 ### Taper Schedule

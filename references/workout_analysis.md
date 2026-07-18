@@ -285,7 +285,7 @@ For FTP estimation formulas and individual variation ranges, see `references/tra
 - **HR**: Must reach >90% HRmax by end of interval — if not reaching this, intensity is too low or intervals too short
 - **Recovery**: HR should drop to <75% HRmax between intervals; if not recovering, extend rest or reduce interval count
 - **Cadence**: 95-105 rpm (high leg speed reduces peripheral fatigue)
-- **Failure mode**: Unable to reach target power from interval 1 = accumulated fatigue, consider rest day; power OK but HR not reaching >90% HRmax = intervals may be too short
+- **Failure mode**: Unable to reach target power from interval 1 = accumulated fatigue, consider rest day; power OK + normal RPE but HR not reaching >90% HRmax = intervals may be too short (a shortfall repeating across 2+ sessions is deep fatigue instead — `references/weekly_adaptation.md` → HR-response rule)
 - **Expected IF**: 0.85-0.95 | **Expected TSS/hr**: ~70-90
 
 #### Over-Under Sessions
@@ -391,8 +391,8 @@ For CTL/ATL/TSB definitions, PMC formulas, and ACWR thresholds, see `references/
 
 | TSB Range | Status | Recommendation |
 |-----------|--------|----------------|
-| > +25 | Very fresh | May be detrained, increase load |
-| +10 to +25 | Fresh | Good for racing/testing |
+| > +15 | Very fresh | Detraining risk outside a taper — increase stimulus (`weekly_adaptation.md` TSB > +15 rule) |
+| +10 to +15 | Fresh | Good for racing/testing |
 | -10 to +10 | Neutral | Normal training |
 | -10 to -30 | Fatigued | Monitor, plan recovery |
 | < -30 | Very fatigued | Reduce load, recovery priority |

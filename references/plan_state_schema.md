@@ -34,10 +34,10 @@ High-level plan metadata. Updated when advancing weeks or changing phase.
 
 | Field | Format | Valid Values | Notes |
 |-------|--------|-------------|-------|
-| Plan Type | string | `FTP Builder`, `VO2max Block`, `Endurance Block`, `Polarized Block` | From `references/block_templates.md` |
+| Plan Type | string | `FTP Builder`, `VO2max Block`, `Endurance Block`, `Polarized Block`, or a hybrid label from Block Selection Logic (e.g. `FTP Builder + extended Threshold`) | From `references/block_templates.md` |
 | Start Date | `YYYY-MM-DD` | any date | Monday of first training week |
 | End Date | `YYYY-MM-DD` | any date | Sunday of last training week |
-| Total Weeks | integer | 3-8 | |
+| Total Weeks | integer | 3-12 | Classic blocks run 3-8 wk; `base` / `gravel_endurance` blocks run up to 12 (`references/block_templates.md` → Block Selection Logic) |
 | Current Week | integer | 1 to Total Weeks | Incremented during weekly review |
 | Current Phase | string | Free-text from periodization block template (examples: `Build 1`, `Build 2`, `Recovery`, `Re-Foundation`, `Build`, `Peak`, `Taper & Test`) | From block structure |
 
@@ -230,3 +230,17 @@ Append-only log of adaptation decisions made by Claude. Format:
 - ZWO filenames follow one of two conventions (pick one and use consistently within a plan):
   - `week{N}_{day}_{type}.zwo` (lowercase, underscores) — e.g., `week1_tue_sweetspot.zwo`
   - `W{N}_D{D}_{Type}_{Detail}.zwo` (mixed-case, Zwift-friendly natural sort) — e.g., `W1_D1_SweetSpot_3x15.zwo`. **Preferred** when uploading to Zwift, since the workout list sorts these naturally by week then day.
+
+---
+
+## Block History (`plans/block_history.md`)
+
+Append-only archive consumed by the Weekly Review stimulus-rotation check (`workflows/plan.md` → Create Plan validation gate) and Block Selection Logic (`references/block_templates.md`). Created automatically at the first block rollover (Weekly Review Step 8); gitignored like all of `plans/`. One entry per completed block, newest last:
+
+```markdown
+## {Plan Type} — {Start Date} → {End Date}
+- Weeks: {completed}/{Total Weeks} completed
+- Planned vs actual TSS: {planned total} / {actual total}
+- FTP: {start}W → {end}W ({test | estimate | unchanged})
+- Outcome: {1-2 lines — key adaptations, limiters observed, what to rotate next}
+```
